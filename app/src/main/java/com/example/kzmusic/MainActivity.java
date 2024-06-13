@@ -21,5 +21,4 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
     }
-    int x = 3 + 3;
 }
