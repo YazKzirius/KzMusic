@@ -1,45 +1,37 @@
 package com.example.kzmusic;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Button;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import android.view.View;
-import android.widget.Button;
-import android.content.Intent;
 
-public class MainActivity extends AppCompatActivity {
+public class NewAccount extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_new_account);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        set_up_login();
-        set_up_create();
+        create_back_btn();
     }
-    //This function sets up the login button
-    public void set_up_login() {
-        Button get_started = findViewById(R.id.Login_btn);
-        get_started.setOnClickListener(v -> navigate_to_activity(SignIn.class));
+    //This function creates functionality for the back btn
+    public void create_back_btn() {
+        Button back = findViewById(R.id.Back_btn2);
+        back.setOnClickListener(v -> navigate_to_activity(MainActivity.class));
     }
-    //This function sets up the Create account button
-    public void set_up_create() {
-        Button get_started = findViewById(R.id.create_btn);
-        get_started.setOnClickListener(v -> navigate_to_activity(NewAccount.class));
-    }
-
-    //This function navigates to the log in activity
+    //This function navigates to a new activity given parameters
     public void navigate_to_activity(Class <?> target) {
-        Intent intent = new Intent(MainActivity.this, target);
+        Intent intent = new Intent(NewAccount.this, target);
         startActivity(intent);
     }
 }
