@@ -77,7 +77,7 @@
             android:layout_height="56dp"
             android:text="Create account"
             android:textSize="20sp"
-            android:id="@+id/create_btn2"/>
+            android:id="@+id/create2"/>
         <Button
             android:layout_marginTop="20dp"
             android:layout_width="330dp"

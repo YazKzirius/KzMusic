@@ -1,6 +1,9 @@
 package com.example.kzmusic;
 
+import android.database.Cursor;
 import android.os.Bundle;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,4 +24,5 @@ public class MainPage extends AppCompatActivity {
             return insets;
         });
     }
+
 }

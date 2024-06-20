@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
     }
     //This function sets up the Create account button
     public void set_up_create() {
-        Button get_started = findViewById(R.id.create_btn);
+        Button get_started = findViewById(R.id.create);
         get_started.setOnClickListener(v -> navigate_to_activity(NewAccount.class));
     }
 
