@@ -1,5 +1,5 @@
 package com.example.kzmusic;
-
+//Importing important modules
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -13,12 +13,26 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import android.database.Cursor;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 
+//This class implements the registration page of applications
+//Allows the user to create a new account and adds to SQL Users table
 public class NewAccount extends AppCompatActivity {
+    //Interface attributes
+    private static final int RC_SIGN_IN = 9001;
+    GoogleSignInClient gsc;
+    GoogleSignInOptions gso;
     String Username;
     String Email;
     String Password;
     Boolean is_registered = false;
+    Boolean exists = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -29,28 +43,47 @@ public class NewAccount extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        //Creating button functionality
         create_back_btn();
         create_account();
+        set_up_g_signin();
+    }
+    //This function creates functionality for logo image
+    //Moves back to homepage
+    public void create_image_btn() {
+        findViewById(R.id.imageView1).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                navigate_to_activity(MainActivity.class);
+            }
+        });
     }
     //This function creates functionality for the back btn
+    //Moves back to homepage
     public void create_back_btn() {
         Button back = findViewById(R.id.Back_btn2);
         back.setOnClickListener(v -> navigate_to_activity(MainActivity.class));
     }
     //This function creates functionality for create account btn
+    //Creates an account by checking if data is validate using password validation and checks if account already exists.
     public void create_account() {
         Button create = findViewById(R.id.create2);
         create.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //Validating data user entered
                 validate_data();
                 if (is_registered == true) {
-                    Toast.makeText(getApplicationContext(), "Registration successful", Toast.LENGTH_SHORT).show();
-                    UsersTable table = new UsersTable(getApplicationContext());
-                    table.open();
+                    //Adding it to SQL Users table
                     add_data();
-                    table.close();
-                    navigate_to_activity(MainPage.class);
+                    //If user already exists
+                    if (exists) {
+                        //Display error message and don't register
+                        Toast.makeText(getApplicationContext(), "Registration Error: User already exists with that email", Toast.LENGTH_SHORT).show();
+                    } else {
+                        //If new account, adds data and moves to main page
+                        navigate_to_activity(MainPage.class);
+                    }
                 } else {
                     ;
                 }
@@ -81,10 +114,12 @@ public class NewAccount extends AppCompatActivity {
     }
     //This function validates user input and checks if ready to register
     public void validate_data() {
+        //Getting user data
         String username = get_username();
         String email = get_email();
         String pass1 = get_password();
         String pass2 = get_password2();
+        //Checking if email and username are valid
         if (email.contains("@") == false) {
             is_registered = false;
             Toast.makeText(this, "Registration Error: Email invalid", Toast.LENGTH_SHORT).show();
@@ -97,8 +132,10 @@ public class NewAccount extends AppCompatActivity {
         if (message.equals("Valid") == true) {
             if (pass1.equals(pass2) == false) {
                 is_registered = false;
+                //Error message
                 Toast.makeText(this, "Registration Error: Passwords need to match", Toast.LENGTH_SHORT).show();
             } else {
+                //Data is ok and ready for creating
                 is_registered = true;
                 Username = username;
                 Email = email;
@@ -111,9 +148,11 @@ public class NewAccount extends AppCompatActivity {
     }
     //This function validates user password
     public String validate_password(String password) {
+        //Checks if string has special characters, capital letter and number
         boolean hasSpecial = password.matches(".*[@!£$%^&*()/.,;:{}#~><=+?]+.*");
         boolean hasCapital = password.matches(".*[A-Z]+.*");
         boolean hasNumber = password.matches(".*[0-9]+.*");
+        //Checks if string has more than 8 characters
         if (password.length() < 8) {
             is_registered = false;
             return "Registration Error: Password must have at least 8 characters";
@@ -131,12 +170,68 @@ public class NewAccount extends AppCompatActivity {
         }
     }
 
-    //This function adds data to database
+    //This function adds data to SQLlite database via the Users table
     public void add_data() {
         UsersTable table = new UsersTable(getApplicationContext());
         table.open();
-        long id = table.add_account(Username, Email, Password);
+        //If doesn't exists, adds data to Users table
+        if (!table.user_exists(Email)) {
+            long id = table.add_account(Username, Email, Password);
+            Toast.makeText(getApplicationContext(), "Registration successful, Welcome "+Username.replaceAll(" ","")+"!", Toast.LENGTH_SHORT).show();
+        //Otherwise, it records that account already exists
+        } else {
+            exists = true;
+        }
         table.close();
+    }
+    //This function manages google sign-in
+    //Using the Google Sign-in API
+    public void set_up_g_signin() {
+        gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestEmail().build();
+        gsc = GoogleSignIn.getClient(this, gso);
+        findViewById(R.id.Gsignin_btn2).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                signIn();
+            }
+        });
+        findViewById(R.id.google_icon).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                signIn();
+            }
+        });
+    }
+    //These following functions manage the Google Sign-in process
+    private void signIn() {
+        Intent signInIntent = gsc.getSignInIntent();
+        startActivityForResult(signInIntent, RC_SIGN_IN);
+    }
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        // Result returned from launching the Intent from GoogleSignInClient.getSignInIntent(...);
+        if (requestCode == RC_SIGN_IN) {
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            handleSignInResult(task);
+        }
+    }
+
+    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
+        try {
+            GoogleSignInAccount account = completedTask.getResult(ApiException.class);
+            //Adding account to Users table
+            Username = account.getDisplayName();
+            Email = account.getEmail();
+            add_data();
+            //Displaying message
+            Toast.makeText(getApplicationContext(), "Welcome "+Username+"!", Toast.LENGTH_SHORT).show();
+            navigate_to_activity(MainPage.class);
+        //If API error, displays error message
+        } catch (ApiException e) {
+            Toast.makeText(this, "Registration Error: Sign in failed", Toast.LENGTH_SHORT).show();
+        }
     }
 
 

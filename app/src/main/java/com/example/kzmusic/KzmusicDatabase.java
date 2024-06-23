@@ -5,8 +5,10 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+//This class implemnents the main Kzmusic database
+//Used for user data collection
 public class KzmusicDatabase extends SQLiteOpenHelper {
-    //Listing table attributes
+    //Listing database attributes
     public static final String DATABASE_NAME = "Kzmusic.db";
 
     public KzmusicDatabase(Context context) {
@@ -15,19 +17,26 @@ public class KzmusicDatabase extends SQLiteOpenHelper {
     @Override
     //Creating Database Tables
     public void onCreate(SQLiteDatabase db) {
+        db.execSQL("PRAGMA foreign_keys = ON");
         create_users(db);
     }
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         //List of table names
-        String[] tables = {"Users", "Songs", "Artists", "Albums", "Playlists", "PlaylistSongs"};
+        String[] tables = {"Users", "Security", "Songs", "Artists", "Albums", "Playlists", "PlaylistSongs"};
         // Drop table if exists
         for (String table : tables) {
             db.execSQL("DROP TABLE IF EXISTS " + table);
         }
         onCreate(db);
     }
-    //This function creates Users table
+    @Override
+    public void onConfigure(SQLiteDatabase db) {
+        super.onConfigure(db);
+        // Enable foreign key constraints
+        db.setForeignKeyConstraintsEnabled(true);
+    }
+    //This function creates Users table which stores ID, Username and Email
     public void create_users(SQLiteDatabase db) {
         db.execSQL("CREATE TABLE Users (UserID INTEGER PRIMARY KEY AUTOINCREMENT, USERNAME TEXT, EMAIL TEXT, PASSWORD TEXT)");
     }

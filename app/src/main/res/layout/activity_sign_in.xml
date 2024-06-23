@@ -23,17 +23,18 @@
 
         <TextView
             android:id="@+id/textView"
-            android:layout_width="278dp"
-            android:layout_height="64dp"
-            android:text="Sign-in details:"
+            android:layout_width="250dp"
+            android:layout_height="40dp"
+            android:text="Login to account:"
             android:textColor="@color/white"
-            android:textSize="30sp" />
+            android:textSize="25sp" />
         <EditText
             android:id="@+id/TextEmailAddress"
             android:layout_width="330dp"
             android:layout_height="56dp"
+            android:layout_marginTop="20dp"
             android:background="@color/white"
-            android:hint="Email or Username:"
+            android:hint="Email address:"
             android:textColorHint="@color/black"
             android:textSize="20sp"
             android:textColor="@color/black"/>
@@ -52,19 +53,19 @@
             android:inputType="textPassword"/>
 
         <com.google.android.gms.common.SignInButton
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="30dp"
             android:layout_width="330dp"
             android:layout_height="56dp"
             android:id="@+id/Gsignin_btn"/>
         <Button
-            android:layout_marginTop="30dp"
+            android:layout_marginTop="20dp"
             android:layout_width="330dp"
             android:layout_height="56dp"
             android:text="Sign in"
             android:textSize="20sp"
             android:id="@+id/signin_btn"/>
         <Button
-            android:layout_marginTop="100dp"
+            android:layout_marginTop="20dp"
             android:layout_width="330dp"
             android:layout_height="56dp"
             android:text="Back"

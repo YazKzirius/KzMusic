@@ -1,7 +1,7 @@
 package com.example.kzmusic;
 
+//Importing important modules
 import android.os.Bundle;
-
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -20,12 +20,13 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import android.widget.Toast;
 
+//This class implements the Sign-in page for application
 public class SignIn extends AppCompatActivity {
+    //Interface attributes
     private static final int RC_SIGN_IN = 9001;
     GoogleSignInClient gsc;
     GoogleSignInOptions gso;
     String email;
-    String username;
     String password;
 
     @Override
@@ -38,27 +39,33 @@ public class SignIn extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        //Creating button functionality
         create_back_btn();
+        set_up_signin();
         set_up_g_signin();
-        email = get_email_or_username();
-        password = get_password();
-        if (email.contains("@") == false) {
-            username = email;
-        } else {
-            ;
-        }
+    }
+    //This function creates functionality for logo image
+    //Moves back to homepage if clicked
+    public void create_image_btn() {
+        findViewById(R.id.imageView2).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                navigate_to_activity(MainActivity.class);
+            }
+        });
     }
     //This function creates functionality for the back btn
+    //Moves back to homepage if clicked
     public void create_back_btn() {
         Button back = findViewById(R.id.Back_btn);
         back.setOnClickListener(v -> navigate_to_activity(MainActivity.class));
     }
-    //This function gets Email of username
-    public String get_email_or_username() {
+    //This function gets email entered
+    public String get_email() {
         EditText text = findViewById(R.id.TextEmailAddress);
         return text.getText().toString();
     }
-    //This function gets password
+    //This function gets password entered
     public String get_password() {
         EditText text = findViewById(R.id.TextPassword);
         return text.getText().toString();
@@ -68,7 +75,44 @@ public class SignIn extends AppCompatActivity {
         Intent intent = new Intent(SignIn.this, target);
         startActivity(intent);
     }
+    //This function checks if user details are valid in SQL Users table
+    public void check_user_details() {
+        Boolean is_valid = false;
+        //Getting entered data
+        email = get_email();
+        password = get_password();
+        //Opening Users table
+        UsersTable table = new UsersTable(getApplicationContext());
+        table.open();
+        //Checking if user exists
+        if (table.user_exists(email)) {
+            //Checking if user exists
+            is_valid = table.checkLogin(email, password);
+            if (is_valid) {
+                //Navigating to new activity with display message
+                Toast.makeText(getApplicationContext(), "Welcome back: "+table.find_name_by_email(email).replaceAll(" ","")+"!", Toast.LENGTH_SHORT).show();
+                navigate_to_activity(MainPage.class);
+            } else {
+                //Displaying error message
+                Toast.makeText(getApplicationContext(), "Sign-in Error: Invalid Credentials entered", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            //Displaying another error message
+            Toast.makeText(getApplicationContext(), "Sign-in Error: User doesn't exist", Toast.LENGTH_SHORT).show();
+        }
+    }
+    //This function sets up sign in button
+    //Implements checking functions
+    public void set_up_signin() {
+        findViewById(R.id.signin_btn).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                check_user_details();
+            }
+        });
+    }
     //This function manages google sign-in
+    //Uses Google-API to sign-user into google account
     public void set_up_g_signin() {
         gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestEmail().build();
         gsc = GoogleSignIn.getClient(this, gso);
@@ -79,6 +123,7 @@ public class SignIn extends AppCompatActivity {
             }
         });
     }
+    //These following functions handle Google Sign-in functionality
     private void signIn() {
         Intent signInIntent = gsc.getSignInIntent();
         startActivityForResult(signInIntent, RC_SIGN_IN);
@@ -98,11 +143,22 @@ public class SignIn extends AppCompatActivity {
         try {
             GoogleSignInAccount account = completedTask.getResult(ApiException.class);
             // Signed in successfully, show authenticated UI.
-            Toast.makeText(this, "Signed in as: " + account.getEmail(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Welcome back " + account.getDisplayName()+"!", Toast.LENGTH_SHORT).show();
+            //Check if user exists already
+            //If exists continue as usual, if not sign in and add to table, else continue as usual
+            UsersTable table = new UsersTable(getApplicationContext());
+            table.open();
+            if (!table.user_exists(account.getEmail())) {
+                table.add_account(account.getDisplayName(), account.getEmail(), "");
+            } else {
+                ;
+            }
+            table.close();
             //Move to next activity
             navigate_to_activity(MainPage.class);
+        //Throwing API exception and with error message
         } catch (ApiException e) {
-            Toast.makeText(this, "Sign in failed", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Sign-in Error: Sign in failed", Toast.LENGTH_SHORT).show();
         }
     }
 
