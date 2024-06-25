@@ -6,19 +6,17 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
-
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import android.database.Cursor;
+//Google  authorisation API
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
 //This class implements the registration page of applications
@@ -33,6 +31,9 @@ public class NewAccount extends AppCompatActivity {
     String Password;
     Boolean is_registered = false;
     Boolean exists = false;
+    String CLIENT_ID = "21dc131ad4524c6aae75a9d0256b1b70";
+    String REDIRECT_URI = "kzmusic://callback";
+    int REQUEST_CODE = 1337;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -185,7 +186,7 @@ public class NewAccount extends AppCompatActivity {
         table.close();
     }
     //This function manages google sign-in
-    //Using the Google Sign-in API
+    //Uses Google-API to sign-user into google account
     public void set_up_g_signin() {
         gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestEmail().build();
         gsc = GoogleSignIn.getClient(this, gso);
@@ -195,14 +196,8 @@ public class NewAccount extends AppCompatActivity {
                 signIn();
             }
         });
-        findViewById(R.id.google_icon).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                signIn();
-            }
-        });
     }
-    //These following functions manage the Google Sign-in process
+    //These following functions handle Google Sign-in functionality
     private void signIn() {
         Intent signInIntent = gsc.getSignInIntent();
         startActivityForResult(signInIntent, RC_SIGN_IN);
@@ -221,19 +216,23 @@ public class NewAccount extends AppCompatActivity {
     private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
         try {
             GoogleSignInAccount account = completedTask.getResult(ApiException.class);
-            //Adding account to Users table
-            Username = account.getDisplayName();
-            Email = account.getEmail();
-            add_data();
-            //Displaying message
-            Toast.makeText(getApplicationContext(), "Welcome "+Username+"!", Toast.LENGTH_SHORT).show();
+            // Signed in successfully, show authenticated UI.
+            Toast.makeText(this, "Welcome " + account.getDisplayName()+"!", Toast.LENGTH_SHORT).show();
+            //Check if user exists already
+            //If exists continue as usual, if not sign in and add to table, else continue as usual
+            UsersTable table = new UsersTable(getApplicationContext());
+            table.open();
+            if (!table.user_exists(account.getEmail())) {
+                table.add_account(account.getDisplayName(), account.getEmail(), "");
+            } else {
+                ;
+            }
+            table.close();
+            //Move to next activity
             navigate_to_activity(MainPage.class);
-        //If API error, displays error message
+            //Throwing API exception and with error message
         } catch (ApiException e) {
-            Toast.makeText(this, "Registration Error: Sign in failed", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Sign-in Error: Sign in failed", Toast.LENGTH_SHORT).show();
         }
     }
-
-
-
 }
