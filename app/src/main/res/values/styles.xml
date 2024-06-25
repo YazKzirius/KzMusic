@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Custom style for BottomNavigationView -->
+    <style name="CustomBottomNavigationView" parent="Widget.Design.BottomNavigationView">
+        <item name="itemIconSize">120px</item> <!-- Adjust the size as needed -->
+    </style>
+</resources>
