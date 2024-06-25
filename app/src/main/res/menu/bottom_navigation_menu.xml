@@ -19,5 +19,5 @@
         android:id="@+id/nav_account"
         android:icon="@drawable/account"
         android:iconTint="#090909"
-        android:title="Account Settings" />
+        android:title="User Settings" />
 </menu>
