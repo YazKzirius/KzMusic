@@ -46,7 +46,9 @@ public class NewAccount extends AppCompatActivity {
         });
         //Creating button functionality
         create_back_btn();
+        create_image_btn();
         create_account();
+        create_google_icon();
         set_up_g_signin();
     }
     //This function creates functionality for logo image
@@ -56,6 +58,15 @@ public class NewAccount extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 navigate_to_activity(MainActivity.class);
+            }
+        });
+    }
+    //This function creates functionality for Google icon
+    public void create_google_icon() {
+        findViewById(R.id.google_icon).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                signIn();
             }
         });
     }

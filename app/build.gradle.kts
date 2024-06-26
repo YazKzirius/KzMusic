@@ -45,6 +45,13 @@ dependencies {
     implementation("com.google.android.gms:play-services-auth:21.1.0")
     implementation("com.google.android.material:material:1.4.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.")
+    implementation("com.google.android.exoplayer:exoplayer:2.14.2")
     implementation("com.spotify.android:auth:1.2.5")
-    implementation("androidx.browser:browser:1.0.0")
+    // Retrofit for API requests
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // OkHttp for HTTP client
+    implementation("com.squareup.okhttp3:okhttp:4.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.9.0")
 }

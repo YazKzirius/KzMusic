@@ -42,6 +42,8 @@ public class SignIn extends AppCompatActivity {
         //Creating button functionality
         create_back_btn();
         set_up_signin();
+        create_image_btn();
+        create_google_icon();
         set_up_g_signin();
     }
     //This function creates functionality for logo image
@@ -51,6 +53,15 @@ public class SignIn extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 navigate_to_activity(MainActivity.class);
+            }
+        });
+    }
+    //This function creates functionality for Google icon
+    public void create_google_icon() {
+        findViewById(R.id.google_icon2).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                signIn();
             }
         });
     }
