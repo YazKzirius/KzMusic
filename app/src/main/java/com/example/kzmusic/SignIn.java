@@ -101,7 +101,7 @@ public class SignIn extends AppCompatActivity {
             is_valid = table.checkLogin(email, password);
             if (is_valid) {
                 //Navigating to new activity with display message
-                Toast.makeText(getApplicationContext(), "Welcome back: "+table.find_name_by_email(email).replaceAll(" ","")+"!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), "Welcome back: "+table.find_name_by_email(email).split(", ")[0].replaceAll(" ","")+"!", Toast.LENGTH_SHORT).show();
                 navigate_to_activity(MainPage.class);
             } else {
                 //Displaying error message

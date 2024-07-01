@@ -27,7 +27,6 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
         //Creating button functionality
         set_up_login();
         set_up_create();
