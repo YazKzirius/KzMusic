@@ -112,6 +112,17 @@ public class SignIn extends AppCompatActivity {
             Toast.makeText(getApplicationContext(), "Sign-in Error: User doesn't exist", Toast.LENGTH_SHORT).show();
         }
     }
+    //This function sends Google data to next page
+    public void send_data(String username, String email) {
+        Bundle bundle = new Bundle();
+        bundle.putString("Username", username);
+        bundle.putString("Email", email);
+        bundle.putString("Password", "");
+        Intent new_intent = new Intent(SignIn.this, SpotifyAuthPage2.class);
+        new_intent.putExtras(bundle);
+        startActivity(new_intent);
+    }
+
     //This function sets up sign in button
     //Implements checking functions
     public void set_up_signin() {
@@ -160,13 +171,10 @@ public class SignIn extends AppCompatActivity {
             UsersTable table = new UsersTable(getApplicationContext());
             table.open();
             if (!table.user_exists(account.getEmail())) {
-                table.add_account(account.getDisplayName(), account.getEmail(), "");
+                send_data(account.getDisplayName(), account.getEmail());
             } else {
-                ;
+                navigate_to_activity(MainPage.class);
             }
-            table.close();
-            //Move to next activity
-            navigate_to_activity(MainPage.class);
         //Throwing API exception and with error message
         } catch (ApiException e) {
             Toast.makeText(this, "Sign-in Error: Sign in failed", Toast.LENGTH_SHORT).show();

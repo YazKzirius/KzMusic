@@ -30,10 +30,6 @@ public class NewAccount extends AppCompatActivity {
     String Email;
     String Password;
     Boolean is_registered = false;
-    Boolean exists = false;
-    String CLIENT_ID = "21dc131ad4524c6aae75a9d0256b1b70";
-    String REDIRECT_URI = "kzmusic://callback";
-    int REQUEST_CODE = 1337;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -86,15 +82,13 @@ public class NewAccount extends AppCompatActivity {
                 //Validating data user entered
                 validate_data();
                 if (is_registered == true) {
-                    //Adding it to SQL Users table
-                    add_data();
-                    //If user already exists
-                    if (exists) {
+                    //Adding checking if already exists
+                    if (can_register() == false) {
                         //Display error message and don't register
                         Toast.makeText(getApplicationContext(), "Registration Error: User already exists with that email", Toast.LENGTH_SHORT).show();
                     } else {
-                        //If new account, adds data and moves to main page
-                        navigate_to_activity(MainPage.class);
+                        //If moves to spotify authorisation
+                        send_data();
                     }
                 } else {
                     ;
@@ -182,20 +176,28 @@ public class NewAccount extends AppCompatActivity {
         }
     }
 
-    //This function adds data to SQLlite database via the Users table
-    public void add_data() {
+    //This function checks if a user details already exists in the database
+    public Boolean can_register() {
         UsersTable table = new UsersTable(getApplicationContext());
         table.open();
         //If doesn't exists, adds data to Users table
         if (!table.user_exists(Email)) {
-            long id = table.add_account(Username, Email, Password);
-            Toast.makeText(getApplicationContext(), "Registration successful, Welcome "+Username.replaceAll(" ","")+"!", Toast.LENGTH_SHORT).show();
-        //Otherwise, it records that account already exists
+            return true;
         } else {
-            exists = true;
+            return false;
         }
-        table.close();
     }
+    //This function sends data to next page
+    public void send_data() {
+        Bundle bundle = new Bundle();
+        bundle.putString("Username", Username);
+        bundle.putString("Email", Email);
+        bundle.putString("Password", Password);
+        Intent new_intent = new Intent(NewAccount.this, SpotifyAuthPage.class);
+        new_intent.putExtras(bundle);
+        startActivity(new_intent);
+    }
+
     //This function manages google sign-in
     //Uses Google-API to sign-user into google account
     public void set_up_g_signin() {
@@ -228,19 +230,18 @@ public class NewAccount extends AppCompatActivity {
         try {
             GoogleSignInAccount account = completedTask.getResult(ApiException.class);
             // Signed in successfully, show authenticated UI.
-            Toast.makeText(this, "Welcome " + account.getDisplayName()+"!", Toast.LENGTH_SHORT).show();
-            //Check if user exists already
-            //If exists continue as usual, if not sign in and add to table, else continue as usual
             UsersTable table = new UsersTable(getApplicationContext());
             table.open();
-            if (!table.user_exists(account.getEmail())) {
-                table.add_account(account.getDisplayName(), account.getEmail(), "");
-            } else {
-                ;
-            }
-            table.close();
             //Move to next activity
-            navigate_to_activity(MainPage.class);
+            Username = account.getDisplayName();
+            Email = account.getEmail();
+            Password = "";
+            if (!table.user_exists(Email)) {
+                send_data();
+            }
+            else {
+                navigate_to_activity(MainPage.class);
+            }
             //Throwing API exception and with error message
         } catch (ApiException e) {
             Toast.makeText(this, "Sign-in Error: Sign in failed", Toast.LENGTH_SHORT).show();

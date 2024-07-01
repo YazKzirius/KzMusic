@@ -10,6 +10,8 @@ import androidx.core.view.WindowInsetsCompat;
 import android.view.View;
 import android.widget.Button;
 import android.content.Intent;
+import android.database.Cursor;
+import android.widget.Toast;
 
 //This class implements the application homepage
 //Allows users to login or create account
@@ -25,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
         //Creating button functionality
         set_up_login();
         set_up_create();

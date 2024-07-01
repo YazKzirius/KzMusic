@@ -16,15 +16,23 @@
         android:theme="@style/Theme.Kzmusic"
         tools:targetApi="31">
         <activity
+            android:name=".SpotifyAuthPage2"
+            android:exported="false" />
+        <activity
+            android:name=".SpotifyAuthPage"
+            android:exported="false" />
+        <activity
             android:name=".NewAccount"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+
                 <data
-                    android:scheme="kzmusic"
-                    android:host="callback" />
+                    android:host="callback"
+                    android:scheme="kzmusic" />
             </intent-filter>
         </activity>
         <activity
