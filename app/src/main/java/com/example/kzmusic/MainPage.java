@@ -14,6 +14,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 public class MainPage extends AppCompatActivity {
     Fragment fragment;
     String email;
+    String username;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -21,7 +22,8 @@ public class MainPage extends AppCompatActivity {
         setContentView(R.layout.activity_main_page);
         Bundle bundle = getIntent().getExtras();
         if (bundle != null) {
-            email = bundle.getString("email");
+            username = bundle.getString("Username");
+            email = bundle.getString("Email");
             send_data();
         }
         //Default fragment
@@ -51,11 +53,13 @@ public class MainPage extends AppCompatActivity {
     public void send_data() {
         // Sending data to FragmentA
         Bundle bundle = new Bundle();
-        bundle.putString("email2", email);
+        bundle.putString("Email", email);
+        bundle.putString("Username", username);
         fragment = new HomeFragment();
         fragment.setArguments(bundle);
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, fragment)
                 .commit();
     }
+
 }

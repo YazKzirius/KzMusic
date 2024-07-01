@@ -113,12 +113,12 @@ public class SignIn extends AppCompatActivity {
         }
     }
     //This function sends Google data to next page
-    public void send_data(String username, String email) {
+    public void send_data(String username, String email, Class <?> target) {
         Bundle bundle = new Bundle();
         bundle.putString("Username", username);
         bundle.putString("Email", email);
         bundle.putString("Password", "");
-        Intent new_intent = new Intent(SignIn.this, SpotifyAuthPage2.class);
+        Intent new_intent = new Intent(SignIn.this, target);
         new_intent.putExtras(bundle);
         startActivity(new_intent);
     }
@@ -171,9 +171,9 @@ public class SignIn extends AppCompatActivity {
             UsersTable table = new UsersTable(getApplicationContext());
             table.open();
             if (!table.user_exists(account.getEmail())) {
-                send_data(account.getDisplayName(), account.getEmail());
+                send_data(account.getDisplayName(), account.getEmail(), SpotifyAuthPage2.class);
             } else {
-                navigate_to_activity(MainPage.class);
+                send_data(account.getDisplayName(), account.getEmail(), MainPage.class);
             }
         //Throwing API exception and with error message
         } catch (ApiException e) {

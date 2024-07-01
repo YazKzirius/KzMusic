@@ -70,7 +70,8 @@ public class SpotifyAuthPage extends AppCompatActivity {
                     table.close();
                     //Sending email data to next activity
                     Bundle bundle = new Bundle();
-                    bundle.putString("email", email);
+                    bundle.putString("Username", username);
+                    bundle.putString("Email", email);
                     Toast.makeText(this, "Welcome " + username+"!", Toast.LENGTH_SHORT).show();
                     Intent new_intent = new Intent(SpotifyAuthPage.this, MainPage.class);
                     new_intent.putExtras(bundle);

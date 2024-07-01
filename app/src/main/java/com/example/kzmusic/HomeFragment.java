@@ -36,9 +36,11 @@ public class HomeFragment extends Fragment {
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
     private List<SearchResponse.Track> trackList = new ArrayList<>();
+    private static final String TRACK_LIST_KEY = "track_list";
     private MusicAdapter musicAdapter;
     String accesstoken;
     String email;
+    String username;
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -88,10 +90,20 @@ public class HomeFragment extends Fragment {
         UsersTable table = new UsersTable(getContext());
         table.open();
         if (getArguments() != null) {
-            email = getArguments().getString("email2");
+            email = getArguments().getString("Email");
+            username = getArguments().getString("Username");
             accesstoken = table.find_name_by_email(email).split(", ")[1];
         }
-        searchRandomMusic();
+        if (savedInstanceState != null) {
+            List<SearchResponse.Track> savedTrackList = (List<SearchResponse.Track>) savedInstanceState.getSerializable(TRACK_LIST_KEY);
+            if (savedTrackList != null) {
+                trackList.clear();
+                trackList.addAll(savedTrackList);
+                musicAdapter.notifyDataSetChanged();
+            }
+        } else {
+            searchRandomMusic();
+        }
         return view;
     }
     @Override
@@ -111,10 +123,9 @@ public class HomeFragment extends Fragment {
                     trackList.addAll(response.body().getTracks().getItems());
                     musicAdapter.notifyDataSetChanged();
                 } else {
-                    Toast.makeText(getContext(), "Failed to fetch data "+accesstoken, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Failed to fetch data " + accesstoken, Toast.LENGTH_SHORT).show();
                 }
             }
-
             @Override
             public void onFailure(Call<SearchResponse> call, Throwable t) {
                 Toast.makeText(getContext(), "API call failed: " + t.getMessage(), Toast.LENGTH_SHORT).show();
