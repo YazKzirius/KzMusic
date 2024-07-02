@@ -39,6 +39,7 @@ public class HomeFragment extends Fragment {
     SessionManager sessionManager;
     String email;
     String username;
+    SpotifyAuthService authService;
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -85,6 +86,7 @@ public class HomeFragment extends Fragment {
         musicAdapter = new MusicAdapter(trackList, getContext());
         recyclerView.setAdapter(musicAdapter);
         sessionManager = new SessionManager(getContext());
+        authService = new SpotifyAuthService();
         username = sessionManager.getUsername();
         email = sessionManager.getEmail();
         TextView text = view.findViewById(R.id.made_for_x);
@@ -93,16 +95,36 @@ public class HomeFragment extends Fragment {
         if (getArguments() != null) {
             accesstoken = getArguments().getString("Token");
         }
-        searchRandomMusic();
+        display_music(accesstoken);
         return view;
     }
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);;
     }
+    //This function displays gets the music based on token validation
+    public void display_music(String token) {
+        //Performing access token validation, if token expires it gets a new one
+        if (token == null) {
+            authService.getAccessToken(new SpotifyAuthService.Callback<String>() {
+                @Override
+                public void onSuccess(String new_token) {
+                    searchRandomMusic(new_token);
+                }
+                @Override
+                public void onFailure(Throwable t) {
+                    Intent intent = new Intent(getContext(), GetStarted.class);
+                    startActivity(intent);
+                }
+            });
+        } else {
+            searchRandomMusic(token);
+        }
+
+    }
     //This function searches for random music using API queries and updates the current tracklist
-    //Displays in the homepage
-    private void searchRandomMusic() {
+    private void searchRandomMusic(String token) {
+        accesstoken = token;
         String[] randomQueries = {"happy", "sad", "party", "chill", "love", "workout"};
         String randomQuery = randomQueries[(int) (Math.random() * randomQueries.length)];
         SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
@@ -115,7 +137,8 @@ public class HomeFragment extends Fragment {
                     trackList.addAll(response.body().getTracks().getItems());
                     musicAdapter.notifyDataSetChanged();
                 } else {
-                    Toast.makeText(getContext(), "Failed to fetch data " + accesstoken, Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(getContext(), GetStarted.class);
+                    startActivity(intent);
                 }
             }
             @Override

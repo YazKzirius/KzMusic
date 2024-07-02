@@ -38,13 +38,25 @@ public class MainPage extends AppCompatActivity {
             getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new HomeFragment()).commit();
         }
         create_fragments();
+        if (token == null) {
+            Intent intent = new Intent(getApplicationContext(), GetStarted.class);
+            startActivity(intent);
+        }
     }
     //This function sends user data to fragments
     public void send_data() {
-        // Sending data to FragmentA
+        // Sending data to Home fragment
         Bundle bundle = new Bundle();
         bundle.putString("Token", token);
         fragment = new HomeFragment();
+        fragment.setArguments(bundle);
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, fragment)
+                .commit();
+        //Sending it to Search fragment
+        Bundle bundle2 = new Bundle();
+        bundle2.putString("Token", token);
+        fragment = new SearchFragment();
         fragment.setArguments(bundle);
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, fragment)

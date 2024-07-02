@@ -43,6 +43,7 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     implementation("com.google.android.gms:play-services-auth:21.1.0")
+    implementation("com.google.code.gson:gson:2.8.6")
     implementation("com.google.android.material:material:1.4.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.")
     implementation("com.google.android.exoplayer:exoplayer:2.14.2")
