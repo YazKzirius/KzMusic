@@ -55,5 +55,6 @@ dependencies {
     // Glide for image loading
     implementation("com.github.bumptech.glide:glide:4.12.0")
     annotationProcessor("com.github.bumptech.glide:compiler:4.12.0")
+    implementation("androidx.preference:preference:1.1.1")
 
 }

@@ -16,7 +16,7 @@ import android.widget.Toast;
 //This class implements the application homepage
 //Allows users to login or create account
 public class MainActivity extends AppCompatActivity {
-
+    SessionManager sessionManager;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -27,9 +27,14 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        //Creating button functionality
-        set_up_login();
-        set_up_create();
+        sessionManager = new SessionManager(this);
+        if (sessionManager.isLoggedIn()) {
+            navigate_to_activity(GetStarted.class);
+        } else {
+            //Creating button functionality
+            set_up_login();
+            set_up_create();
+        }
     }
     //This function sets up the login button
     //Moves to Sign-in page

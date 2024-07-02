@@ -30,6 +30,7 @@ public class NewAccount extends AppCompatActivity {
     String Email;
     String Password;
     Boolean is_registered = false;
+    SessionManager sessionManager;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,6 +41,7 @@ public class NewAccount extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        sessionManager = new SessionManager(this);
         //Creating button functionality
         create_back_btn();
         create_image_btn();
@@ -92,7 +94,8 @@ public class NewAccount extends AppCompatActivity {
                         table.open();
                         table.add_account(Username, Email, Password);
                         table.close();
-                        send_data(GetStarted.class);
+                        sessionManager.createLoginSession(Username, Email);
+                        navigate_to_activity(GetStarted.class);
                     }
                 } else {
                     ;
@@ -191,16 +194,6 @@ public class NewAccount extends AppCompatActivity {
             return false;
         }
     }
-    //This function sends data to next page
-    public void send_data(Class <?> target) {
-        Bundle bundle = new Bundle();
-        bundle.putString("Username", Username);
-        bundle.putString("Email", Email);
-        Intent new_intent = new Intent(NewAccount.this, target);
-        new_intent.putExtras(bundle);
-        startActivity(new_intent);
-    }
-
     //This function manages google sign-in
     //Uses Google-API to sign-user into google account
     public void set_up_g_signin() {
@@ -239,12 +232,13 @@ public class NewAccount extends AppCompatActivity {
             Username = account.getDisplayName();
             Email = account.getEmail();
             Password = "";
+            sessionManager.createLoginSession(Username, Email);
             if (!table.user_exists(Email)) {
                 table.add_account(Username, Email, Password);
-                send_data(GetStarted.class);
+                navigate_to_activity(GetStarted.class);
             }
             else {
-                send_data(GetStarted.class);
+                navigate_to_activity(GetStarted.class);
             }
             table.close();
             //Throwing API exception and with error message

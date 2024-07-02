@@ -1,5 +1,6 @@
 package com.example.kzmusic;
 
+//Imports
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -8,17 +9,13 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import android.widget.Toast;
 
+import android.widget.TextView;
+import android.widget.Toast;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-
-import com.spotify.sdk.android.auth.AuthorizationClient;
-import com.spotify.sdk.android.auth.AuthorizationRequest;
-import com.spotify.sdk.android.auth.AuthorizationResponse;
-
 import java.util.ArrayList;
 import java.util.List;
 import retrofit2.Call;
@@ -39,6 +36,7 @@ public class HomeFragment extends Fragment {
     private static final String TRACK_LIST_KEY = "track_list";
     private MusicAdapter musicAdapter;
     String accesstoken;
+    SessionManager sessionManager;
     String email;
     String username;
 
@@ -86,6 +84,11 @@ public class HomeFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         musicAdapter = new MusicAdapter(trackList, getContext());
         recyclerView.setAdapter(musicAdapter);
+        sessionManager = new SessionManager(getContext());
+        username = sessionManager.getUsername();
+        email = sessionManager.getEmail();
+        TextView text = view.findViewById(R.id.made_for_x);
+        text.setText("Made for "+username);
         //Opening getting access token from Spotify API AUTH
         if (getArguments() != null) {
             accesstoken = getArguments().getString("Token");
@@ -97,6 +100,8 @@ public class HomeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);;
     }
+    //This function searches for random music using API queries and updates the current tracklist
+    //Displays in the homepage
     private void searchRandomMusic() {
         String[] randomQueries = {"happy", "sad", "party", "chill", "love", "workout"};
         String randomQuery = randomQueries[(int) (Math.random() * randomQueries.length)];

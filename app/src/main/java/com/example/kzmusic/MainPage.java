@@ -17,6 +17,7 @@ public class MainPage extends AppCompatActivity {
     String email;
     String username;
     String token;
+    SessionManager sessionManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,9 +25,10 @@ public class MainPage extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main_page);
         Bundle bundle = getIntent().getExtras();
+        sessionManager = new SessionManager(getApplicationContext());
+        username = sessionManager.getUsername();
+        email = sessionManager.getEmail();
         if (bundle != null) {
-            username = bundle.getString("Username");
-            email = bundle.getString("Email");
             token = bundle.getString("Token");
             Toast.makeText(this, "Welcome " + username+"!", Toast.LENGTH_SHORT).show();
             send_data();
@@ -41,8 +43,6 @@ public class MainPage extends AppCompatActivity {
     public void send_data() {
         // Sending data to FragmentA
         Bundle bundle = new Bundle();
-        bundle.putString("Email", email);
-        bundle.putString("Username", username);
         bundle.putString("Token", token);
         fragment = new HomeFragment();
         fragment.setArguments(bundle);

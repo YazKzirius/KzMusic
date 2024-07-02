@@ -1,5 +1,5 @@
 package com.example.kzmusic;
-
+//Imports
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
@@ -19,8 +19,8 @@ public class GetStarted extends AppCompatActivity {
     int REQUEST_CODE = 1337;
     String username;
     String email;
-    String password;
     String token;
+    SessionManager sessionManager;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -31,12 +31,19 @@ public class GetStarted extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        findViewById(R.id.Get_started_button).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                set_up_spotify();
-            }
-        });
+        sessionManager = new SessionManager(this);
+        if (!sessionManager.isLoggedIn()) {
+            Intent intent = new Intent(GetStarted.this, MainActivity.class);
+            startActivity(intent);
+            finish();
+        } else {
+            findViewById(R.id.Get_started_button).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    set_up_spotify();
+                }
+            });
+        }
     }
     //These functions sets up the Spotify Sign-in/authorisation using spotify API
     public void set_up_spotify() {
@@ -62,13 +69,8 @@ public class GetStarted extends AppCompatActivity {
                     // Handle successful response
                     //Display message
                     token = response.getAccessToken();
-                    Bundle data = getIntent().getExtras();
-                    username = data.getString("Username");
-                    email = data.getString("Email");
                     //Sending email data to next activity
                     Bundle bundle = new Bundle();
-                    bundle.putString("Username", username);
-                    bundle.putString("Email", email);
                     bundle.putString("Token", token);
                     Intent new_intent = new Intent(GetStarted.this, MainPage.class);
                     new_intent.putExtras(bundle);

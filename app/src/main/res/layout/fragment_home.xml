@@ -21,6 +21,7 @@
             android:src="@drawable/logo" />
 
         <TextView
+            android:id="@+id/made_for_x"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Made for you:"

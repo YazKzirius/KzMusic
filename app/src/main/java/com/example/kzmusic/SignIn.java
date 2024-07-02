@@ -28,6 +28,7 @@ public class SignIn extends AppCompatActivity {
     GoogleSignInOptions gso;
     String email;
     String password;
+    SessionManager sessionManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,6 +40,7 @@ public class SignIn extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        sessionManager = new SessionManager(this);
         //Creating button functionality
         create_back_btn();
         set_up_signin();
@@ -102,7 +104,9 @@ public class SignIn extends AppCompatActivity {
             if (is_valid) {
                 //Navigating to new activity with display message
                 Toast.makeText(getApplicationContext(), "Welcome back: "+table.find_name_by_email(email).replaceAll(" ","")+"!", Toast.LENGTH_SHORT).show();
-                send_data(table.find_name_by_email(email), email, GetStarted.class);
+                sessionManager.createLoginSession(table.find_name_by_email(email), email);
+                navigate_to_activity(GetStarted.class);
+                table.close();
             } else {
                 //Displaying error message
                 Toast.makeText(getApplicationContext(), "Sign-in Error: Invalid Credentials entered", Toast.LENGTH_SHORT).show();
@@ -112,16 +116,6 @@ public class SignIn extends AppCompatActivity {
             Toast.makeText(getApplicationContext(), "Sign-in Error: User doesn't exist", Toast.LENGTH_SHORT).show();
         }
     }
-    //This function sends Google data to next page
-    public void send_data(String username, String email, Class <?> target) {
-        Bundle bundle = new Bundle();
-        bundle.putString("Username", username);
-        bundle.putString("Email", email);
-        Intent new_intent = new Intent(SignIn.this, target);
-        new_intent.putExtras(bundle);
-        startActivity(new_intent);
-    }
-
     //This function sets up sign in button
     //Implements checking functions
     public void set_up_signin() {
@@ -170,9 +164,11 @@ public class SignIn extends AppCompatActivity {
             table.open();
             if (!table.user_exists(account.getEmail())) {
                 table.add_account(account.getDisplayName(), account.getEmail(), "");
-                send_data(account.getDisplayName(), account.getEmail(), GetStarted.class);
+                sessionManager.createLoginSession(account.getDisplayName(), account.getEmail());
+                navigate_to_activity(GetStarted.class);
             } else {
-                send_data(account.getDisplayName(), account.getEmail(), GetStarted.class);
+                sessionManager.createLoginSession(account.getDisplayName(), account.getEmail());
+                navigate_to_activity(GetStarted.class);
             }
         //Throwing API exception and with error message
         } catch (ApiException e) {
