@@ -88,7 +88,11 @@ public class NewAccount extends AppCompatActivity {
                         Toast.makeText(getApplicationContext(), "Registration Error: User already exists with that email", Toast.LENGTH_SHORT).show();
                     } else {
                         //If moves to spotify authorisation
-                        send_data(SpotifyAuthPage.class);
+                        UsersTable table = new UsersTable(getApplicationContext());
+                        table.open();
+                        table.add_account(Username, Email, Password);
+                        table.close();
+                        send_data(GetStarted.class);
                     }
                 } else {
                     ;
@@ -192,7 +196,6 @@ public class NewAccount extends AppCompatActivity {
         Bundle bundle = new Bundle();
         bundle.putString("Username", Username);
         bundle.putString("Email", Email);
-        bundle.putString("Password", Password);
         Intent new_intent = new Intent(NewAccount.this, target);
         new_intent.putExtras(bundle);
         startActivity(new_intent);
@@ -237,11 +240,13 @@ public class NewAccount extends AppCompatActivity {
             Email = account.getEmail();
             Password = "";
             if (!table.user_exists(Email)) {
-                send_data(SpotifyAuthPage.class);
+                table.add_account(Username, Email, Password);
+                send_data(GetStarted.class);
             }
             else {
-                send_data(MainPage.class);
+                send_data(GetStarted.class);
             }
+            table.close();
             //Throwing API exception and with error message
         } catch (ApiException e) {
             Toast.makeText(this, "Sign-in Error: Sign in failed", Toast.LENGTH_SHORT).show();

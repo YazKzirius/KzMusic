@@ -86,24 +86,11 @@ public class HomeFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         musicAdapter = new MusicAdapter(trackList, getContext());
         recyclerView.setAdapter(musicAdapter);
-        //Opening User-table and getting user access token by email
-        UsersTable table = new UsersTable(getContext());
-        table.open();
+        //Opening getting access token from Spotify API AUTH
         if (getArguments() != null) {
-            email = getArguments().getString("Email");
-            username = getArguments().getString("Username");
-            accesstoken = table.find_name_by_email(email).split(", ")[1];
+            accesstoken = getArguments().getString("Token");
         }
-        if (savedInstanceState != null) {
-            List<SearchResponse.Track> savedTrackList = (List<SearchResponse.Track>) savedInstanceState.getSerializable(TRACK_LIST_KEY);
-            if (savedTrackList != null) {
-                trackList.clear();
-                trackList.addAll(savedTrackList);
-                musicAdapter.notifyDataSetChanged();
-            }
-        } else {
-            searchRandomMusic();
-        }
+        searchRandomMusic();
         return view;
     }
     @Override

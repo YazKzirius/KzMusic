@@ -16,6 +16,9 @@
         android:theme="@style/Theme.Kzmusic"
         tools:targetApi="31">
         <activity
+            android:name=".GetStarted"
+            android:exported="false" />
+        <activity
             android:name=".SpotifyAuthPage2"
             android:exported="false" />
         <activity

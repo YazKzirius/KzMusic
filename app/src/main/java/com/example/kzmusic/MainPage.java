@@ -1,5 +1,6 @@
 package com.example.kzmusic;
 //Importing important modules
+import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.widget.Toast;
@@ -15,6 +16,8 @@ public class MainPage extends AppCompatActivity {
     Fragment fragment;
     String email;
     String username;
+    String token;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -24,12 +27,31 @@ public class MainPage extends AppCompatActivity {
         if (bundle != null) {
             username = bundle.getString("Username");
             email = bundle.getString("Email");
+            token = bundle.getString("Token");
+            Toast.makeText(this, "Welcome " + username+"!", Toast.LENGTH_SHORT).show();
             send_data();
         }
         //Default fragment
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new HomeFragment()).commit();
         }
+        create_fragments();
+    }
+    //This function sends user data to fragments
+    public void send_data() {
+        // Sending data to FragmentA
+        Bundle bundle = new Bundle();
+        bundle.putString("Email", email);
+        bundle.putString("Username", username);
+        bundle.putString("Token", token);
+        fragment = new HomeFragment();
+        fragment.setArguments(bundle);
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, fragment)
+                .commit();
+    }
+    //This function creates main page fragments
+    public void create_fragments() {
         //Fragment navigation menu
         BottomNavigationView navView = findViewById(R.id.bottom_navigation);
         navView.setOnNavigationItemSelectedListener(item -> {
@@ -49,17 +71,4 @@ public class MainPage extends AppCompatActivity {
             return true;
         });
     }
-    //This function sends user data to fragments
-    public void send_data() {
-        // Sending data to FragmentA
-        Bundle bundle = new Bundle();
-        bundle.putString("Email", email);
-        bundle.putString("Username", username);
-        fragment = new HomeFragment();
-        fragment.setArguments(bundle);
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, fragment)
-                .commit();
-    }
-
 }

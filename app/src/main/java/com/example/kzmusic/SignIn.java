@@ -101,8 +101,8 @@ public class SignIn extends AppCompatActivity {
             is_valid = table.checkLogin(email, password);
             if (is_valid) {
                 //Navigating to new activity with display message
-                Toast.makeText(getApplicationContext(), "Welcome back: "+table.find_name_by_email(email).split(", ")[0].replaceAll(" ","")+"!", Toast.LENGTH_SHORT).show();
-                navigate_to_activity(MainPage.class);
+                Toast.makeText(getApplicationContext(), "Welcome back: "+table.find_name_by_email(email).replaceAll(" ","")+"!", Toast.LENGTH_SHORT).show();
+                send_data(table.find_name_by_email(email), email, GetStarted.class);
             } else {
                 //Displaying error message
                 Toast.makeText(getApplicationContext(), "Sign-in Error: Invalid Credentials entered", Toast.LENGTH_SHORT).show();
@@ -117,7 +117,6 @@ public class SignIn extends AppCompatActivity {
         Bundle bundle = new Bundle();
         bundle.putString("Username", username);
         bundle.putString("Email", email);
-        bundle.putString("Password", "");
         Intent new_intent = new Intent(SignIn.this, target);
         new_intent.putExtras(bundle);
         startActivity(new_intent);
@@ -165,15 +164,15 @@ public class SignIn extends AppCompatActivity {
         try {
             GoogleSignInAccount account = completedTask.getResult(ApiException.class);
             // Signed in successfully, show authenticated UI.
-            Toast.makeText(this, "Welcome back " + account.getDisplayName()+"!", Toast.LENGTH_SHORT).show();
             //Check if user exists already
             //If exists continue as usual, if not sign in and add to table, else continue as usual
             UsersTable table = new UsersTable(getApplicationContext());
             table.open();
             if (!table.user_exists(account.getEmail())) {
-                send_data(account.getDisplayName(), account.getEmail(), SpotifyAuthPage2.class);
+                table.add_account(account.getDisplayName(), account.getEmail(), "");
+                send_data(account.getDisplayName(), account.getEmail(), GetStarted.class);
             } else {
-                send_data(account.getDisplayName(), account.getEmail(), MainPage.class);
+                send_data(account.getDisplayName(), account.getEmail(), GetStarted.class);
             }
         //Throwing API exception and with error message
         } catch (ApiException e) {
