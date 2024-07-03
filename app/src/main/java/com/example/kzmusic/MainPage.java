@@ -9,6 +9,9 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 
 //This class implements the main page of the application
 //Manages music listening and audio entertainment by mood
@@ -17,6 +20,7 @@ public class MainPage extends AppCompatActivity {
     String email;
     String username;
     String token;
+    long expiration_time;
     SessionManager sessionManager;
 
     @Override
@@ -30,10 +34,13 @@ public class MainPage extends AppCompatActivity {
         email = sessionManager.getEmail();
         if (bundle != null) {
             token = bundle.getString("Token");
+            expiration_time = bundle.getLong("expiration_time");
             Toast.makeText(this, "Welcome " + username+"!", Toast.LENGTH_SHORT).show();
             send_data();
         }
         //Default fragment
+        //Setting token refresh time 2 minutes before expiration
+        schedule_token_refresh(expiration_time-120);
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new HomeFragment()).commit();
         }
@@ -48,6 +55,7 @@ public class MainPage extends AppCompatActivity {
         // Sending data to Home fragment
         Bundle bundle = new Bundle();
         bundle.putString("Token", token);
+        bundle.putLong("expiration_time", expiration_time);
         fragment = new HomeFragment();
         fragment.setArguments(bundle);
         getSupportFragmentManager().beginTransaction()
@@ -56,6 +64,7 @@ public class MainPage extends AppCompatActivity {
         //Sending it to Search fragment
         Bundle bundle2 = new Bundle();
         bundle2.putString("Token", token);
+        bundle2.putLong("expiration_time", expiration_time);
         fragment = new SearchFragment();
         fragment.setArguments(bundle);
         getSupportFragmentManager().beginTransaction()
@@ -82,5 +91,12 @@ public class MainPage extends AppCompatActivity {
             getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, fragment).commit();
             return true;
         });
+    }
+    public void schedule_token_refresh(long refresh_time) {
+        long refreshTime = System.currentTimeMillis() + refresh_time * 1000;
+        Intent intent = new Intent(this, AlarmReceiver.class);
+        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+        alarmManager.set(AlarmManager.RTC_WAKEUP, refreshTime, pendingIntent);
     }
 }

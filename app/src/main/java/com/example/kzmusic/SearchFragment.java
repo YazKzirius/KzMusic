@@ -43,7 +43,6 @@ public class SearchFragment extends Fragment {
     MusicAdapter musicAdapter;
     private List<SearchResponse.Track> trackList = new ArrayList<>();
     String accesstoken;
-    SpotifyAuthService authService;
 
     public SearchFragment() {
         // Required empty public constructor
@@ -85,7 +84,6 @@ public class SearchFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         musicAdapter = new MusicAdapter(trackList, getContext());
         recyclerView.setAdapter(musicAdapter);
-        authService = new SpotifyAuthService();
         if (getArguments() != null) {
             accesstoken = getArguments().getString("Token");
         }
@@ -104,8 +102,11 @@ public class SearchFragment extends Fragment {
                     View.setText("Search results:");
                 } else {
                     //Displaying results
-                    display_search(accesstoken, input);
+                    search_track(input, accesstoken);
                     View.setText("Search results:");
+                    if (trackList.size() == 0) {
+                        display_random(accesstoken);
+                    }
                 }
             }
         });
@@ -119,7 +120,7 @@ public class SearchFragment extends Fragment {
     }
     //This function makes an API call using previous access token to search for random music
     //It does this based on the track_name entered
-    private void searchRandomMusic(String track_name, String token) {
+    private void search_track(String track_name, String token) {
         accesstoken = token;
         String randomQuery = track_name;
         SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
@@ -142,47 +143,9 @@ public class SearchFragment extends Fragment {
             }
         });
     }
-    //This function performs token validation to get the random music
-    public void display_random(String token) {
-        //Performing access token validation
-        if (token == null) {
-            authService.getAccessToken(new SpotifyAuthService.Callback<String>() {
-                @Override
-                public void onSuccess(String new_token) {
-                    get_random(new_token);
-                }
-                @Override
-                public void onFailure(Throwable t) {
-                    Intent intent = new Intent(getContext(), GetStarted.class);
-                    startActivity(intent);
-                }
-            });
-        } else {
-            get_random(token);
-        }
-    }
-    //This function performs token validation to get track searches
-    public void display_search(String token, String track) {
-        //Performing access token validation
-        if (token == null) {
-            authService.getAccessToken(new SpotifyAuthService.Callback<String>() {
-                @Override
-                public void onSuccess(String new_token) {
-                    searchRandomMusic(track, new_token);
-                }
-                @Override
-                public void onFailure(Throwable t) {
-                    Intent intent = new Intent(getContext(), GetStarted.class);
-                    startActivity(intent);
-                }
-            });
-        } else {
-            searchRandomMusic(track, token);
-        }
-    }
     //This function gets random music based on catergory
     //It does this before the user chooses to search for a random track
-    private void get_random(String token) {
+    private void display_random(String token) {
         accesstoken = token;
         String[] randomQueries = {"happy", "sad", "party", "chill", "love", "workout"};
         String randomQuery = randomQueries[(int) (Math.random() * randomQueries.length)];

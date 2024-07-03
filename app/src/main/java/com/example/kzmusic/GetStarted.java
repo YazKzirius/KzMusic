@@ -20,6 +20,7 @@ public class GetStarted extends AppCompatActivity {
     String username;
     String email;
     String token;
+    long expiration_time;
     SessionManager sessionManager;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,9 +70,11 @@ public class GetStarted extends AppCompatActivity {
                     // Handle successful response
                     //Display message
                     token = response.getAccessToken();
+                    expiration_time = response.getExpiresIn();
                     //Sending email data to next activity
                     Bundle bundle = new Bundle();
                     bundle.putString("Token", token);
+                    bundle.putLong("expiration_time", expiration_time);
                     Intent new_intent = new Intent(GetStarted.this, MainPage.class);
                     new_intent.putExtras(bundle);
                     startActivity(new_intent);
