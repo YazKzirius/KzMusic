@@ -30,6 +30,8 @@ public class SearchResponse {
 
         @SerializedName("album")
         private Album album;
+        @SerializedName("uri")
+        private String uri;
 
         public String getName() {
             return name;
@@ -42,6 +44,7 @@ public class SearchResponse {
         public Album getAlbum() {
             return album;
         }
+        public String getUri() { return uri;}
     }
 
     public class Artist {

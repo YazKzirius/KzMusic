@@ -1,26 +1,31 @@
 package com.example.kzmusic;
 
 //Imports
-import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-
+import android.media.MediaPlayer;
 import android.widget.TextView;
+import java.io.IOException;
 import android.widget.Toast;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import java.util.ArrayList;
 import java.util.List;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import com.spotify.android.appremote.api.ConnectionParams;
+import com.spotify.android.appremote.api.Connector;
+import com.spotify.android.appremote.api.SpotifyAppRemote;
+import com.spotify.protocol.client.Subscription;
+import com.spotify.protocol.types.PlayerState;
+import com.spotify.protocol.types.Track;
 /**
  * A simple {@link Fragment} subclass.
  * Use the {@link HomeFragment#newInstance} factory method to
@@ -32,9 +37,13 @@ public class HomeFragment extends Fragment {
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
-    private List<SearchResponse.Track> trackList = new ArrayList<>();
+    List<SearchResponse.Track> trackList = new ArrayList<>();
+    String CLIENT_ID = "21dc131ad4524c6aae75a9d0256b1b70";
+    String REDIRECT_URI = "kzmusic://callback";
     private static final String TRACK_LIST_KEY = "track_list";
-    private MusicAdapter musicAdapter;
+    RecyclerView recyclerView;
+    MusicAdapter musicAdapter;
+    SpotifyAppRemote mSpotifyAppRemote;
     String accesstoken;
     SessionManager sessionManager;
     String email;
@@ -80,9 +89,15 @@ public class HomeFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_home, container, false);
-        RecyclerView recyclerView = view.findViewById(R.id.recycler_view1);
+        recyclerView = view.findViewById(R.id.recycler_view1);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        musicAdapter = new MusicAdapter(trackList, getContext());
+        musicAdapter = new MusicAdapter(trackList, getContext(), new MusicAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(SearchResponse.Track track) {
+                Toast.makeText(getContext(), "Song: "+track.getUri(), Toast.LENGTH_SHORT).show();
+                playTrack(track.getUri());
+            }
+        });
         recyclerView.setAdapter(musicAdapter);
         sessionManager = new SessionManager(getContext());
         username = sessionManager.getUsername();
@@ -96,12 +111,41 @@ public class HomeFragment extends Fragment {
         display_random_music(accesstoken);
         return view;
     }
+    //These functions authenticate Spotify remote use
+    @Override
+    public void onStart() {
+        super.onStart();
+        ConnectionParams connectionParams = new ConnectionParams.Builder(CLIENT_ID)
+                .setRedirectUri(REDIRECT_URI)
+                .showAuthView(true)
+                .build();
+
+        SpotifyAppRemote.connect(getContext(), connectionParams,
+                new Connector.ConnectionListener() {
+                    @Override
+                    public void onConnected(SpotifyAppRemote spotifyAppRemote) {
+                        mSpotifyAppRemote = spotifyAppRemote;
+                        Log.d("SpotifyAppRemote", "Connected");
+                    }
+
+                    @Override
+                    public void onFailure(Throwable throwable) {
+                        Log.e("SpotifyAppRemote", throwable.getMessage(), throwable);
+                    }
+                });
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        SpotifyAppRemote.disconnect(mSpotifyAppRemote);
+    }
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);;
     }
     //This function searches for random music using API queries and updates the current tracklist
-    private void display_random_music(String token) {
+    public void display_random_music(String token) {
         accesstoken = token;
         String[] randomQueries = {"happy", "sad", "party", "chill", "love", "workout"};
         String randomQuery = randomQueries[(int) (Math.random() * randomQueries.length)];
@@ -111,12 +155,9 @@ public class HomeFragment extends Fragment {
             @Override
             public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    trackList.clear();
-                    trackList.addAll(response.body().getTracks().getItems());
-                    musicAdapter.notifyDataSetChanged();
+                    musicAdapter.updateTracks(response.body().getTracks().getItems());
                 } else {
-                    Intent intent = new Intent(getContext(), GetStarted.class);
-                    startActivity(intent);
+                    ;
                 }
             }
             @Override
@@ -124,5 +165,19 @@ public class HomeFragment extends Fragment {
                 Toast.makeText(getContext(), "API call failed: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+    //These functions handle music playback
+    private void playTrack(String uri) {
+        if (mSpotifyAppRemote != null) {
+            mSpotifyAppRemote.getPlayerApi().play(uri);
+            mSpotifyAppRemote.getPlayerApi()
+                    .subscribeToPlayerState()
+                    .setEventCallback(new Subscription.EventCallback<PlayerState>() {
+                        @Override
+                        public void onEvent(PlayerState playerState) {
+                            final Track track = playerState.track;
+                        }
+                    });
+        }
     }
 }

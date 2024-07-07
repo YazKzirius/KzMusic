@@ -9,6 +9,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +17,13 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.Button;
+
+import com.spotify.android.appremote.api.ConnectionParams;
+import com.spotify.android.appremote.api.Connector;
+import com.spotify.android.appremote.api.SpotifyAppRemote;
+import com.spotify.protocol.client.Subscription;
+import com.spotify.protocol.types.PlayerState;
+import com.spotify.protocol.types.Track;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +49,9 @@ public class SearchFragment extends Fragment {
     private String mParam1;
     private String mParam2;
     MusicAdapter musicAdapter;
+    SpotifyAppRemote mSpotifyAppRemote;
+    String CLIENT_ID = "21dc131ad4524c6aae75a9d0256b1b70";
+    String REDIRECT_URI = "kzmusic://callback";
     private List<SearchResponse.Track> trackList = new ArrayList<>();
     String accesstoken;
 
@@ -82,7 +93,12 @@ public class SearchFragment extends Fragment {
         View view =  inflater.inflate(R.layout.fragment_search, container, false);
         RecyclerView recyclerView = view.findViewById(R.id.recycler_view2);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        musicAdapter = new MusicAdapter(trackList, getContext());
+        musicAdapter = new MusicAdapter(trackList, getContext(), new MusicAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(SearchResponse.Track track) {
+                playTrack(track.getUri());
+            }
+        });
         recyclerView.setAdapter(musicAdapter);
         if (getArguments() != null) {
             accesstoken = getArguments().getString("Token");
@@ -168,5 +184,48 @@ public class SearchFragment extends Fragment {
                 Toast.makeText(getContext(), "API call failed: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+    //These functions authenticate Spotify remote use
+    @Override
+    public void onStart() {
+        super.onStart();
+        ConnectionParams connectionParams = new ConnectionParams.Builder(CLIENT_ID)
+                .setRedirectUri(REDIRECT_URI)
+                .showAuthView(true)
+                .build();
+
+        SpotifyAppRemote.connect(getContext(), connectionParams,
+                new Connector.ConnectionListener() {
+                    @Override
+                    public void onConnected(SpotifyAppRemote spotifyAppRemote) {
+                        mSpotifyAppRemote = spotifyAppRemote;
+                        Log.d("SpotifyAppRemote", "Connected");
+                    }
+
+                    @Override
+                    public void onFailure(Throwable throwable) {
+                        Log.e("SpotifyAppRemote", throwable.getMessage(), throwable);
+                    }
+                });
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        SpotifyAppRemote.disconnect(mSpotifyAppRemote);
+    }
+    //These functions handle music playback
+    private void playTrack(String uri) {
+        if (mSpotifyAppRemote != null) {
+            mSpotifyAppRemote.getPlayerApi().play(uri);
+            mSpotifyAppRemote.getPlayerApi()
+                    .subscribeToPlayerState()
+                    .setEventCallback(new Subscription.EventCallback<PlayerState>() {
+                        @Override
+                        public void onEvent(PlayerState playerState) {
+                            final Track track = playerState.track;
+                        }
+                    });
+        }
     }
 }

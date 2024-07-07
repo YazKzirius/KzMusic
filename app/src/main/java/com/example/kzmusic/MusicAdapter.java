@@ -18,10 +18,14 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
 
     private List<SearchResponse.Track> trackList;
     private Context context;
-
-    public MusicAdapter(List<SearchResponse.Track> trackList, Context context) {
+    private OnItemClickListener Listener;
+    public interface OnItemClickListener {
+        void onItemClick(SearchResponse.Track track);
+    }
+    public MusicAdapter(List<SearchResponse.Track> trackList, Context context, OnItemClickListener listener) {
         this.trackList = trackList;
         this.context = context;
+        this.Listener = listener;
     }
 
     @NonNull
@@ -34,6 +38,7 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         SearchResponse.Track track = trackList.get(position);
+        holder.bind(track, Listener);
         holder.trackName.setText(track.getName());
         holder.artistName.setText(track.getArtists().get(0).getName());
 
@@ -47,17 +52,29 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
     public int getItemCount() {
         return trackList.size();
     }
+    public void updateTracks(List<SearchResponse.Track> newTracks) {
+        trackList = newTracks;
+        notifyDataSetChanged();
+    }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         public TextView trackName;
         public TextView artistName;
         public ImageView albumImage;
 
-        public ViewHolder(View view) {
-            super(view);
-            trackName = view.findViewById(R.id.track_name);
-            artistName = view.findViewById(R.id.artist_name);
-            albumImage = view.findViewById(R.id.album_image);
+        public ViewHolder(View itemView) {
+            super(itemView);
+            trackName = itemView.findViewById(R.id.track_name);
+            artistName = itemView.findViewById(R.id.artist_name);
+            albumImage = itemView.findViewById(R.id.album_image);
+        }
+        public void bind(final SearchResponse.Track track, final OnItemClickListener listener) {
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    listener.onItemClick(track);
+                }
+            });
         }
     }
 }
