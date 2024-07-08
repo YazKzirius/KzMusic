@@ -39,7 +39,7 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         SearchResponse.Track track = trackList.get(position);
         holder.bind(track, Listener);
-        holder.trackName.setText(track.getName());
+        holder.trackName.setText(track.getAlbum().getName());
         holder.artistName.setText(track.getArtists().get(0).getName());
 
         // Use Glide to load album image

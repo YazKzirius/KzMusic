@@ -45,6 +45,7 @@ public class HomeFragment extends Fragment {
     MusicAdapter musicAdapter;
     SpotifyAppRemote mSpotifyAppRemote;
     String accesstoken;
+    Boolean has_premium;
     SessionManager sessionManager;
     String email;
     String username;
@@ -91,14 +92,6 @@ public class HomeFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
         recyclerView = view.findViewById(R.id.recycler_view1);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        musicAdapter = new MusicAdapter(trackList, getContext(), new MusicAdapter.OnItemClickListener() {
-            @Override
-            public void onItemClick(SearchResponse.Track track) {
-                Toast.makeText(getContext(), "Song: "+track.getUri(), Toast.LENGTH_SHORT).show();
-                playTrack(track.getUri());
-            }
-        });
-        recyclerView.setAdapter(musicAdapter);
         sessionManager = new SessionManager(getContext());
         username = sessionManager.getUsername();
         email = sessionManager.getEmail();
@@ -107,7 +100,16 @@ public class HomeFragment extends Fragment {
         //Opening getting access token from Spotify API AUTH
         if (getArguments() != null) {
             accesstoken = getArguments().getString("Token");
+            has_premium = getArguments().getBoolean("has_premium");
         }
+        musicAdapter = new MusicAdapter(trackList, getContext(), new MusicAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(SearchResponse.Track track) {
+                Toast.makeText(getContext(), "Playing Album: "+track.getAlbum().getName(), Toast.LENGTH_SHORT).show();
+                play_album(track.getAlbum().getUri());
+            }
+        });
+        recyclerView.setAdapter(musicAdapter);
         display_random_music(accesstoken);
         return view;
     }
@@ -166,8 +168,8 @@ public class HomeFragment extends Fragment {
             }
         });
     }
-    //These functions handle music playback
-    private void playTrack(String uri) {
+    //These functions handle album song playback
+    private void play_album(String uri) {
         if (mSpotifyAppRemote != null) {
             mSpotifyAppRemote.getPlayerApi().play(uri);
             mSpotifyAppRemote.getPlayerApi()

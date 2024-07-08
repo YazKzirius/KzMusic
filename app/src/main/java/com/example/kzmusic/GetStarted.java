@@ -107,6 +107,7 @@ public class GetStarted extends AppCompatActivity {
                     //Display message
                     token = response.getAccessToken();
                     expiration_time = response.getExpiresIn();
+
                     //Sending email data to next activity
                     Bundle bundle = new Bundle();
                     bundle.putString("Token", token);

@@ -96,7 +96,7 @@ public class SearchFragment extends Fragment {
         musicAdapter = new MusicAdapter(trackList, getContext(), new MusicAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(SearchResponse.Track track) {
-                playTrack(track.getUri());
+                play_album(track.getAlbum().getUri());
             }
         });
         recyclerView.setAdapter(musicAdapter);
@@ -214,8 +214,8 @@ public class SearchFragment extends Fragment {
         super.onStop();
         SpotifyAppRemote.disconnect(mSpotifyAppRemote);
     }
-    //These functions handle music playback
-    private void playTrack(String uri) {
+    //These functions handle album playback
+    private void play_album(String uri) {
         if (mSpotifyAppRemote != null) {
             mSpotifyAppRemote.getPlayerApi().play(uri);
             mSpotifyAppRemote.getPlayerApi()

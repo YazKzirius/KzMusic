@@ -59,9 +59,16 @@ public class SearchResponse {
     public class Album {
         @SerializedName("images")
         private List<Image> images;
+        String name;
+        String uri;
 
         public List<Image> getImages() {
             return images;
+        }
+        public String getName() { return name;}
+
+        public String getUri() {
+            return uri;
         }
     }
 
