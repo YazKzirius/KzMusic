@@ -96,7 +96,7 @@ public class HomeFragment extends Fragment {
         username = sessionManager.getUsername();
         email = sessionManager.getEmail();
         TextView text = view.findViewById(R.id.made_for_x);
-        text.setText("Made for "+username);
+        text.setText("Albums made for "+username);
         //Opening getting access token from Spotify API AUTH
         if (getArguments() != null) {
             accesstoken = getArguments().getString("Token");
