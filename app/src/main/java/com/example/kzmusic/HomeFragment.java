@@ -96,17 +96,16 @@ public class HomeFragment extends Fragment {
         username = sessionManager.getUsername();
         email = sessionManager.getEmail();
         TextView text = view.findViewById(R.id.made_for_x);
-        text.setText("Albums made for "+username);
+        text.setText("Made for "+username);
         //Opening getting access token from Spotify API AUTH
         if (getArguments() != null) {
             accesstoken = getArguments().getString("Token");
-            has_premium = getArguments().getBoolean("has_premium");
         }
         musicAdapter = new MusicAdapter(trackList, getContext(), new MusicAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(SearchResponse.Track track) {
-                Toast.makeText(getContext(), "Playing Album: "+track.getAlbum().getName(), Toast.LENGTH_SHORT).show();
-                play_album(track.getAlbum().getUri());
+                Toast.makeText(getContext(), "Playing Songs Similar to: "+track.getName(), Toast.LENGTH_SHORT).show();
+                play_track(track.getUri());
             }
         });
         recyclerView.setAdapter(musicAdapter);
@@ -168,8 +167,8 @@ public class HomeFragment extends Fragment {
             }
         });
     }
-    //These functions handle album song playback
-    private void play_album(String uri) {
+    //These functions handle song playback
+    private void play_track(String uri) {
         if (mSpotifyAppRemote != null) {
             mSpotifyAppRemote.getPlayerApi().play(uri);
             mSpotifyAppRemote.getPlayerApi()

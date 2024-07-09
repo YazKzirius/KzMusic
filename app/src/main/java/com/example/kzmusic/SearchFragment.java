@@ -8,8 +8,9 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
+import android.view.inputmethod.EditorInfo;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -96,7 +97,8 @@ public class SearchFragment extends Fragment {
         musicAdapter = new MusicAdapter(trackList, getContext(), new MusicAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(SearchResponse.Track track) {
-                play_album(track.getAlbum().getUri());
+                Toast.makeText(getContext(), "Playing Songs Similar to: "+track.getName(), Toast.LENGTH_SHORT).show();
+                play_track(track.getUri());
             }
         });
         recyclerView.setAdapter(musicAdapter);
@@ -104,6 +106,7 @@ public class SearchFragment extends Fragment {
             accesstoken = getArguments().getString("Token");
         }
         TextView View = view.findViewById(R.id.results);
+        EditText search = view.findViewById(R.id.search_input);
         View.setText("Search results:");
         display_random(accesstoken);
         Button search_button = view.findViewById(R.id.search_button);
@@ -111,7 +114,6 @@ public class SearchFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 //Searching for random tracks based on the name input
-                EditText search = view.findViewById(R.id.search_input);
                 String input = search.getText().toString();
                 if (input.equals("")) {
                     display_random(accesstoken);
@@ -120,12 +122,31 @@ public class SearchFragment extends Fragment {
                     //Displaying results
                     search_track(input, accesstoken);
                     View.setText("Search results:");
-                    if (trackList.size() == 0) {
-                        display_random(accesstoken);
-                    }
+                    display_random(accesstoken);
                 }
             }
         });
+        //Implementing functionality for enter button clicking
+        search.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_DONE ||
+                        (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
+                    // Handle the Enter key event here
+                    String input = search.getText().toString();
+                    //Displaying search results
+                    if (input.equals("")) {
+                        display_random(accesstoken);
+                    } else {
+                        search_track(input, accesstoken);
+                    }
+                    View.setText("Search results:");
+                    return true; // Return true to indicate the event was handled
+                }
+                return false; // Return false if the event is not handled
+            }
+        });
+
         return view;
     }
 
@@ -215,7 +236,7 @@ public class SearchFragment extends Fragment {
         SpotifyAppRemote.disconnect(mSpotifyAppRemote);
     }
     //These functions handle album playback
-    private void play_album(String uri) {
+    public void play_track(String uri) {
         if (mSpotifyAppRemote != null) {
             mSpotifyAppRemote.getPlayerApi().play(uri);
             mSpotifyAppRemote.getPlayerApi()
