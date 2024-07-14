@@ -2,30 +2,16 @@ package com.example.kzmusic;
 
 //Imports
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import android.media.MediaPlayer;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+import android.widget.ImageView;
 import android.widget.TextView;
-import java.io.IOException;
-import android.widget.Toast;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
-import java.util.ArrayList;
-import java.util.List;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import com.spotify.android.appremote.api.ConnectionParams;
-import com.spotify.android.appremote.api.Connector;
-import com.spotify.android.appremote.api.SpotifyAppRemote;
-import com.spotify.protocol.client.Subscription;
-import com.spotify.protocol.types.PlayerState;
-import com.spotify.protocol.types.Track;
 /**
  * A simple {@link Fragment} subclass.
  * Use the {@link HomeFragment#newInstance} factory method to
@@ -37,15 +23,8 @@ public class HomeFragment extends Fragment {
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
-    List<SearchResponse.Track> trackList = new ArrayList<>();
-    String CLIENT_ID = "21dc131ad4524c6aae75a9d0256b1b70";
-    String REDIRECT_URI = "kzmusic://callback";
-    private static final String TRACK_LIST_KEY = "track_list";
-    RecyclerView recyclerView;
-    MusicAdapter musicAdapter;
-    SpotifyAppRemote mSpotifyAppRemote;
     String accesstoken;
-    Boolean has_premium;
+    View view;
     SessionManager sessionManager;
     String email;
     String username;
@@ -89,96 +68,49 @@ public class HomeFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_home, container, false);
-        recyclerView = view.findViewById(R.id.recycler_view1);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        view = inflater.inflate(R.layout.fragment_home, container, false);
         sessionManager = new SessionManager(getContext());
         username = sessionManager.getUsername();
         email = sessionManager.getEmail();
-        TextView text = view.findViewById(R.id.made_for_x);
-        text.setText("Made for "+username);
-        //Opening getting access token from Spotify API AUTH
+        set_up_buttons();
+        TextView text1 = view.findViewById(R.id.made_for_x);
+        TextView text2 = view.findViewById(R.id.user_music);
+        text1.setText(username+" radio:");
+        text2.setText(username+" music:");
         if (getArguments() != null) {
             accesstoken = getArguments().getString("Token");
         }
-        musicAdapter = new MusicAdapter(trackList, getContext(), new MusicAdapter.OnItemClickListener() {
-            @Override
-            public void onItemClick(SearchResponse.Track track) {
-                Toast.makeText(getContext(), "Playing Songs Similar to: "+track.getName(), Toast.LENGTH_SHORT).show();
-                play_track(track.getUri());
-            }
-        });
-        recyclerView.setAdapter(musicAdapter);
-        display_random_music(accesstoken);
         return view;
     }
-    //These functions authenticate Spotify remote use
-    @Override
-    public void onStart() {
-        super.onStart();
-        ConnectionParams connectionParams = new ConnectionParams.Builder(CLIENT_ID)
-                .setRedirectUri(REDIRECT_URI)
-                .showAuthView(true)
-                .build();
-
-        SpotifyAppRemote.connect(getContext(), connectionParams,
-                new Connector.ConnectionListener() {
-                    @Override
-                    public void onConnected(SpotifyAppRemote spotifyAppRemote) {
-                        mSpotifyAppRemote = spotifyAppRemote;
-                        Log.d("SpotifyAppRemote", "Connected");
-                    }
-
-                    @Override
-                    public void onFailure(Throwable throwable) {
-                        Log.e("SpotifyAppRemote", throwable.getMessage(), throwable);
-                    }
-                });
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        SpotifyAppRemote.disconnect(mSpotifyAppRemote);
+    //This function sets up the two image buttons on the homepage
+    public void set_up_buttons() {
+        ImageView button1 = view.findViewById(R.id.ic_radio);
+        ImageView button2 = view.findViewById(R.id.ic_library);
+        button1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Fragment newFragment = new Radio(accesstoken);
+                FragmentManager fragmentManager = getParentFragmentManager();
+                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                fragmentTransaction.replace(R.id.fragment_container, newFragment);
+                fragmentTransaction.addToBackStack(null);  // Optional: adds the transaction to the back stack
+                fragmentTransaction.commit();
+            }
+        });
+        button2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Fragment newFragment = new UserMusic();
+                FragmentManager fragmentManager = getParentFragmentManager();
+                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                fragmentTransaction.replace(R.id.fragment_container, newFragment);
+                fragmentTransaction.addToBackStack(null);  // Optional: adds the transaction to the back stack
+                fragmentTransaction.commit();
+            }
+        });
     }
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);;
-    }
-    //This function searches for random music using API queries and updates the current tracklist
-    public void display_random_music(String token) {
-        accesstoken = token;
-        String[] randomQueries = {"happy", "sad", "party", "chill", "love", "workout"};
-        String randomQuery = randomQueries[(int) (Math.random() * randomQueries.length)];
-        SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
-        Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
-        call.enqueue(new Callback<SearchResponse>() {
-            @Override
-            public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    musicAdapter.updateTracks(response.body().getTracks().getItems());
-                } else {
-                    ;
-                }
-            }
-            @Override
-            public void onFailure(Call<SearchResponse> call, Throwable t) {
-                Toast.makeText(getContext(), "API call failed: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-    //These functions handle song playback
-    private void play_track(String uri) {
-        if (mSpotifyAppRemote != null) {
-            mSpotifyAppRemote.getPlayerApi().play(uri);
-            mSpotifyAppRemote.getPlayerApi()
-                    .subscribeToPlayerState()
-                    .setEventCallback(new Subscription.EventCallback<PlayerState>() {
-                        @Override
-                        public void onEvent(PlayerState playerState) {
-                            final Track track = playerState.track;
-                        }
-                    });
-        }
     }
 }

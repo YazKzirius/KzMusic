@@ -92,7 +92,7 @@ public class SearchFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view =  inflater.inflate(R.layout.fragment_search, container, false);
-        RecyclerView recyclerView = view.findViewById(R.id.recycler_view2);
+        RecyclerView recyclerView = view.findViewById(R.id.recycler_view3);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         musicAdapter = new MusicAdapter(trackList, getContext(), new MusicAdapter.OnItemClickListener() {
             @Override
