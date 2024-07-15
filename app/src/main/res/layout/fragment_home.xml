@@ -16,7 +16,7 @@
 
         <ImageView
             android:id="@+id/imageView"
-            android:layout_width="match_parent"
+            android:layout_width="143dp"
             android:layout_height="143dp"
             android:src="@drawable/logo" />
 
@@ -30,7 +30,7 @@
 
         <ImageView
             android:id="@+id/ic_radio"
-            android:layout_width="match_parent"
+            android:layout_width="200dp"
             android:layout_marginTop="10dp"
             android:layout_height="200dp"
             android:src="@drawable/ic_radio" />
@@ -44,7 +44,7 @@
             android:textSize="25sp"/>
         <ImageView
             android:id="@+id/ic_library"
-            android:layout_width="match_parent"
+            android:layout_width="200dp"
             android:layout_height="200dp"
             android:layout_marginTop="10dp"
             android:src="@drawable/ic_library" />

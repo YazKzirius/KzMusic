@@ -46,7 +46,7 @@ dependencies {
     implementation("com.google.code.gson:gson:2.8.6")
     implementation("com.google.android.material:material:1.4.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.")
-    implementation("com.google.android.exoplayer:exoplayer:2.14.2")
+    implementation("com.google.android.exoplayer:exoplayer:2.19.1")
     //Spotify API
     implementation("com.spotify.android:auth:1.2.5")
     // Retrofit for API requests and HTTP

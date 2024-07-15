@@ -7,11 +7,18 @@
     tools:context=".LibraryFragment">
 
     <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="Library page"
-        android:textSize="20sp"
-        android:textColor="@color/white"/>
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="143dp"
+            android:layout_height="143dp"
+            android:src="@drawable/logo" />
+
+    </LinearLayout>
 
 </FrameLayout>
