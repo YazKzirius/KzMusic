@@ -3,11 +3,12 @@ package com.example.kzmusic;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
-
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.net.Uri;
 import com.bumptech.glide.Glide;
@@ -38,8 +39,11 @@ public class MediaOverlay extends Fragment {
     private ImageView overlayImage;
     private TextView overlaySongTitle;
     private ImageButton btnPlayPause;
+    private Handler handler = new Handler();
     private ImageButton btnLoop;
+    private SeekBar seekBar;
     private SimpleExoPlayer player;
+    private TextView textCurrentTime, textTotalDuration;
     public MediaOverlay() {
         // Required empty public constructor
     }
@@ -80,12 +84,15 @@ public class MediaOverlay extends Fragment {
         overlaySongTitle = view.findViewById(R.id.songTitle);
         btnPlayPause = view.findViewById(R.id.btnPlayPause);
         btnLoop = view.findViewById(R.id.btnLoop);
+        seekBar = view.findViewById(R.id.seekBar);
+        textCurrentTime = view.findViewById(R.id.textCurrentTime);
+        textTotalDuration = view.findViewById(R.id.textTotalDuration);
         player = new SimpleExoPlayer.Builder(getContext()).build();
         if (getArguments() != null) {
             musicFile = getArguments().getParcelable("song");
-            playMusic(musicFile);
             if (musicFile != null) {
                 // Set song details
+                playMusic(musicFile);
                 overlaySongTitle.setText(musicFile.getName()+" by "+musicFile.getArtist());
                 Toast.makeText(getContext(),"Playing: "+musicFile.getName(), Toast.LENGTH_SHORT).show();
                 // Load album image
@@ -94,6 +101,7 @@ public class MediaOverlay extends Fragment {
                 Glide.with(this)
                         .load(album_uri)
                         .into(overlayImage);
+                //Pause/play functionality
                 btnPlayPause.setOnClickListener(v -> {
                     if (player.isPlaying()) {
                         player.pause();
@@ -103,12 +111,13 @@ public class MediaOverlay extends Fragment {
                         btnPlayPause.setImageResource(R.drawable.ic_pause);
                     }
                 });
-
+                //Loop functionality
                 btnLoop.setOnClickListener(v -> {
                     boolean loop = player.getRepeatMode() == SimpleExoPlayer.REPEAT_MODE_ONE;
                     player.setRepeatMode(loop ? SimpleExoPlayer.REPEAT_MODE_OFF : SimpleExoPlayer.REPEAT_MODE_ONE);
                     btnLoop.setImageResource(loop ? R.drawable.ic_loop : R.drawable.ic_loop);
                 });
+                //Seekbar functionality
             }
         }
         return view;
