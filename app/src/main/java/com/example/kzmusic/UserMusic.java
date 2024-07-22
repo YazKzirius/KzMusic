@@ -37,7 +37,6 @@ public class UserMusic extends Fragment {
     private static final int REQUEST_CODE = 1;
     private List<MusicFile> musicFiles = new ArrayList<>();
     private RecyclerView recyclerView;
-    private MediaPlayerNavigationBar mediaPlayerNavigationBar;
     private MusicFileAdapter musicAdapter;
     View view;
 
@@ -77,10 +76,9 @@ public class UserMusic extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         view = inflater.inflate(R.layout.fragment_user_music, container, false);
-        mediaPlayerNavigationBar = view.findViewById(R.id.mediaPlayerNavigationBar);
         recyclerView = view.findViewById(R.id.recycler_view2);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        musicAdapter = new MusicFileAdapter(getContext(), musicFiles, mediaPlayerNavigationBar);
+        musicAdapter = new MusicFileAdapter(getContext(), musicFiles);
         recyclerView.setAdapter(musicAdapter);
         //Checks for manifest external storage permissions
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_MEDIA_AUDIO)
