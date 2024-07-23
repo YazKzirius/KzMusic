@@ -26,7 +26,7 @@
             android:layout_marginTop="20dp"
             android:textColor="@color/white"
             android:textSize="30sp" />
-        <ImageView
+        <com.example.kzmusic.CircularImageViewWithBeatTracker
             android:id="@+id/musicImage"
             android:layout_width="250dp"
             android:layout_height="250dp"

@@ -44,6 +44,9 @@ public class MediaOverlay extends Fragment {
     private SeekBar seekBar;
     private SimpleExoPlayer player;
     private TextView textCurrentTime, textTotalDuration;
+    private CircularImageViewWithBeatTracker imageViewWithBeatTracker;
+    private Runnable beatRunnable;
+    private float[] beatLevels = new float[150];
     public MediaOverlay() {
         // Required empty public constructor
     }
@@ -98,9 +101,10 @@ public class MediaOverlay extends Fragment {
                 // Load album image
                 Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
                 Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(musicFile.getAlbumId()));
-                Glide.with(this)
-                        .load(album_uri)
-                        .into(overlayImage);
+                imageViewWithBeatTracker = view.findViewById(R.id.musicImage);
+
+                // Load image using Glide
+                imageViewWithBeatTracker.loadImage(album_uri);
                 //Pause/play functionality
                 btnPlayPause.setOnClickListener(v -> {
                     if (player.isPlaying()) {
@@ -111,6 +115,20 @@ public class MediaOverlay extends Fragment {
                         btnPlayPause.setImageResource(R.drawable.ic_pause);
                     }
                 });
+                // Example: Update beat levels every 500ms
+                beatRunnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        // Generate random beat levels for demonstration
+                        for (int i = 0; i < beatLevels.length; i++) {
+                            beatLevels[i] = (float) Math.random();
+                        }
+                        imageViewWithBeatTracker.updateBeatLevels(beatLevels);
+                        handler.postDelayed(this, 150);
+                    }
+                };
+
+                handler.post(beatRunnable);
                 //Loop functionality
                 btnLoop.setOnClickListener(v -> {
                     boolean loop = player.getRepeatMode() == SimpleExoPlayer.REPEAT_MODE_ONE;
