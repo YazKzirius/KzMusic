@@ -1,5 +1,6 @@
 package com.example.kzmusic;
 
+//Imports
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapShader;
@@ -15,8 +16,9 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
 
+//This class creates an implements a circular imageview for album covers with beat bars around
 public class CircularImageViewWithBeatTracker extends AppCompatImageView {
-
+    //View attributes
     private Paint imagePaint;
     private Paint beatPaint;
     private BitmapShader shader;
@@ -37,7 +39,7 @@ public class CircularImageViewWithBeatTracker extends AppCompatImageView {
         super(context, attrs, defStyleAttr);
         init();
     }
-
+    //This function intialises view attributes and creates the image
     private void init() {
         imagePaint = new Paint();
         imagePaint.setAntiAlias(true);
@@ -69,7 +71,7 @@ public class CircularImageViewWithBeatTracker extends AppCompatImageView {
             super.onDraw(canvas);
         }
     }
-
+    //This function draws the beat tracker around the circumference of the circle
     private void drawBeatTracker(Canvas canvas, float radius) {
         for (int i = 0; i < beatLevels.length; i++) {
             float angle = (float) (i * (360.0 / beatLevels.length));
@@ -84,12 +86,12 @@ public class CircularImageViewWithBeatTracker extends AppCompatImageView {
             canvas.drawLine(startX, startY, stopX, stopY, beatPaint);
         }
     }
-
+    //This function updates the beat bar levels in the imageview
     public void updateBeatLevels(float[] newLevels) {
         System.arraycopy(newLevels, 0, beatLevels, 0, beatLevels.length);
         invalidate(); // Redraw the view with updated beat levels
     }
-
+    //This function loads an image based on it's url to the custom image view
     public void loadImage(Uri imageUrl) {
         Glide.with(getContext())
                 .asBitmap()

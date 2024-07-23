@@ -16,7 +16,7 @@ public class MusicFile implements Parcelable{
         this.albumId = albumId;
     }
 
-    // Getters and setters
+    // Getters and setter methods
     public long getId() {
         return id;
     }

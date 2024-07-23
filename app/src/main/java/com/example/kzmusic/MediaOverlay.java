@@ -1,7 +1,7 @@
 package com.example.kzmusic;
 
+//Imports
 import android.os.Bundle;
-
 import androidx.fragment.app.Fragment;
 import android.os.Handler;
 import android.view.LayoutInflater;
@@ -11,8 +11,6 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.net.Uri;
-import com.bumptech.glide.Glide;
-import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import java.io.File;
@@ -24,6 +22,7 @@ import android.widget.Toast;
  * Use the {@link MediaOverlay#newInstance} factory method to
  * create an instance of this fragment.
  */
+//This implements the playback overlay when a song is clicked
 public class MediaOverlay extends Fragment {
 
     // TODO: Rename parameter arguments, choose names that match
@@ -34,6 +33,7 @@ public class MediaOverlay extends Fragment {
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
+    //Important attributes
     View view;
     MusicFile musicFile;
     private ImageView overlayImage;
@@ -82,6 +82,7 @@ public class MediaOverlay extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
+        //Implementing player functionality
         view = inflater.inflate(R.layout.fragment_media_overlay, container, false);
         overlayImage = view.findViewById(R.id.musicImage);
         overlaySongTitle = view.findViewById(R.id.songTitle);

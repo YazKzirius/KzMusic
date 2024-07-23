@@ -1,5 +1,6 @@
 package com.example.kzmusic;
 
+//Imports
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,8 +15,9 @@ import com.bumptech.glide.Glide;
 
 import java.util.List;
 
+//This manages Spotify Music recycler view display
 public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> {
-
+    //Important attributes
     private List<SearchResponse.Track> trackList;
     private Context context;
     private OnItemClickListener Listener;
@@ -49,14 +51,17 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
     }
 
     @Override
+    //This function gets the number of tracks in tracklist
     public int getItemCount() {
         return trackList.size();
     }
+    //This function updates the tracks in the tracklist
     public void updateTracks(List<SearchResponse.Track> newTracks) {
         trackList = newTracks;
         notifyDataSetChanged();
     }
 
+    //This class creates the Music item view holder display
     public static class ViewHolder extends RecyclerView.ViewHolder {
         public TextView trackName;
         public TextView artistName;
@@ -68,6 +73,7 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
             artistName = itemView.findViewById(R.id.artist_name);
             albumImage = itemView.findViewById(R.id.album_image);
         }
+        //This function manages music item view clicking
         public void bind(final SearchResponse.Track track, final OnItemClickListener listener) {
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override

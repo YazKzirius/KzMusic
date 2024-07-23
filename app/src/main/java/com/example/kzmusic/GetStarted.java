@@ -16,6 +16,7 @@ import com.spotify.android.appremote.api.ConnectionParams;
 import com.spotify.android.appremote.api.Connector;
 import com.spotify.android.appremote.api.SpotifyAppRemote;
 
+//This class implements Get started page
 public class GetStarted extends AppCompatActivity {
     String CLIENT_ID = "21dc131ad4524c6aae75a9d0256b1b70";
     String REDIRECT_URI = "kzmusic://callback";
@@ -107,7 +108,6 @@ public class GetStarted extends AppCompatActivity {
                     //Display message
                     token = response.getAccessToken();
                     expiration_time = response.getExpiresIn();
-
                     //Sending email data to next activity
                     Bundle bundle = new Bundle();
                     bundle.putString("Token", token);

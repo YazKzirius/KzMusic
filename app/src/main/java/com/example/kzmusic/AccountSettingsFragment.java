@@ -1,11 +1,10 @@
 package com.example.kzmusic;
 
+//Imports
 import android.os.Bundle;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,6 +14,8 @@ import android.view.ViewGroup;
  * Use the {@link AccountSettingsFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
+
+//Account settings class
 public class AccountSettingsFragment extends Fragment {
 
     // TODO: Rename parameter arguments, choose names that match

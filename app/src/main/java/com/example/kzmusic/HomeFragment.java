@@ -17,6 +17,7 @@ import android.view.ViewGroup;
  * Use the {@link HomeFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
+//This implements the default Homepage fragment
 public class HomeFragment extends Fragment {
 
     // TODO: Rename parameter arguments, choose names that match
@@ -72,6 +73,7 @@ public class HomeFragment extends Fragment {
         sessionManager = new SessionManager(getContext());
         username = sessionManager.getUsername();
         email = sessionManager.getEmail();
+        //Setting up Homepage and getting given accesstoken
         set_up_buttons();
         TextView text1 = view.findViewById(R.id.made_for_x);
         TextView text2 = view.findViewById(R.id.user_music);

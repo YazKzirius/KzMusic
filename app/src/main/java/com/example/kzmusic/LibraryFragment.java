@@ -1,5 +1,6 @@
 package com.example.kzmusic;
 
+//Imports
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -15,6 +16,7 @@ import android.view.ViewGroup;
  * Use the {@link LibraryFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
+//This implements the user library fragment
 public class LibraryFragment extends Fragment {
 
     // TODO: Rename parameter arguments, choose names that match
