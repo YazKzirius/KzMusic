@@ -23,9 +23,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
-            android:layout_marginTop="20dp"
             android:textColor="@color/white"
-            android:textSize="30sp" />
+            android:textSize="20sp" />
+
         <com.example.kzmusic.CircularImageViewWithBeatTracker
             android:id="@+id/musicImage"
             android:layout_width="250dp"
