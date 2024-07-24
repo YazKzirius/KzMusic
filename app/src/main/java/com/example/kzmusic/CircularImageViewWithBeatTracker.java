@@ -10,6 +10,8 @@ import android.graphics.Shader;
 import android.net.Uri;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
+import android.widget.Toast;
+
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatImageView;
 import com.bumptech.glide.Glide;
@@ -93,9 +95,31 @@ public class CircularImageViewWithBeatTracker extends AppCompatImageView {
     }
     //This function loads an image based on it's url to the custom image view
     public void loadImage(Uri imageUrl) {
+        if (imageUrl.toString().equals("content://media/external/audio/albumart/7616398988556461978")){
+            loadImageResource(R.drawable.ic_library);
+        } else {
+            Glide.with(getContext())
+                    .asBitmap()
+                    .load(imageUrl)
+                    .into(new CustomTarget<Bitmap>() {
+                        @Override
+                        public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
+                            bitmap = resource;
+                            shader = null; // Reset shader to update the image
+                            invalidate();
+                        }
+
+                        @Override
+                        public void onLoadCleared(@Nullable Drawable placeholder) {
+                        }
+                    });
+        }
+    }
+    //This function loads a random image resource
+    private void loadImageResource(int resId) {
         Glide.with(getContext())
                 .asBitmap()
-                .load(imageUrl)
+                .load(resId)
                 .into(new CustomTarget<Bitmap>() {
                     @Override
                     public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {

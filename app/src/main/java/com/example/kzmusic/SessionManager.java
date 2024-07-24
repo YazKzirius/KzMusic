@@ -4,6 +4,8 @@ package com.example.kzmusic;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+
+//This class manages user login is sessions so user can stay logged into app until log out
 public class SessionManager {
 
     private SharedPreferences sharedPreferences;

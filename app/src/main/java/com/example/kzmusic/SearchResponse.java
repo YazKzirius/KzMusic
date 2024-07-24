@@ -1,9 +1,11 @@
 package com.example.kzmusic;
 
+//Imports
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
 
+//This class manages the information retrieved from API calls
 public class SearchResponse {
     @SerializedName("tracks")
     private Tracks tracks;
@@ -20,7 +22,7 @@ public class SearchResponse {
             return items;
         }
     }
-
+    //Stores information about track
     public class Track {
         @SerializedName("name")
         private String name;
@@ -46,7 +48,7 @@ public class SearchResponse {
         }
         public String getUri() { return uri;}
     }
-
+    //Stores information about Artist
     public class Artist {
         @SerializedName("name")
         private String name;
@@ -55,7 +57,7 @@ public class SearchResponse {
             return name;
         }
     }
-
+    //Stores information about Album
     public class Album {
         @SerializedName("images")
         private List<Image> images;
@@ -71,7 +73,7 @@ public class SearchResponse {
             return uri;
         }
     }
-
+    //Stores information about album image
     public class Image {
         @SerializedName("url")
         private String url;

@@ -25,6 +25,7 @@ import com.bumptech.glide.Glide;
 import java.io.File;
 import java.util.List;
 
+//This class manages music files in user directory
 public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.MusicViewHolder> {
 
     private List<MusicFile> musicFiles;
@@ -61,7 +62,10 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
                 if (currentlyPlayingHolder != null && currentlyPlayingHolder != holder) {
                     player.release();
                 }
-                open_overlay(musicFile);
+                //Stopping all players and resetting player
+                ExoPlayerManager.getInstance().stopAllPlayers();
+                //Opening media playback overlay
+                open_overlay(musicFile, holder.getAdapterPosition());
                 currentlyPlayingHolder = holder;
             }
         });
@@ -71,10 +75,11 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
         return musicFiles.size();
     }
     //This function opens the playback handling overlay
-    public void open_overlay(MusicFile musicFile) {
+    public void open_overlay(MusicFile musicFile, int position) {
         Fragment media_page = new MediaOverlay();
         Bundle bundle = new Bundle();
         bundle.putParcelable("song", musicFile);
+        bundle.putInt("position", position);
         media_page.setArguments(bundle);
         FragmentManager fragmentManager = ((AppCompatActivity) context).getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
@@ -86,7 +91,7 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
         Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
         return Uri.withAppendedPath(albumArtUri, String.valueOf(albumId));
     }
-
+    //This class implements the music recycler view holder
     static class MusicViewHolder extends RecyclerView.ViewHolder {
         TextView nameTextView;
         TextView artistTextView;

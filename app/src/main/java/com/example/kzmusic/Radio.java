@@ -1,7 +1,7 @@
 package com.example.kzmusic;
 
+//imports
 import android.os.Bundle;
-
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -16,10 +16,8 @@ import com.spotify.android.appremote.api.SpotifyAppRemote;
 import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
 import com.spotify.protocol.types.Track;
-
 import java.util.ArrayList;
 import java.util.List;
-
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -29,6 +27,7 @@ import retrofit2.Response;
  * Use the {@link Radio#newInstance} factory method to
  * create an instance of this fragment.
  */
+//This class implements the User radio page
 public class Radio extends Fragment {
 
     // TODO: Rename parameter arguments, choose names that match

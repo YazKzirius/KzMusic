@@ -1,5 +1,6 @@
 package com.example.kzmusic;
 
+//Imports
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -39,6 +40,7 @@ import retrofit2.Response;
  * Use the {@link SearchFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
+//This class implements the search page
 public class SearchFragment extends Fragment {
 
     // TODO: Rename parameter arguments, choose names that match

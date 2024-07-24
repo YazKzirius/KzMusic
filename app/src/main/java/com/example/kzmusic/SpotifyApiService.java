@@ -5,7 +5,7 @@ import retrofit2.http.GET;
 import retrofit2.http.Headers;
 import retrofit2.http.Query;
 
-//API service interface
+//Spotify API service interface
 public interface SpotifyApiService {
     @Headers("Authorization: Bearer {token}")
     @GET("v1/search")

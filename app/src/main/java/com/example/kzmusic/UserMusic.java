@@ -1,9 +1,8 @@
 package com.example.kzmusic;
 
+//Imports
 import android.os.Bundle;
-
 import androidx.fragment.app.Fragment;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +12,8 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.MediaStore;
+import android.widget.Toast;
+
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -24,6 +25,7 @@ import java.util.List;
  * Use the {@link UserMusic#newInstance} factory method to
  * create an instance of this fragment.
  */
+//This class manages the user music page
 public class UserMusic extends Fragment {
 
     // TODO: Rename parameter arguments, choose names that match
@@ -85,6 +87,7 @@ public class UserMusic extends Fragment {
                 != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.READ_MEDIA_AUDIO}, REQUEST_CODE);
         } else {
+            //Loading music files into recycler view
             loadMusicFiles();
         }
         musicAdapter.notifyDataSetChanged();
