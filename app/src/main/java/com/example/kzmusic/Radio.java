@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 import com.spotify.android.appremote.api.ConnectionParams;
 import com.spotify.android.appremote.api.Connector;
+import com.spotify.android.appremote.api.PlayerApi;
 import com.spotify.android.appremote.api.SpotifyAppRemote;
 import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
@@ -158,9 +159,9 @@ public class Radio extends Fragment {
     //These functions handle song playback
     private void play_track(String uri) {
         if (mSpotifyAppRemote != null) {
-            mSpotifyAppRemote.getPlayerApi().play(uri);
-            mSpotifyAppRemote.getPlayerApi()
-                    .subscribeToPlayerState()
+            PlayerApi player = mSpotifyAppRemote.getPlayerApi();
+            player.play(uri);
+            player.subscribeToPlayerState()
                     .setEventCallback(new Subscription.EventCallback<PlayerState>() {
                         @Override
                         public void onEvent(PlayerState playerState) {
