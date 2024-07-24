@@ -13,6 +13,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.provider.MediaStore;
 import android.widget.Toast;
+import android.media.MediaMetadataRetriever;
 
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -126,13 +127,22 @@ public class UserMusic extends Fragment {
             int albumIdColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID);
 
             while (cursor.moveToNext()) {
+                //Getting music information
                 long id = cursor.getLong(idColumn);
                 String name = cursor.getString(nameColumn);
                 String artist = cursor.getString(artistColumn);
                 String data = cursor.getString(dataColumn);
                 long albumId = cursor.getLong(albumIdColumn);
-
-                musicFiles.add(new MusicFile(id, name, artist, data, albumId));
+                //Defining music file
+                MusicFile musicFile = new MusicFile(id, name, artist, data, albumId);
+                //Filtering out music from short sounds and voice recordings
+                if (artist.equals("Voice Recorder")) {
+                    ;
+                } else if (artist.equals("<unknown>")) {
+                    ;
+                } else {
+                    musicFiles.add(musicFile);
+                }
             }
         }
     }

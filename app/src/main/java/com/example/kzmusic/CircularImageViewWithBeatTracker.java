@@ -95,28 +95,29 @@ public class CircularImageViewWithBeatTracker extends AppCompatImageView {
     }
     //This function loads an image based on it's url to the custom image view
     public void loadImage(Uri imageUrl) {
-        if (imageUrl.toString().equals("content://media/external/audio/albumart/7616398988556461978")){
-            loadImageResource(R.drawable.ic_library);
-        } else {
-            Glide.with(getContext())
-                    .asBitmap()
-                    .load(imageUrl)
-                    .into(new CustomTarget<Bitmap>() {
-                        @Override
-                        public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
+        Glide.with(getContext())
+                .asBitmap()
+                .load(imageUrl)
+                .into(new CustomTarget<Bitmap>() {
+                    @Override
+                    public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
+                        //Checking for black bitmap
+                        if (isBlackBitmap(resource)) {
+                            loadImageResource(R.drawable.ic_library);
+                        } else {
                             bitmap = resource;
                             shader = null; // Reset shader to update the image
                             invalidate();
                         }
+                    }
 
-                        @Override
-                        public void onLoadCleared(@Nullable Drawable placeholder) {
-                        }
-                    });
-        }
+                    @Override
+                    public void onLoadCleared(@Nullable Drawable placeholder) {
+                    }
+                });
     }
     //This function loads a random image resource
-    private void loadImageResource(int resId) {
+    public void loadImageResource(int resId) {
         Glide.with(getContext())
                 .asBitmap()
                 .load(resId)
@@ -132,5 +133,25 @@ public class CircularImageViewWithBeatTracker extends AppCompatImageView {
                     public void onLoadCleared(@Nullable Drawable placeholder) {
                     }
                 });
+    }
+    //This function checks if the image is a black image
+    private boolean isBlackBitmap(Bitmap bitmap) {
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        int[] pixels = new int[width * height];
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
+
+        int blackPixelCount = 0;
+        int totalPixelCount = pixels.length;
+
+        for (int pixel : pixels) {
+            // Check if the pixel is black (ARGB = 0xFF000000)
+            if (pixel == 0xFF000000) {
+                blackPixelCount++;
+            }
+        }
+
+        // Consider it black if more than 95% of the pixels are black
+        return blackPixelCount > totalPixelCount * 0.95;
     }
 }

@@ -94,7 +94,9 @@ public class Radio extends Fragment {
         musicAdapter=new MusicAdapter(trackList,getContext(),new MusicAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(SearchResponse.Track track){
-                Toast.makeText(getContext(),"Playing Songs Similar to:"+track.getName(),Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(),"Playing Songs Similar to: "+track.getName(),Toast.LENGTH_SHORT).show();
+                //Stopping all players, so no playback overlap
+                ExoPlayerManager.getInstance().stopAllPlayers();
                 play_track(track.getUri());
             }
         });

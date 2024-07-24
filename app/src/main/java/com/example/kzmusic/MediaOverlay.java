@@ -4,7 +4,10 @@ package com.example.kzmusic;
 import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
@@ -21,9 +24,7 @@ import com.google.android.exoplayer2.SimpleExoPlayer;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-
 import android.widget.ImageButton;
-import android.widget.Toast;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -49,8 +50,7 @@ public class MediaOverlay extends Fragment {
     private TextView overlaySongTitle;
     private ImageButton btnPlayPause;
     private Handler handler = new Handler();
-    Boolean is_looping = false;
-    Boolean is_playing = false;
+    Boolean is_looping;
     private ImageButton btnLoop;
     private ImageButton btnSkip_left;
     private ImageButton btnSkip_right;
@@ -106,16 +106,19 @@ public class MediaOverlay extends Fragment {
         seekBar = view.findViewById(R.id.seekBar);
         textCurrentTime = view.findViewById(R.id.textCurrentTime);
         textTotalDuration = view.findViewById(R.id.textTotalDuration);
+        //Defining new exo-player
         player = new SimpleExoPlayer.Builder(getContext()).build();
         if (getArguments() != null) {
             musicFile = getArguments().getParcelable("song");
             position = getArguments().getInt("position");
+            is_looping = getArguments().getBoolean("is_looping");
             if (musicFile != null) {
                 // Set song details
+                //This function sets up the circular view for a song with no album art
+                set_up_circular_view_blank(R.drawable.ic_library);
                 playMusic(musicFile);
-                is_playing = true;
-                //Setting up circular view with beats around
-                set_up_circular_view();
+                //Setting up circular view with beats around for song with album art
+                set_up_circular_view(musicFile);
                 //Loading previous music files
                 loadMusicFiles();
                 //Setting up media buttons
@@ -127,10 +130,10 @@ public class MediaOverlay extends Fragment {
         return view;
     }
     //This function sets up music image view
-    public void set_up_circular_view() {
+    public void set_up_circular_view(MusicFile file) {
         // Load album image
         Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
-        Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(musicFile.getAlbumId()));
+        Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(file.getAlbumId()));
         imageViewWithBeatTracker = view.findViewById(R.id.musicImage);
         // Load image using Glide
         imageViewWithBeatTracker.loadImage(album_uri);
@@ -143,7 +146,27 @@ public class MediaOverlay extends Fragment {
                     beatLevels[i] = (float) Math.random();
                 }
                 imageViewWithBeatTracker.updateBeatLevels(beatLevels);
-                handler.postDelayed(this, 150);
+                handler.postDelayed(this, 100);
+            }
+        };
+        handler.post(beatRunnable);
+    }
+    //This function sets up circular view with beats for blank album art
+    public void set_up_circular_view_blank(int Id) {
+        // Load album image
+        imageViewWithBeatTracker = view.findViewById(R.id.musicImage);
+        // Load image using Glide
+        imageViewWithBeatTracker.loadImageResource(Id);
+        // Example: Update beat levels every 500ms
+        beatRunnable = new Runnable() {
+            @Override
+            public void run() {
+                // Generate random beat levels for demonstration
+                for (int i = 0; i < beatLevels.length; i++) {
+                    beatLevels[i] = (float) Math.random();
+                }
+                imageViewWithBeatTracker.updateBeatLevels(beatLevels);
+                handler.postDelayed(this, 100);
             }
         };
         handler.post(beatRunnable);
@@ -161,6 +184,17 @@ public class MediaOverlay extends Fragment {
             }
         });
         //Loop functionality
+        //If loop was on previously, keep loop on otherwise, continue
+        if (is_looping == true) {
+            //Setting repeat mode on and replacing icon
+            player.setRepeatMode(SimpleExoPlayer.REPEAT_MODE_ONE);
+            btnLoop.setImageResource(R.drawable.ic_loop_on);
+        } else {
+            //Setting repeat mode off and replacing icon
+            player.setRepeatMode(SimpleExoPlayer.REPEAT_MODE_OFF);
+            btnLoop.setImageResource(R.drawable.ic_loop);
+        }
+        //Loop button click functionality
         btnLoop.setOnClickListener(v -> {
             is_looping = !is_looping;
             if (is_looping == true) {
@@ -178,15 +212,8 @@ public class MediaOverlay extends Fragment {
                 player.pause();
                 position -= 1;
                 musicFile = musicFiles.get(position);
-                playMusic(musicFile);
-                //Setting up new circular view
-                set_up_circular_view();
-                //Loading previous music files
-                loadMusicFiles();
-                //Setting up media buttons
-                set_up_media_buttons();
-                //Setting up seekbar
-                set_up_bar();
+                open_new_overlay(musicFile, position);
+
             }
         });
         btnSkip_right.setOnClickListener(new View.OnClickListener() {
@@ -195,15 +222,7 @@ public class MediaOverlay extends Fragment {
                 player.pause();
                 position += 1;
                 musicFile = musicFiles.get(position);
-                playMusic(musicFile);
-                //Setting up new circular view
-                set_up_circular_view();
-                //Loading previous music files
-                loadMusicFiles();
-                //Setting up media buttons
-                set_up_media_buttons();
-                //Setting up seekbar
-                set_up_bar();
+                open_new_overlay(musicFile, position);
             }
         });
     }
@@ -254,6 +273,8 @@ public class MediaOverlay extends Fragment {
     }
     //This function plays the specified music file
     private void playMusic(MusicFile musicFile) {
+        //Stops all players before playing new song
+        ExoPlayerManager.getInstance().stopAllPlayers();
         Uri uri = Uri.fromFile(new File(musicFile.getPath()));
         MediaItem mediaItem = MediaItem.fromUri(uri);
         player.setMediaItem(mediaItem);
@@ -292,6 +313,7 @@ public class MediaOverlay extends Fragment {
         return String.format("%02d:%02d", minutes, seconds);
     }
     //This function loads User music audio files from personal directory
+    //This function loads User music audio files from personal directory
     private void loadMusicFiles() {
         Uri collection;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -324,14 +346,38 @@ public class MediaOverlay extends Fragment {
             int albumIdColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID);
 
             while (cursor.moveToNext()) {
+                //Getting music information
                 long id = cursor.getLong(idColumn);
                 String name = cursor.getString(nameColumn);
                 String artist = cursor.getString(artistColumn);
                 String data = cursor.getString(dataColumn);
                 long albumId = cursor.getLong(albumIdColumn);
-
-                musicFiles.add(new MusicFile(id, name, artist, data, albumId));
+                //Defining music file
+                MusicFile musicFile = new MusicFile(id, name, artist, data, albumId);
+                //Filtering out music from short sounds and voice recordings
+                if (artist.equals("Voice Recorder")) {
+                    ;
+                } else if (artist.equals("<unknown>")) {
+                    ;
+                } else {
+                    musicFiles.add(musicFile);
+                }
             }
         }
+    }
+    //This function opens a new overlay
+    //This function opens the playback handling overlay
+    public void open_new_overlay(MusicFile musicFile, int position) {
+        Fragment media_page = new MediaOverlay();
+        Bundle bundle = new Bundle();
+        bundle.putParcelable("song", musicFile);
+        bundle.putInt("position", position);
+        bundle.putBoolean("is_looping", is_looping);
+        media_page.setArguments(bundle);
+        FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.replace(R.id.fragment_container, media_page);
+        fragmentTransaction.addToBackStack(null);
+        fragmentTransaction.commit();
     }
 }

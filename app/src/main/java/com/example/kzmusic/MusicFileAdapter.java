@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.os.Bundle;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
@@ -75,12 +76,16 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
         return musicFiles.size();
     }
     //This function opens the playback handling overlay
+    //Whilst sending necessary data over
     public void open_overlay(MusicFile musicFile, int position) {
         Fragment media_page = new MediaOverlay();
         Bundle bundle = new Bundle();
+        //Sending variables
         bundle.putParcelable("song", musicFile);
         bundle.putInt("position", position);
+        bundle.putBoolean("is_looping", false);
         media_page.setArguments(bundle);
+        //Opening fragment
         FragmentManager fragmentManager = ((AppCompatActivity) context).getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.fragment_container, media_page);
