@@ -109,38 +109,35 @@
         <SeekBar
             android:id="@+id/seekBarSpeed"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="20dp"
             android:max="200"
             android:progress="100"
+            android:paddingEnd="8dp"
             android:layout_marginTop="20dp"/>
         <TextView
+            android:id="@+id/speed_text"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Tempo"/>
+            android:layout_height="20dp"
+            android:text="Speed: 1.0x"
+            android:textSize="15sp"
+            android:textColor="@color/white"/>
 
         <SeekBar
             android:id="@+id/seekBarPitch"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="20dp"
             android:max="200"
             android:progress="100"
+            android:paddingEnd="8dp"
             android:layout_marginTop="20dp"/>
         <TextView
+            android:id="@+id/pitch_text"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Pitch"/>
+            android:layout_height="20dp"
+            android:text="Pitch: 1.0x"
+            android:textSize="15sp"
+            android:textColor="@color/white"/>
 
-        <SeekBar
-            android:id="@+id/seekBarReverb"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="6"
-            android:progress="0"
-            android:layout_marginTop="20dp"/>
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Reverberation"/>
     </LinearLayout>
 
 </FrameLayout>
