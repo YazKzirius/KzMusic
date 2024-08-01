@@ -1,5 +1,4 @@
 package com.example.kzmusic;
-
 //Imports
 import android.database.Cursor;
 import android.os.Build;
@@ -14,19 +13,15 @@ import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.SeekBar;
-import com.google.android.exoplayer2.ExoPlayer;
 import android.widget.TextView;
 import android.net.Uri;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.SimpleExoPlayer;
+
 import android.media.audiofx.PresetReverb;
-import com.google.android.exoplayer2.audio.AudioProcessor;
-import com.google.android.exoplayer2.audio.AudioProcessorChain;
-import com.google.android.exoplayer2.audio.SonicAudioProcessor;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -128,7 +123,6 @@ public class MediaOverlay extends Fragment {
                 //This function sets up the circular view for a song with no album art
                 set_up_circular_view_blank(R.drawable.ic_library);
                 playMusic(musicFile);
-
                 //Setting up circular view with beats around for song with album art
                 set_up_circular_view(musicFile);
                 //Loading previous music files
@@ -443,8 +437,8 @@ public class MediaOverlay extends Fragment {
                 float pitch = Math.max(0.5f, Math.min(progress / 100f, 2.0f));
                 pitch_text.setText(String.format("Pitch: %.1fx", pitch)); // Update the pitch text
                 player.setPlaybackParameters(new PlaybackParameters(player.getPlaybackParameters().speed, pitch));
-            }
 
+            }
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
             }

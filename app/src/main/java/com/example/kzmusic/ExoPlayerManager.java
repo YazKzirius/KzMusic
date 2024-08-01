@@ -1,22 +1,16 @@
 package com.example.kzmusic;
 
 //Imports
-import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.ExoPlayer;
 import java.util.ArrayList;
 import java.util.List;
-import com.spotify.android.appremote.api.ConnectionParams;
-import com.spotify.android.appremote.api.Connector;
 import com.spotify.android.appremote.api.PlayerApi;
-import com.spotify.android.appremote.api.SpotifyAppRemote;
-import com.spotify.protocol.client.Subscription;
-import com.spotify.protocol.types.PlayerState;
-import com.spotify.protocol.types.Track;
 
 //This class manages player sessions for seamless playing
 public class ExoPlayerManager {
 
     private static ExoPlayerManager instance;
-    private final List<SimpleExoPlayer> playerList;
+    private final List<ExoPlayer> playerList;
     private final List<PlayerApi> Spotify_playerList;
 
     private ExoPlayerManager() {
@@ -31,17 +25,17 @@ public class ExoPlayerManager {
         return instance;
     }
 
-    public void addPlayer(SimpleExoPlayer player) {
+    public void addPlayer(ExoPlayer player) {
         playerList.add(player);
     }
 
-    public void removePlayer(SimpleExoPlayer player) {
+    public void removePlayer(ExoPlayer player) {
         playerList.remove(player);
     }
 
 
     public void stopAllPlayers() {
-        for (SimpleExoPlayer player : playerList) {
+        for (ExoPlayer player : playerList) {
             player.stop();
         }
     }

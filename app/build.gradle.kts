@@ -40,6 +40,7 @@ dependencies {
     implementation(libs.constraintlayout)
     implementation(libs.preference)
     implementation(files("C:\\Users\\yaz33\\AndroidStudioProjects\\Kzmusic\\spotify-app-remote-release-0.8.0.aar"))
+    implementation(files("C:\\Users\\yaz33\\Downloads\\TarsosDSP-Android-2.4.jar"))
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
@@ -50,6 +51,7 @@ dependencies {
     implementation("com.google.android.exoplayer:exoplayer:2.19.1")
     implementation("com.google.android.exoplayer:exoplayer-ui:2.19.1")
     implementation("com.google.android.exoplayer:exoplayer-core:2.19.1")
+    implementation(files("libs/tarsosdsp-Android-2.4.jar"))
     implementation("androidx.appcompat:appcompat:1.7.0")
     //Spotify API
     implementation("com.spotify.android:auth:1.2.5")
