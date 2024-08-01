@@ -21,6 +21,7 @@ import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 
+
 import android.media.audiofx.PresetReverb;
 import java.io.File;
 import java.util.ArrayList;
@@ -49,6 +50,7 @@ public class MediaOverlay extends Fragment {
     MusicFile musicFile;
     int position;
     private List<MusicFile> musicFiles = new ArrayList<>();
+    //UI Attributes
     private TextView overlaySongTitle;
     private ImageButton btnPlayPause;
     private Handler handler = new Handler();
@@ -66,6 +68,8 @@ public class MediaOverlay extends Fragment {
     private Runnable beatRunnable;
     private Runnable runnable;
     private float[] beatLevels = new float[150];
+    float song_speed;
+    float song_pitch;
     public MediaOverlay() {
         // Required empty public constructor
     }
@@ -131,7 +135,6 @@ public class MediaOverlay extends Fragment {
                 set_up_media_buttons();
                 //Setting up seekbar
                 set_up_bar();
-                //Setting up speed+reverb
                 set_up_speed();
                 set_up_pitch();
             }
