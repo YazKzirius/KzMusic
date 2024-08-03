@@ -97,7 +97,7 @@ public class Radio extends Fragment {
             public void onItemClick(SearchResponse.Track track){
                 Toast.makeText(getContext(),"Playing Songs Similar to: "+track.getName(),Toast.LENGTH_SHORT).show();
                 //Stopping all players, so no playback overlap
-                ExoPlayerManager.getInstance().stopAllPlayers();
+                PlayerManager.getInstance().stopAllPlayers();
                 play_track(track.getUri());
             }
         });

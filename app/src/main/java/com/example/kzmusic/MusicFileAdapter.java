@@ -9,7 +9,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.os.Bundle;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
@@ -17,13 +16,11 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.MediaItem;
+
 import com.google.android.exoplayer2.SimpleExoPlayer;
 
 import com.bumptech.glide.Glide;
 
-import java.io.File;
 import java.util.List;
 
 //This class manages music files in user directory
@@ -64,7 +61,7 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
                     player.release();
                 }
                 //Stopping all players and resetting player
-                ExoPlayerManager.getInstance().stopAllPlayers();
+                PlayerManager.getInstance().stopAllPlayers();
                 //Opening media playback overlay
                 open_overlay(musicFile, holder.getAdapterPosition());
                 currentlyPlayingHolder = holder;

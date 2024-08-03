@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.kzmusic"
-        minSdk = 21
+        minSdk = 23
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -40,7 +40,6 @@ dependencies {
     implementation(libs.constraintlayout)
     implementation(libs.preference)
     implementation(files("C:\\Users\\yaz33\\AndroidStudioProjects\\Kzmusic\\spotify-app-remote-release-0.8.0.aar"))
-    implementation(files("C:\\Users\\yaz33\\AndroidStudioProjects\\Kzmusic\\app\\libs\\TarsosDSP-Android-2.4.jar"))
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

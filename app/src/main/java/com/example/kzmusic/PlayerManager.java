@@ -7,20 +7,20 @@ import java.util.List;
 import com.spotify.android.appremote.api.PlayerApi;
 
 //This class manages player sessions for seamless playing
-public class ExoPlayerManager {
+public class PlayerManager {
 
-    private static ExoPlayerManager instance;
+    private static PlayerManager instance;
     private final List<ExoPlayer> playerList;
     private final List<PlayerApi> Spotify_playerList;
 
-    private ExoPlayerManager() {
+    private PlayerManager() {
         this.playerList = new ArrayList<>();
         this.Spotify_playerList = new ArrayList<>();
     }
 
-    public static synchronized ExoPlayerManager getInstance() {
+    public static synchronized PlayerManager getInstance() {
         if (instance == null) {
-            instance = new ExoPlayerManager();
+            instance = new PlayerManager();
         }
         return instance;
     }

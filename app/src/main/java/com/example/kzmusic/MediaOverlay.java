@@ -19,9 +19,8 @@ import android.net.Uri;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.PlaybackParameters;
-import com.google.android.exoplayer2.SimpleExoPlayer;
-
-
+import com.google.android.exoplayer2.ExoPlayer;
+import android.media.MediaPlayer;
 import android.media.audiofx.PresetReverb;
 import java.io.File;
 import java.util.ArrayList;
@@ -59,9 +58,10 @@ public class MediaOverlay extends Fragment {
     private ImageButton btnSkip_left;
     private ImageButton btnSkip_right;
     private SeekBar seekBar;
-    private SimpleExoPlayer player;
+    int session_id;
+    private ExoPlayer player;
     private TextView speed_text;
-    private TextView pitch_text;
+    private TextView reverb_text;
     private PresetReverb reverb;
     private TextView textCurrentTime, textTotalDuration;
     private CircularImageViewWithBeatTracker imageViewWithBeatTracker;
@@ -113,7 +113,7 @@ public class MediaOverlay extends Fragment {
         btnSkip_left = view.findViewById(R.id.btnSkipLeft);
         btnSkip_right = view.findViewById(R.id.btnSkipRight);
         speed_text = view.findViewById(R.id.speed_text);
-        pitch_text = view.findViewById(R.id.pitch_text);
+        reverb_text = view.findViewById(R.id.reverb_text);
         seekBar = view.findViewById(R.id.seekBar);
         textCurrentTime = view.findViewById(R.id.textCurrentTime);
         textTotalDuration = view.findViewById(R.id.textTotalDuration);
@@ -122,7 +122,6 @@ public class MediaOverlay extends Fragment {
             position = getArguments().getInt("position");
             is_looping = getArguments().getBoolean("is_looping");
             if (musicFile != null) {
-                player = new SimpleExoPlayer.Builder(getContext()).build();
                 // Set song details
                 //This function sets up the circular view for a song with no album art
                 set_up_circular_view_blank(R.drawable.ic_library);
@@ -135,8 +134,16 @@ public class MediaOverlay extends Fragment {
                 set_up_media_buttons();
                 //Setting up seekbar
                 set_up_bar();
-                set_up_speed();
-                set_up_pitch();
+                set_up_speed_and_pitch();
+                //Setting up reverberation
+                player.addListener(new ExoPlayer.Listener() {
+                    @Override
+                    public void onPlaybackStateChanged(int state) {
+                        if (state == ExoPlayer.STATE_READY) {
+                            set_up_reverb();
+                        }
+                    }
+                });
             }
         }
         return view;
@@ -199,21 +206,21 @@ public class MediaOverlay extends Fragment {
         //If loop was on previously, keep loop on otherwise, continue
         if (is_looping == true) {
             //Setting repeat mode on and replacing icon
-            player.setRepeatMode(SimpleExoPlayer.REPEAT_MODE_ONE);
+            player.setRepeatMode(ExoPlayer.REPEAT_MODE_ONE);
             btnLoop.setImageResource(R.drawable.ic_loop_on);
         } else {
             //Setting repeat mode off and replacing icon
-            player.setRepeatMode(SimpleExoPlayer.REPEAT_MODE_OFF);
+            player.setRepeatMode(ExoPlayer.REPEAT_MODE_OFF);
             btnLoop.setImageResource(R.drawable.ic_loop);
         }
         //Loop button click functionality
         btnLoop.setOnClickListener(v -> {
             is_looping = !is_looping;
             if (is_looping == true) {
-                player.setRepeatMode(SimpleExoPlayer.REPEAT_MODE_ONE);
+                player.setRepeatMode(ExoPlayer.REPEAT_MODE_ONE);
                 btnLoop.setImageResource(R.drawable.ic_loop_on);
             } else {
-                player.setRepeatMode(SimpleExoPlayer.REPEAT_MODE_OFF);
+                player.setRepeatMode(ExoPlayer.REPEAT_MODE_OFF);
                 btnLoop.setImageResource(R.drawable.ic_loop);
             }
         });
@@ -255,7 +262,11 @@ public class MediaOverlay extends Fragment {
             public void onPlaybackStateChanged(int state) {
                 if (state == Player.STATE_READY) {
                     long duration = player.getDuration();
-                    textTotalDuration.setText(formatTime(duration));
+                    if (formatTime(duration) == textTotalDuration.getText()) {
+                        ;
+                    } else {
+                        textTotalDuration.setText(formatTime(duration));
+                    }
                     seekBar.setMax((int) duration);
                 } else {
                     // Handle unknown duration case, possibly set to live stream duration handling
@@ -286,24 +297,25 @@ public class MediaOverlay extends Fragment {
     //This function plays the specified music file
     private void playMusic(MusicFile musicFile) {
         //Stops all players before playing new song
-        ExoPlayerManager.getInstance().stopAllPlayers();
+        PlayerManager.getInstance().stopAllPlayers();
         Uri uri = Uri.fromFile(new File(musicFile.getPath()));
+        player = new ExoPlayer.Builder(getContext()).build();
+        session_id = player.getAudioSessionId();
         MediaItem mediaItem = MediaItem.fromUri(uri);
         player.setMediaItem(mediaItem);
         player.prepare();
         player.play();
         //Adds player to Player session manager
-        ExoPlayerManager.getInstance().addPlayer(player);
+        PlayerManager.getInstance().addPlayer(player);
         overlaySongTitle.setText(musicFile.getName()+" by "+musicFile.getArtist());
     }
-    //This function updates seek bar duration based on speed changer
-    private void updateSeekBarDuration() {
-        if (player != null) {
-            long duration = player.getDuration();
-            float playbackSpeed = player.getPlaybackParameters().speed;
-            long adjustedDuration = (long) (duration / playbackSpeed);
-            seekBar.setMax((int) adjustedDuration);
-            textTotalDuration.setText(formatTime(adjustedDuration));
+    public void initialize_reverb() {
+        int current_id = player.getAudioSessionId();
+        if (current_id == session_id && current_id != 0) {
+            reverb = new PresetReverb(0, current_id);
+            reverb.setEnabled(true);
+        } else {
+            ;
         }
     }
     //This function updates the seekbar based on the duration of song
@@ -406,7 +418,7 @@ public class MediaOverlay extends Fragment {
         fragmentTransaction.commit();
     }
     //This function sets up speed manager seek bar
-    public void set_up_speed() {
+    public void set_up_speed_and_pitch() {
         // SeekBar for Speed
         SeekBar seekBarSpeed = view.findViewById(R.id.seekBarSpeed);
         seekBarSpeed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -414,10 +426,10 @@ public class MediaOverlay extends Fragment {
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 //Setting speed between 0.5x and 2.0x
                 float speed = Math.max(0.5f, Math.min(progress / 100f, 2.0f));
-                speed_text.setText(String.format("Speed: %.1fx", speed)); // Update the speed text
-                player.setPlaybackParameters(new PlaybackParameters(speed, player.getPlaybackParameters().pitch));
-                //Updating seekbar duration
-                updateSeekBarDuration();
+                song_pitch = speed;
+                song_speed = speed;
+                speed_text.setText(String.format("Speed + pitch: %.1fx", speed)); // Update the speed text
+                player.setPlaybackParameters(new PlaybackParameters(song_speed, song_pitch));
             }
 
             @Override
@@ -430,17 +442,18 @@ public class MediaOverlay extends Fragment {
         });
     }
     //This function sets up pitch manager seek bar
-    public void set_up_pitch() {
+    public void set_up_reverb() {
+        // Initialize PresetReverb
+       initialize_reverb();
         // SeekBar for Pitch
-        SeekBar seekBarPitch = view.findViewById(R.id.seekBarPitch);
-        seekBarPitch.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        SeekBar seekBarReverb = view.findViewById(R.id.seekBarReverb);
+        seekBarReverb.setMax(100);
+        seekBarReverb.setProgress(0);
+        seekBarReverb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                //Setting pitch between 0.5x and 2.0x
-                float pitch = Math.max(0.5f, Math.min(progress / 100f, 2.0f));
-                pitch_text.setText(String.format("Pitch: %.1fx", pitch)); // Update the pitch text
-                player.setPlaybackParameters(new PlaybackParameters(player.getPlaybackParameters().speed, pitch));
-
+                //Set reverb parameters
+                setReverbPreset(progress);
             }
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
@@ -451,6 +464,28 @@ public class MediaOverlay extends Fragment {
             }
         });
     }
+    //This function sets reverb level based on seekbar progress level
+    private void setReverbPreset(int progress) {
+        short preset;
+        // Map SeekBar progress to reverb presets
+        if (progress < 20) {
+            preset = PresetReverb.PRESET_NONE;
+        } else if (progress < 40) {
+            preset = PresetReverb.PRESET_SMALLROOM;
+        } else if (progress < 60) {
+            preset = PresetReverb.PRESET_MEDIUMROOM;
+        } else if (progress < 80) {
+            preset = PresetReverb.PRESET_LARGEROOM;
+        } else if (progress < 90) {
+            preset = PresetReverb.PRESET_MEDIUMHALL;
+        } else {
+            preset = PresetReverb.PRESET_LARGEHALL;
+        }
+        reverb.setPreset(preset);
+        reverb.setEnabled(true);
+        reverb_text.setText("Reverberation: "+preset*10+"%");
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
