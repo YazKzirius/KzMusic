@@ -109,7 +109,7 @@
                 android:background="?attr/selectableItemBackground" />
 
             <ImageButton
-                android:id="@+id/btnSettings"
+                android:id="@+id/btnShuffle"
                 android:layout_width="70dp"
                 android:layout_height="70dp"
                 android:layout_marginRight="2dp"
@@ -148,7 +148,8 @@
             android:text="Reverberbation: 0%"
             android:textSize="15sp"
             android:textColor="@color/white"
-            android:max="100"/>
+            android:max="1000"
+            android:min="-1000"/>
 
     </LinearLayout>
 

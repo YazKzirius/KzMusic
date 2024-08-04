@@ -47,7 +47,7 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
     @Override
     public void onBindViewHolder(@NonNull MusicViewHolder holder, int position) {
         MusicFile musicFile = musicFiles.get(position);
-        holder.nameTextView.setText(musicFile.getName());
+        holder.nameTextView.setText(musicFile.getName().replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", ""));
         holder.artistTextView.setText(musicFile.getArtist());
 
         Uri albumArtUri = getAlbumArtUri(musicFile.getAlbumId());

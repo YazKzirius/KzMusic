@@ -1,5 +1,6 @@
 package com.example.kzmusic;
 //Imports
+import java.util.Random;
 import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
@@ -20,8 +21,7 @@ import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.ExoPlayer;
-import android.media.MediaPlayer;
-import android.media.audiofx.PresetReverb;
+import android.media.audiofx.EnvironmentalReverb;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,23 +53,28 @@ public class MediaOverlay extends Fragment {
     private TextView overlaySongTitle;
     private ImageButton btnPlayPause;
     private Handler handler = new Handler();
-    Boolean is_looping;
+    Boolean is_looping = false;
+    Boolean shuffle_on = false;
     private ImageButton btnLoop;
     private ImageButton btnSkip_left;
     private ImageButton btnSkip_right;
+    private ImageButton btnShuffle;
     private SeekBar seekBar;
+    private SeekBar seekBarReverb;
+    private SeekBar seekBarSpeed;
     int session_id;
     private ExoPlayer player;
     private TextView speed_text;
     private TextView reverb_text;
-    private PresetReverb reverb;
+    private EnvironmentalReverb reverb;
     private TextView textCurrentTime, textTotalDuration;
     private CircularImageViewWithBeatTracker imageViewWithBeatTracker;
     private Runnable beatRunnable;
     private Runnable runnable;
     private float[] beatLevels = new float[150];
-    float song_speed;
-    float song_pitch;
+    float song_speed = (float) 1.0;
+    float song_pitch = (float) 1.0;
+    int reverb_level = -1000;
     public MediaOverlay() {
         // Required empty public constructor
     }
@@ -112,15 +117,33 @@ public class MediaOverlay extends Fragment {
         btnLoop = view.findViewById(R.id.btnLoop);
         btnSkip_left = view.findViewById(R.id.btnSkipLeft);
         btnSkip_right = view.findViewById(R.id.btnSkipRight);
+        btnShuffle = view.findViewById(R.id.btnShuffle);
         speed_text = view.findViewById(R.id.speed_text);
         reverb_text = view.findViewById(R.id.reverb_text);
         seekBar = view.findViewById(R.id.seekBar);
+        seekBarReverb = view.findViewById(R.id.seekBarReverb);
+        seekBarSpeed = view.findViewById(R.id.seekBarSpeed);
         textCurrentTime = view.findViewById(R.id.textCurrentTime);
         textTotalDuration = view.findViewById(R.id.textTotalDuration);
         if (getArguments() != null) {
+            //Retrieving arguments from previous page
             musicFile = getArguments().getParcelable("song");
             position = getArguments().getInt("position");
             is_looping = getArguments().getBoolean("is_looping");
+            shuffle_on = getArguments().getBoolean("shuffle_on");
+            song_speed = getArguments().getFloat("song_speed");
+            song_pitch = getArguments().getFloat("song_pitch");
+            reverb_level = getArguments().getInt("reverb_level");
+            //Handling the event of which user doesn't move seekbars
+            if (song_speed == 0 && song_speed == 0) {
+                song_speed = (float) 1;
+                song_pitch = (float) 1;
+            }
+            //Also handling for reverb seek bar as well
+            if (reverb_level == 0) {
+                reverb_level = -1000;
+            }
+            //If speed and pitch is zero, set it to neutral
             if (musicFile != null) {
                 // Set song details
                 //This function sets up the circular view for a song with no album art
@@ -134,17 +157,22 @@ public class MediaOverlay extends Fragment {
                 set_up_media_buttons();
                 //Setting up seekbar
                 set_up_bar();
+                //Setting up speed+pitch seekbar
+                seekBarSpeed.setMax(200);
+                seekBarSpeed.setMin(50);
+                seekBarSpeed.setProgress((int)(song_speed*100));
                 set_up_speed_and_pitch();
                 //Setting up reverberation
-                player.addListener(new ExoPlayer.Listener() {
-                    @Override
-                    public void onPlaybackStateChanged(int state) {
-                        if (state == ExoPlayer.STATE_READY) {
-                            set_up_reverb();
-                        }
-                    }
-                });
+                //Setting reverb bar to lowest
+                seekBarReverb.setMax(1000);
+                seekBarReverb.setMin(-1000);
+                seekBarReverb.setProgress(reverb_level);
+                set_up_reverb();
+            } else {
+                ;
             }
+        } else {
+            ;
         }
         return view;
     }
@@ -225,25 +253,69 @@ public class MediaOverlay extends Fragment {
             }
         });
         //Skip button functionality
+        Random rand = new Random();
         btnSkip_left.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 player.pause();
-                position -= 1;
+                //Moving to next song in recycler view if shuffle is off
+                if (shuffle_on == false) {
+                    //Handling the event that current song is top of recycler view
+                    if (position == 0) {
+                        ;
+                    } else {
+                        position -= 1;
+                    }
+                } else {
+                    position = rand.nextInt(musicFiles.size());
+                }
                 musicFile = musicFiles.get(position);
                 open_new_overlay(musicFile, position);
-
             }
         });
         btnSkip_right.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 player.pause();
-                position += 1;
+                //Moving to next song in recycler view if shuffle is off
+                if (shuffle_on == false) {
+                    //Handling the event that it's the last song in the recycler view
+                    if (position == musicFiles.size()-1) {
+                        ;
+                    } else {
+                        position += 1;
+                    }
+                } else {
+                    position = rand.nextInt(musicFiles.size());
+                }
                 musicFile = musicFiles.get(position);
                 open_new_overlay(musicFile, position);
             }
         });
+        //Implementing shuffle button functionality
+        //If loop was on previously, keep loop on otherwise, continue
+        if (shuffle_on == true) {
+            //Setting repeat mode on and replacing icon
+            btnShuffle.setImageResource(R.drawable.ic_shuffle_on);
+        } else {
+            //Setting repeat mode off and replacing icon
+            btnShuffle.setImageResource(R.drawable.ic_shuffle);
+        }
+        btnShuffle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                shuffle_on = !shuffle_on;
+                if (shuffle_on == true) {
+                    //Setting repeat mode on and replacing icon
+                    btnShuffle.setImageResource(R.drawable.ic_shuffle_on);
+                } else {
+                    //Setting repeat mode off and replacing icon
+                    btnShuffle.setImageResource(R.drawable.ic_shuffle);
+                }
+            }
+        });
+
+
     }
     //This function sets up and implements a live rewind seekbar
     public void set_up_bar() {
@@ -304,15 +376,25 @@ public class MediaOverlay extends Fragment {
         MediaItem mediaItem = MediaItem.fromUri(uri);
         player.setMediaItem(mediaItem);
         player.prepare();
+        //Setting playback speed
+        player.setPlaybackParameters(new PlaybackParameters(song_speed, song_pitch));
+        speed_text.setText(String.format("Speed + pitch: %.1fx", song_speed));
+        //Setting reverberation properties
+        initialize_reverb();
+        setReverbPreset(reverb_level);
         player.play();
         //Adds player to Player session manager
         PlayerManager.getInstance().addPlayer(player);
-        overlaySongTitle.setText(musicFile.getName()+" by "+musicFile.getArtist());
+        overlaySongTitle.setText((musicFile.getName().replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", ""))+" by "+musicFile.getArtist());
     }
     public void initialize_reverb() {
+        //Reseting reverb instance is not null
+        if (reverb != null) {
+            reverb.release();
+        }
         int current_id = player.getAudioSessionId();
         if (current_id == session_id && current_id != 0) {
-            reverb = new PresetReverb(0, current_id);
+            reverb = new EnvironmentalReverb(0, current_id);
             reverb.setEnabled(true);
         } else {
             ;
@@ -402,6 +484,7 @@ public class MediaOverlay extends Fragment {
     //This function opens a new overlay
     //This function opens the playback handling overlay
     public void open_new_overlay(MusicFile musicFile, int position) {
+        //Resetting if not null
         if (reverb != null) {
             reverb.release();
         }
@@ -410,6 +493,10 @@ public class MediaOverlay extends Fragment {
         bundle.putParcelable("song", musicFile);
         bundle.putInt("position", position);
         bundle.putBoolean("is_looping", is_looping);
+        bundle.putBoolean("shuffle_on", shuffle_on);
+        bundle.putFloat("song_speed", song_speed);
+        bundle.putFloat("song_pitch", song_pitch);
+        bundle.putInt("reverb_level", reverb_level);
         media_page.setArguments(bundle);
         FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
@@ -420,7 +507,6 @@ public class MediaOverlay extends Fragment {
     //This function sets up speed manager seek bar
     public void set_up_speed_and_pitch() {
         // SeekBar for Speed
-        SeekBar seekBarSpeed = view.findViewById(R.id.seekBarSpeed);
         seekBarSpeed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -430,6 +516,7 @@ public class MediaOverlay extends Fragment {
                 song_speed = speed;
                 speed_text.setText(String.format("Speed + pitch: %.1fx", speed)); // Update the speed text
                 player.setPlaybackParameters(new PlaybackParameters(song_speed, song_pitch));
+                seekBarSpeed.setProgress(progress);
             }
 
             @Override
@@ -445,15 +532,12 @@ public class MediaOverlay extends Fragment {
     public void set_up_reverb() {
         // Initialize PresetReverb
        initialize_reverb();
-        // SeekBar for Pitch
-        SeekBar seekBarReverb = view.findViewById(R.id.seekBarReverb);
-        seekBarReverb.setMax(100);
-        seekBarReverb.setProgress(0);
         seekBarReverb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 //Set reverb parameters
                 setReverbPreset(progress);
+                seekBar.setProgress(progress);
             }
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
@@ -466,24 +550,17 @@ public class MediaOverlay extends Fragment {
     }
     //This function sets reverb level based on seekbar progress level
     private void setReverbPreset(int progress) {
-        short preset;
-        // Map SeekBar progress to reverb presets
-        if (progress < 20) {
-            preset = PresetReverb.PRESET_NONE;
-        } else if (progress < 40) {
-            preset = PresetReverb.PRESET_SMALLROOM;
-        } else if (progress < 60) {
-            preset = PresetReverb.PRESET_MEDIUMROOM;
-        } else if (progress < 80) {
-            preset = PresetReverb.PRESET_LARGEROOM;
-        } else if (progress < 90) {
-            preset = PresetReverb.PRESET_MEDIUMHALL;
-        } else {
-            preset = PresetReverb.PRESET_LARGEHALL;
-        }
-        reverb.setPreset(preset);
+        //Computing reverberation parameters based of reverb level data proportionality
+        int room_level = -2000 + (progress + 1000);
+        double decay_level = 10000;
+        reverb.setReverbLevel((short) progress);
+        reverb.setDecayTime((int) decay_level);
+        reverb.setRoomLevel((short) room_level);
+        //Estimating percentage of seekbar complete
+        double percentage = ((double) (progress+1000) / 2000) * 100;
         reverb.setEnabled(true);
-        reverb_text.setText("Reverberation: "+preset*10+"%");
+        reverb_level = progress;
+        reverb_text.setText("Reverberation: "+(int) percentage / 2+"%");
     }
 
     @Override
