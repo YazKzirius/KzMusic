@@ -11,6 +11,7 @@ public class PlayerManager {
 
     private static PlayerManager instance;
     private final List<ExoPlayer> playerList;
+    ExoPlayer current_player;
     private final List<PlayerApi> Spotify_playerList;
 
     private PlayerManager() {
@@ -38,5 +39,12 @@ public class PlayerManager {
         for (ExoPlayer player : playerList) {
             player.stop();
         }
+    }
+    public int get_size() {
+        return playerList.size();
+    }
+
+    public void setCurrent_player(ExoPlayer current_player) {
+        this.current_player = current_player;
     }
 }

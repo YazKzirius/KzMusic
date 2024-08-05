@@ -25,15 +25,26 @@
             android:layout_centerHorizontal="true"
             android:textColor="@color/white"
             android:textSize="20sp" />
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp">
 
-        <com.example.kzmusic.CircularImageViewWithBeatTracker
-            android:id="@+id/musicImage"
-            android:layout_width="200dp"
-            android:layout_height="200dp"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="10dp"
-            android:scaleType="centerCrop"
-            android:src="@drawable/ic_library" />
+            <ImageView
+                android:id="@+id/musicImage"
+                android:layout_width="140dp"
+                android:layout_height="140dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_library" />
+
+            <ImageView
+                android:layout_width="220dp"
+                android:layout_height="220dp"
+                android:id="@+id/song_playing_gif"
+                android:layout_gravity="center"/>
+
+        </FrameLayout>
+
 
         <LinearLayout
             android:layout_width="match_parent"

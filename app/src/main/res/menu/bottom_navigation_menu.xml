@@ -17,7 +17,7 @@
         android:title="Library" />
     <item
         android:id="@+id/nav_account"
-        android:icon="@drawable/account"
+        android:icon="@drawable/ic_settings"
         android:iconTint="#090909"
         android:title="User Settings" />
 </menu>

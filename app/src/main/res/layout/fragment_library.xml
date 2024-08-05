@@ -20,5 +20,53 @@
             android:src="@drawable/logo" />
 
     </LinearLayout>
+    <RelativeLayout
+        android:id="@+id/playback_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:padding="10dp"
+        android:background="@color/black">
+
+        <ImageView
+            android:id="@+id/current_song_art"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@drawable/ic_library"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="10dp"/>
+
+        <TextView
+            android:id="@+id/current_song_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Untitled"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:layout_toEndOf="@id/current_song_art"
+            android:layout_alignParentTop="true"/>
+
+        <TextView
+            android:id="@+id/current_song_artist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Untitled"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:layout_toEndOf="@id/current_song_art"
+            android:layout_below="@id/current_song_title"/>
+
+        <ImageButton
+            android:id="@+id/play_pause_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_pause"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="10dp"
+            android:background="?attr/selectableItemBackground"/>
+
+    </RelativeLayout>
 
 </FrameLayout>

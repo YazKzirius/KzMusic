@@ -14,6 +14,7 @@ import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.net.Uri;
@@ -26,6 +27,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import android.widget.ImageButton;
+import com.bumptech.glide.Glide;
 import android.widget.Toast;
 
 /**
@@ -68,7 +70,8 @@ public class MediaOverlay extends Fragment {
     private TextView reverb_text;
     private EnvironmentalReverb reverb;
     private TextView textCurrentTime, textTotalDuration;
-    private CircularImageViewWithBeatTracker imageViewWithBeatTracker;
+    private ImageView album_cover;
+    private ImageView song_gif;
     private Runnable beatRunnable;
     private Runnable runnable;
     private float[] beatLevels = new float[150];
@@ -113,6 +116,8 @@ public class MediaOverlay extends Fragment {
         //Implementing player functionality
         view = inflater.inflate(R.layout.fragment_media_overlay, container, false);
         overlaySongTitle = view.findViewById(R.id.songTitle);
+        album_cover = view.findViewById(R.id.musicImage);
+        song_gif = view.findViewById(R.id.song_playing_gif);
         btnPlayPause = view.findViewById(R.id.btnPlayPause);
         btnLoop = view.findViewById(R.id.btnLoop);
         btnSkip_left = view.findViewById(R.id.btnSkipLeft);
@@ -125,55 +130,28 @@ public class MediaOverlay extends Fragment {
         seekBarSpeed = view.findViewById(R.id.seekBarSpeed);
         textCurrentTime = view.findViewById(R.id.textCurrentTime);
         textTotalDuration = view.findViewById(R.id.textTotalDuration);
-        if (getArguments() != null) {
-            //Retrieving arguments from previous page
-            musicFile = getArguments().getParcelable("song");
-            position = getArguments().getInt("position");
-            is_looping = getArguments().getBoolean("is_looping");
-            shuffle_on = getArguments().getBoolean("shuffle_on");
-            song_speed = getArguments().getFloat("song_speed");
-            song_pitch = getArguments().getFloat("song_pitch");
-            reverb_level = getArguments().getInt("reverb_level");
-            //Handling the event of which user doesn't move seekbars
-            if (song_speed == 0 && song_speed == 0) {
-                song_speed = (float) 1;
-                song_pitch = (float) 1;
-            }
-            //Also handling for reverb seek bar as well
-            if (reverb_level == 0) {
-                reverb_level = -1000;
-            }
-            //If speed and pitch is zero, set it to neutral
-            if (musicFile != null) {
-                // Set song details
-                //This function sets up the circular view for a song with no album art
-                set_up_circular_view_blank(R.drawable.ic_library);
-                playMusic(musicFile);
-                //Setting up circular view with beats around for song with album art
-                set_up_circular_view(musicFile);
-                //Loading previous music files
-                loadMusicFiles();
-                //Setting up media buttons
-                set_up_media_buttons();
-                //Setting up seekbar
-                set_up_bar();
-                //Setting up speed+pitch seekbar
-                seekBarSpeed.setMax(200);
-                seekBarSpeed.setMin(50);
-                seekBarSpeed.setProgress((int)(song_speed*100));
-                set_up_speed_and_pitch();
-                //Setting up reverberation
-                //Setting reverb bar to lowest
-                seekBarReverb.setMax(1000);
-                seekBarReverb.setMin(-1000);
-                seekBarReverb.setProgress(reverb_level);
-                set_up_reverb();
-            } else {
-                ;
-            }
-        } else {
-            ;
-        }
+        //Retrieving data from song queue
+        musicFile = SongQueue.getInstance().current_song;
+        position = SongQueue.getInstance().current_position;
+        is_looping = SongQueue.getInstance().is_looping;
+        shuffle_on = SongQueue.getInstance().shuffle_on;
+        song_speed = SongQueue.getInstance().speed;
+        song_pitch = SongQueue.getInstance().pitch;
+        reverb_level = SongQueue.getInstance().reverb_level;
+        //Playing music
+        playMusic(musicFile);
+        //Setting up circular view with beats around for song with album art
+        set_up_circular_view(musicFile);
+        //Loading previous music files
+        loadMusicFiles();
+        //Setting up media buttons
+        set_up_media_buttons();
+        //Setting up seekbar
+        set_up_bar();
+        //Setting up speed+pitch seekbar functionality
+        set_up_speed_and_pitch();
+        //Setting up reverberation seekbar functionality
+        set_up_reverb();
         return view;
     }
     //This function sets up music image view
@@ -181,53 +159,24 @@ public class MediaOverlay extends Fragment {
         // Load album image
         Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
         Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(file.getAlbumId()));
-        imageViewWithBeatTracker = view.findViewById(R.id.musicImage);
-        // Load image using Glide
-        imageViewWithBeatTracker.loadImage(album_uri);
-        // Example: Update beat levels every 500ms
-        beatRunnable = new Runnable() {
-            @Override
-            public void run() {
-                // Generate random beat levels for demonstration
-                for (int i = 0; i < beatLevels.length; i++) {
-                    beatLevels[i] = (float) Math.random();
-                }
-                imageViewWithBeatTracker.updateBeatLevels(beatLevels);
-                handler.postDelayed(this, 100);
-            }
-        };
-        handler.post(beatRunnable);
+        Glide.with(getContext()).asBitmap().load(album_uri).circleCrop().into(album_cover);
+        Glide.with(getContext()).asGif().load(R.drawable.media_playing).circleCrop().into(song_gif);
     }
-    //This function sets up circular view with beats for blank album art
-    public void set_up_circular_view_blank(int Id) {
-        // Load album image
-        imageViewWithBeatTracker = view.findViewById(R.id.musicImage);
-        // Load image using Glide
-        imageViewWithBeatTracker.loadImageResource(Id);
-        // Example: Update beat levels every 500ms
-        beatRunnable = new Runnable() {
-            @Override
-            public void run() {
-                // Generate random beat levels for demonstration
-                for (int i = 0; i < beatLevels.length; i++) {
-                    beatLevels[i] = (float) Math.random();
-                }
-                imageViewWithBeatTracker.updateBeatLevels(beatLevels);
-                handler.postDelayed(this, 100);
-            }
-        };
-        handler.post(beatRunnable);
-    }
+
     //This function sets up and implements button functionality
     public void set_up_media_buttons() {
         //Pause/play functionality
         btnPlayPause.setOnClickListener(v -> {
             if (player.isPlaying()) {
                 player.pause();
+                // Stop the GIF by clearing the ImageView
+                Glide.with(getContext()).clear(song_gif);
+                song_gif.setImageDrawable(null);
                 btnPlayPause.setImageResource(R.drawable.ic_play);
             } else {
                 player.play();
                 btnPlayPause.setImageResource(R.drawable.ic_pause);
+                set_up_circular_view(musicFile);
             }
         });
         //Loop functionality
@@ -235,10 +184,12 @@ public class MediaOverlay extends Fragment {
         if (is_looping == true) {
             //Setting repeat mode on and replacing icon
             player.setRepeatMode(ExoPlayer.REPEAT_MODE_ONE);
+            SongQueue.getInstance().setIs_looping(true);
             btnLoop.setImageResource(R.drawable.ic_loop_on);
         } else {
             //Setting repeat mode off and replacing icon
             player.setRepeatMode(ExoPlayer.REPEAT_MODE_OFF);
+            SongQueue.getInstance().setIs_looping(false);
             btnLoop.setImageResource(R.drawable.ic_loop);
         }
         //Loop button click functionality
@@ -246,9 +197,11 @@ public class MediaOverlay extends Fragment {
             is_looping = !is_looping;
             if (is_looping == true) {
                 player.setRepeatMode(ExoPlayer.REPEAT_MODE_ONE);
+                SongQueue.getInstance().setIs_looping(true);
                 btnLoop.setImageResource(R.drawable.ic_loop_on);
             } else {
                 player.setRepeatMode(ExoPlayer.REPEAT_MODE_OFF);
+                SongQueue.getInstance().setIs_looping(false);
                 btnLoop.setImageResource(R.drawable.ic_loop);
             }
         });
@@ -270,7 +223,9 @@ public class MediaOverlay extends Fragment {
                     position = rand.nextInt(musicFiles.size());
                 }
                 musicFile = musicFiles.get(position);
-                open_new_overlay(musicFile, position);
+                SongQueue.getInstance().addSong(musicFile);
+                SongQueue.getInstance().setPosition(position);
+                open_new_overlay();
             }
         });
         btnSkip_right.setOnClickListener(new View.OnClickListener() {
@@ -289,16 +244,18 @@ public class MediaOverlay extends Fragment {
                     position = rand.nextInt(musicFiles.size());
                 }
                 musicFile = musicFiles.get(position);
-                open_new_overlay(musicFile, position);
+                open_new_overlay();
             }
         });
         //Implementing shuffle button functionality
         //If loop was on previously, keep loop on otherwise, continue
         if (shuffle_on == true) {
             //Setting repeat mode on and replacing icon
+            SongQueue.getInstance().setShuffle_on(true);
             btnShuffle.setImageResource(R.drawable.ic_shuffle_on);
         } else {
             //Setting repeat mode off and replacing icon
+            SongQueue.getInstance().setShuffle_on(false);
             btnShuffle.setImageResource(R.drawable.ic_shuffle);
         }
         btnShuffle.setOnClickListener(new View.OnClickListener() {
@@ -307,9 +264,11 @@ public class MediaOverlay extends Fragment {
                 shuffle_on = !shuffle_on;
                 if (shuffle_on == true) {
                     //Setting repeat mode on and replacing icon
+                    SongQueue.getInstance().setShuffle_on(true);
                     btnShuffle.setImageResource(R.drawable.ic_shuffle_on);
                 } else {
                     //Setting repeat mode off and replacing icon
+                    SongQueue.getInstance().setShuffle_on(false);
                     btnShuffle.setImageResource(R.drawable.ic_shuffle);
                 }
             }
@@ -352,6 +311,7 @@ public class MediaOverlay extends Fragment {
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (fromUser) {
                     player.seekTo(progress);
+                    SongQueue.getInstance().setCurrent_time(player.getCurrentPosition());
                 }
             }
 
@@ -371,22 +331,52 @@ public class MediaOverlay extends Fragment {
         //Stops all players before playing new song
         PlayerManager.getInstance().stopAllPlayers();
         Uri uri = Uri.fromFile(new File(musicFile.getPath()));
+        MediaItem mediaItem = MediaItem.fromUri(uri);
+        // Set song details
         player = new ExoPlayer.Builder(getContext()).build();
         session_id = player.getAudioSessionId();
-        MediaItem mediaItem = MediaItem.fromUri(uri);
         player.setMediaItem(mediaItem);
         player.prepare();
-        //Setting playback speed
+        //Applying audio effects
+        apply_audio_effect();
+        String display_title = musicFile.getName().replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", "")+" by "+musicFile.getArtist();
+        player.play();
+        //Playing resuming song at previous duration if the same song as last
+        if (SongQueue.getInstance().get_size() > 1) {
+            int index = SongQueue.getInstance().pointer- 1;
+            //Getting current and previous song names
+            String s1 = SongQueue.getInstance().get_specified(index).getName();
+            String s2 = SongQueue.getInstance().get_specified(index-1).getName();
+            if (s1.equals(s2)) {
+                //Resuming at left point
+                player.seekTo(SongQueue.getInstance().current_time);
+                seekBar.setProgress((int) SongQueue.getInstance().current_time);
+            }
+        }
+        //Adds player to Player session manager
+        PlayerManager.getInstance().addPlayer(player);
+        PlayerManager.getInstance().setCurrent_player(player);
+        overlaySongTitle.setText(display_title);
+    }
+    //This function assigns audio effects to the exoplayer like speed/reverb
+    public void apply_audio_effect() {
+        //Setting playback speed properties
         player.setPlaybackParameters(new PlaybackParameters(song_speed, song_pitch));
         speed_text.setText(String.format("Speed + pitch: %.1fx", song_speed));
+        //Setting up speed+pitch seekbar
+        seekBarSpeed.setMax(200);
+        seekBarSpeed.setMin(50);
+        seekBarSpeed.setProgress((int)(song_speed*100));
         //Setting reverberation properties
         initialize_reverb();
         setReverbPreset(reverb_level);
-        player.play();
-        //Adds player to Player session manager
-        PlayerManager.getInstance().addPlayer(player);
-        overlaySongTitle.setText((musicFile.getName().replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", ""))+" by "+musicFile.getArtist());
+        //Setting reverb bar to lowest
+        seekBarReverb.setMax(1000);
+        seekBarReverb.setMin(-1000);
+        seekBarReverb.setProgress(reverb_level);
     }
+
+    //This function implements reverb settings initialisation
     public void initialize_reverb() {
         //Reseting reverb instance is not null
         if (reverb != null) {
@@ -409,6 +399,7 @@ public class MediaOverlay extends Fragment {
                 if (player != null && player.isPlaying()) {
                     seekBar.setProgress((int) player.getCurrentPosition());
                     textCurrentTime.setText(formatTime(player.getCurrentPosition()));
+                    SongQueue.getInstance().setCurrent_time(player.getCurrentPosition());
                     handler.postDelayed(this, 1000);
                 }
             }
@@ -483,25 +474,18 @@ public class MediaOverlay extends Fragment {
     }
     //This function opens a new overlay
     //This function opens the playback handling overlay
-    public void open_new_overlay(MusicFile musicFile, int position) {
+    public void open_new_overlay() {
         //Resetting if not null
         if (reverb != null) {
             reverb.release();
         }
+        //Adding new song to queue
+        SongQueue.getInstance().addSong(musicFile);
+        SongQueue.getInstance().setPosition(position);
         Fragment media_page = new MediaOverlay();
-        Bundle bundle = new Bundle();
-        bundle.putParcelable("song", musicFile);
-        bundle.putInt("position", position);
-        bundle.putBoolean("is_looping", is_looping);
-        bundle.putBoolean("shuffle_on", shuffle_on);
-        bundle.putFloat("song_speed", song_speed);
-        bundle.putFloat("song_pitch", song_pitch);
-        bundle.putInt("reverb_level", reverb_level);
-        media_page.setArguments(bundle);
         FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.fragment_container, media_page);
-        fragmentTransaction.addToBackStack(null);
         fragmentTransaction.commit();
     }
     //This function sets up speed manager seek bar
@@ -517,6 +501,8 @@ public class MediaOverlay extends Fragment {
                 speed_text.setText(String.format("Speed + pitch: %.1fx", speed)); // Update the speed text
                 player.setPlaybackParameters(new PlaybackParameters(song_speed, song_pitch));
                 seekBarSpeed.setProgress(progress);
+                SongQueue.getInstance().setSpeed(song_speed);
+                SongQueue.getInstance().setPitch(song_pitch);
             }
 
             @Override
@@ -530,14 +516,11 @@ public class MediaOverlay extends Fragment {
     }
     //This function sets up pitch manager seek bar
     public void set_up_reverb() {
-        // Initialize PresetReverb
-       initialize_reverb();
         seekBarReverb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 //Set reverb parameters
                 setReverbPreset(progress);
-                seekBar.setProgress(progress);
             }
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
@@ -561,8 +544,9 @@ public class MediaOverlay extends Fragment {
         reverb.setEnabled(true);
         reverb_level = progress;
         reverb_text.setText("Reverberation: "+(int) percentage / 2+"%");
+        seekBar.setProgress(progress);
+        SongQueue.getInstance().setReverb_level(reverb_level);
     }
-
     @Override
     public void onDestroy() {
         super.onDestroy();
