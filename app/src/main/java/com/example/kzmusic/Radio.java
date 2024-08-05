@@ -57,6 +57,7 @@ public class Radio extends Fragment {
     RecyclerView recyclerView;
     MusicAdapter musicAdapter;
     SpotifyAppRemote mSpotifyAppRemote;
+    PlayerApi player;
     String accesstoken;
     View view;
     Boolean has_premium;
@@ -117,9 +118,17 @@ public class Radio extends Fragment {
             @Override
             public void onItemClick(SearchResponse.Track track){
                 Toast.makeText(getContext(),"Playing Songs Similar to: "+track.getName(),Toast.LENGTH_SHORT).show();
-                //Stopping all players, so no playback overlap
-                PlayerManager.getInstance().stopAllPlayers();
-                play_track(track.getUri());
+                //Pausing current player, so no playback overlap
+                if (PlayerManager.getInstance().get_size() > 0) {
+                    PlayerManager.getInstance().current_player.pause();
+                    btnPlayPause.setImageResource(R.drawable.ic_play);
+                    play_track(track.getUri());
+                } else {
+                    play_track(track.getUri());
+                }
+                if (PlayerManager.getInstance().spotify_playing != null) {
+                    set_up_spotify_play();
+                }
             }
         });
         recyclerView.setAdapter(musicAdapter);
@@ -155,7 +164,7 @@ public class Radio extends Fragment {
     @Override
     public void onStop() {
         super.onStop();
-        SpotifyAppRemote.disconnect(mSpotifyAppRemote);
+        ;
     }
     //This function searches for random music using API queries and updates the current tracklist
     public void display_random_music(String token) {
@@ -182,7 +191,7 @@ public class Radio extends Fragment {
     //These functions handle song playback
     private void play_track(String uri) {
         if (mSpotifyAppRemote != null) {
-            PlayerApi player = mSpotifyAppRemote.getPlayerApi();
+            player = mSpotifyAppRemote.getPlayerApi();
             player.play(uri);
             player.subscribeToPlayerState()
                     .setEventCallback(new Subscription.EventCallback<PlayerState>() {
@@ -191,7 +200,26 @@ public class Radio extends Fragment {
                             final Track track = playerState.track;
                         }
                     });
+            //Adding player to manager
+            PlayerManager.getInstance().addSpotifyPlayer(player);
+            PlayerManager.getInstance().setSpotify_player(player);
+            PlayerManager.getInstance().setCurrent_remote(mSpotifyAppRemote);
         }
+    }
+    //This function handles Spotify overlay play/pause
+    public void set_up_spotify_play() {
+        player.subscribeToPlayerState()
+                .setEventCallback(new Subscription.EventCallback<PlayerState>() {
+                    @Override
+                    public void onEvent(PlayerState playerState) {
+                        if (playerState.isPaused) {
+                            ;
+                        } else {
+                            PlayerManager.getInstance().current_player.pause();
+                            btnPlayPause.setImageResource(R.drawable.ic_play);
+                        }
+                    }
+                });
     }
     //This function assigns data from playback overlay to bottom navigation
     public void set_up_play_bar() {
@@ -247,6 +275,7 @@ public class Radio extends Fragment {
                             PlayerManager.getInstance().current_player.pause();
                             btnPlayPause.setImageResource(R.drawable.ic_play);
                         } else {
+                            player.pause();
                             PlayerManager.getInstance().current_player.play();
                             btnPlayPause.setImageResource(R.drawable.ic_pause);
                         }
@@ -262,6 +291,7 @@ public class Radio extends Fragment {
     //This function opens a new song overlay
     public void open_new_overlay(MusicFile file, int position) {
         //Adding song to queue
+        player.pause();
         SongQueue.getInstance().addSong(file);
         SongQueue.getInstance().setPosition(position);
         Fragment media_page = new MediaOverlay();

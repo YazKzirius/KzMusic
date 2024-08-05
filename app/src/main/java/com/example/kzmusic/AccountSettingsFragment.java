@@ -19,6 +19,8 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.spotify.protocol.client.Subscription;
+import com.spotify.protocol.types.PlayerState;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -88,13 +90,33 @@ public class AccountSettingsFragment extends Fragment {
         btnPlayPause = view.findViewById(R.id.play_pause_button);
         playback_bar = view.findViewById(R.id.playback_bar);
         //Setting up bottom playback navigator
-        set_up_play_bar();
+        if (PlayerManager.getInstance().spotify_player != null && PlayerManager.getInstance().current_player != null) {
+            set_up_spotify_play();
+            set_up_play_bar();
+        } else {
+            set_up_play_bar();
+        }
         return view;
     }
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         ;
+    }
+    //This function handles Spotify overlay play/pause
+    public void set_up_spotify_play() {
+        PlayerManager.getInstance().spotify_player.subscribeToPlayerState()
+                .setEventCallback(new Subscription.EventCallback<PlayerState>() {
+                    @Override
+                    public void onEvent(PlayerState playerState) {
+                        if (playerState.isPaused) {
+                            ;
+                        } else {
+                            PlayerManager.getInstance().current_player.pause();
+                            btnPlayPause.setImageResource(R.drawable.ic_play);
+                        }
+                    }
+                });
     }
     //This function assigns data from playback overlay to bottom navigation
     public void set_up_play_bar() {
@@ -150,6 +172,9 @@ public class AccountSettingsFragment extends Fragment {
                             PlayerManager.getInstance().current_player.pause();
                             btnPlayPause.setImageResource(R.drawable.ic_play);
                         } else {
+                            if (PlayerManager.getInstance().spotify_player != null) {
+                                PlayerManager.getInstance().spotify_player.pause();
+                            }
                             PlayerManager.getInstance().current_player.play();
                             btnPlayPause.setImageResource(R.drawable.ic_pause);
                         }

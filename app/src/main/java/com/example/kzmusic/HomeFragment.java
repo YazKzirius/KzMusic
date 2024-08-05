@@ -11,6 +11,8 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import com.bumptech.glide.Glide;
+import com.spotify.protocol.client.Subscription;
+import com.spotify.protocol.types.PlayerState;
 
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -100,8 +102,14 @@ public class HomeFragment extends Fragment {
         text2.setText(username+" music:");
         if (getArguments() != null) {
             accesstoken = getArguments().getString("Token");
-        }//Setting up bottom playback navigator
-        set_up_play_bar();
+        }
+        //Setting up bottom playback navigator
+        if (PlayerManager.getInstance().spotify_player != null && PlayerManager.getInstance().current_player != null) {
+            set_up_spotify_play();
+            set_up_play_bar();
+        } else {
+            set_up_play_bar();
+        }
         return view;
     }
     //This function sets up the two image buttons on the homepage
@@ -130,6 +138,21 @@ public class HomeFragment extends Fragment {
                 fragmentTransaction.commit();
             }
         });
+    }
+    //This function handles Spotify overlay play/pause
+    public void set_up_spotify_play() {
+        PlayerManager.getInstance().spotify_player.subscribeToPlayerState()
+                .setEventCallback(new Subscription.EventCallback<PlayerState>() {
+                    @Override
+                    public void onEvent(PlayerState playerState) {
+                        if (playerState.isPaused) {
+                            ;
+                        } else {
+                            PlayerManager.getInstance().current_player.pause();
+                            btnPlayPause.setImageResource(R.drawable.ic_play);
+                        }
+                    }
+                });
     }
     //This function assigns data from playback overlay to bottom navigation
     public void set_up_play_bar() {
@@ -185,6 +208,9 @@ public class HomeFragment extends Fragment {
                             PlayerManager.getInstance().current_player.pause();
                             btnPlayPause.setImageResource(R.drawable.ic_play);
                         } else {
+                            if (PlayerManager.getInstance().spotify_player != null) {
+                                PlayerManager.getInstance().spotify_player.pause();
+                            }
                             PlayerManager.getInstance().current_player.play();
                             btnPlayPause.setImageResource(R.drawable.ic_pause);
                         }

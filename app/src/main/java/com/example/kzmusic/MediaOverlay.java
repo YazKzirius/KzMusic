@@ -18,6 +18,9 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.net.Uri;
+import com.spotify.protocol.client.Subscription;
+import com.spotify.protocol.types.PlayerState;
+import com.spotify.android.appremote.api.SpotifyAppRemote;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.PlaybackParameters;
@@ -113,6 +116,10 @@ public class MediaOverlay extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
+        //Pausing spotify player if song is currently playing, to elimnate overlap
+        if (PlayerManager.getInstance().spotify_player != null) {
+            PlayerManager.getInstance().spotify_player.pause();
+        }
         //Implementing player functionality
         view = inflater.inflate(R.layout.fragment_media_overlay, container, false);
         overlaySongTitle = view.findViewById(R.id.songTitle);
@@ -152,6 +159,10 @@ public class MediaOverlay extends Fragment {
         set_up_speed_and_pitch();
         //Setting up reverberation seekbar functionality
         set_up_reverb();
+        //Setting up spotify play buttons
+        if (PlayerManager.getInstance().spotify_player != null) {
+            set_up_spotify_play();
+        }
         return view;
     }
     //This function sets up music image view
@@ -546,6 +557,21 @@ public class MediaOverlay extends Fragment {
         reverb_text.setText("Reverberation: "+(int) percentage / 2+"%");
         seekBar.setProgress(progress);
         SongQueue.getInstance().setReverb_level(reverb_level);
+    }
+    //This function handles Spotify overlay play/pause
+    public void set_up_spotify_play() {
+        PlayerManager.getInstance().spotify_player.subscribeToPlayerState()
+                .setEventCallback(new Subscription.EventCallback<PlayerState>() {
+                    @Override
+                    public void onEvent(PlayerState playerState) {
+                        if (playerState.isPaused) {
+                            ;
+                        } else {
+                            player.pause();
+                            btnPlayPause.setImageResource(R.drawable.ic_play);
+                        }
+                    }
+                });
     }
     @Override
     public void onDestroy() {

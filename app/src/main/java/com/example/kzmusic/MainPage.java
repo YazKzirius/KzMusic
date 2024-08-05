@@ -9,6 +9,8 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.spotify.android.appremote.api.SpotifyAppRemote;
+
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -98,5 +100,12 @@ public class MainPage extends AppCompatActivity {
         AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
         alarmManager.set(AlarmManager.RTC_WAKEUP, refreshTime, pendingIntent);
+    }
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (PlayerManager.getInstance().spotify_playing != null) {
+            SpotifyAppRemote.disconnect(PlayerManager.getInstance().current_remote);
+        }
     }
 }
