@@ -293,7 +293,9 @@ public class Radio extends Fragment {
     //This function opens a new song overlay
     public void open_new_overlay(MusicFile file, int position) {
         //Adding song to queue
-        player.pause();
+        if (player != null) {
+            player.pause();
+        }
         SongQueue.getInstance().addSong(file);
         SongQueue.getInstance().setPosition(position);
         Fragment media_page = new MediaOverlay();
