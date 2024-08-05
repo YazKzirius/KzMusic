@@ -354,7 +354,9 @@ public class SearchFragment extends Fragment {
                             PlayerManager.getInstance().current_player.pause();
                             btnPlayPause.setImageResource(R.drawable.ic_play);
                         } else {
-                            player.pause();
+                            if (player != null) {
+                                player.pause();
+                            }
                             PlayerManager.getInstance().current_player.play();
                             btnPlayPause.setImageResource(R.drawable.ic_pause);
                         }
