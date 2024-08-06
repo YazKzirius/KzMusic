@@ -28,6 +28,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.spotify.protocol.client.Subscription;
+import com.spotify.protocol.types.PlayerState;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -114,6 +116,7 @@ public class UserMusic extends Fragment {
         }
         musicAdapter.notifyDataSetChanged();
         //Setting up bottom playback navigator
+        set_up_spotify_play();
         set_up_play_bar();
         return view;
     }
@@ -209,6 +212,9 @@ public class UserMusic extends Fragment {
             //Implementing pause button functionality
             if (PlayerManager.getInstance().get_size() > 0) {
                 if (PlayerManager.getInstance().current_player.isPlaying()) {
+                    if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
+                        SpotifyPlayerLife.getInstance().pause_playback();
+                    }
                     btnPlayPause.setImageResource(R.drawable.ic_pause);
                 } else {
                     btnPlayPause.setImageResource(R.drawable.ic_play);
@@ -224,6 +230,9 @@ public class UserMusic extends Fragment {
                             btnPlayPause.setImageResource(R.drawable.ic_play);
                         } else {
                             PlayerManager.getInstance().current_player.play();
+                            if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
+                                SpotifyPlayerLife.getInstance().pause_playback();
+                            }
                             btnPlayPause.setImageResource(R.drawable.ic_pause);
                         }
                     } else {
@@ -245,5 +254,25 @@ public class UserMusic extends Fragment {
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.fragment_container, media_page);
         fragmentTransaction.commit();
+    }
+    //This function handles Spotify overlay play/pause
+    public void set_up_spotify_play() {
+        if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
+            SpotifyPlayerLife.getInstance().mSpotifyAppRemote.getPlayerApi().subscribeToPlayerState().setEventCallback(new Subscription.EventCallback<PlayerState>() {
+                @Override
+                public void onEvent(PlayerState playerState) {
+                    if (playerState.isPaused) {
+                        ;
+                    } else {
+                        btnPlayPause.setImageResource(R.drawable.ic_play);
+                        if (PlayerManager.getInstance().current_player != null) {
+                            PlayerManager.getInstance().current_player.pause();
+                        } else {
+                            ;
+                        }
+                    }
+                }
+            });
+        }
     }
 }

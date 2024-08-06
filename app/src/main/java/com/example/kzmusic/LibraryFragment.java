@@ -88,33 +88,14 @@ public class LibraryFragment extends Fragment {
         btnPlayPause = view.findViewById(R.id.play_pause_button);
         playback_bar = view.findViewById(R.id.playback_bar);
         //Setting up bottom playback navigator
-        if (PlayerManager.getInstance().spotify_player != null && PlayerManager.getInstance().current_player != null) {
-            set_up_spotify_play();
-            set_up_play_bar();
-        } else {
-            set_up_play_bar();
-        }
+        set_up_spotify_play();
+        set_up_play_bar();
         return view;
     }
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         ;
-    }
-    //This function handles Spotify overlay play/pause
-    public void set_up_spotify_play() {
-        PlayerManager.getInstance().spotify_player.subscribeToPlayerState()
-                .setEventCallback(new Subscription.EventCallback<PlayerState>() {
-                    @Override
-                    public void onEvent(PlayerState playerState) {
-                        if (playerState.isPaused) {
-                            ;
-                        } else {
-                            PlayerManager.getInstance().current_player.pause();
-                            btnPlayPause.setImageResource(R.drawable.ic_play);
-                        }
-                    }
-                });
     }
     //This function assigns data from playback overlay to bottom navigation
     public void set_up_play_bar() {
@@ -156,6 +137,9 @@ public class LibraryFragment extends Fragment {
             //Implementing pause button functionality
             if (PlayerManager.getInstance().get_size() > 0) {
                 if (PlayerManager.getInstance().current_player.isPlaying()) {
+                    if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
+                        SpotifyPlayerLife.getInstance().pause_playback();
+                    }
                     btnPlayPause.setImageResource(R.drawable.ic_pause);
                 } else {
                     btnPlayPause.setImageResource(R.drawable.ic_play);
@@ -170,10 +154,10 @@ public class LibraryFragment extends Fragment {
                             PlayerManager.getInstance().current_player.pause();
                             btnPlayPause.setImageResource(R.drawable.ic_play);
                         } else {
-                            if (PlayerManager.getInstance().spotify_player != null) {
-                                PlayerManager.getInstance().spotify_player.pause();
-                            }
                             PlayerManager.getInstance().current_player.play();
+                            if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
+                                SpotifyPlayerLife.getInstance().pause_playback();
+                            }
                             btnPlayPause.setImageResource(R.drawable.ic_pause);
                         }
                     } else {
@@ -195,5 +179,25 @@ public class LibraryFragment extends Fragment {
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.fragment_container, media_page);
         fragmentTransaction.commit();
+    }
+    //This function handles Spotify overlay play/pause
+    public void set_up_spotify_play() {
+        if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
+            SpotifyPlayerLife.getInstance().mSpotifyAppRemote.getPlayerApi().subscribeToPlayerState().setEventCallback(new Subscription.EventCallback<PlayerState>() {
+                @Override
+                public void onEvent(PlayerState playerState) {
+                    if (playerState.isPaused) {
+                        ;
+                    } else {
+                        btnPlayPause.setImageResource(R.drawable.ic_play);
+                        if (PlayerManager.getInstance().current_player != null) {
+                            PlayerManager.getInstance().current_player.pause();
+                        } else {
+                            ;
+                        }
+                    }
+                }
+            });
+        }
     }
 }

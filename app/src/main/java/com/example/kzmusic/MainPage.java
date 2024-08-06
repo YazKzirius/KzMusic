@@ -104,8 +104,6 @@ public class MainPage extends AppCompatActivity {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (PlayerManager.getInstance().spotify_playing != null) {
-            SpotifyAppRemote.disconnect(PlayerManager.getInstance().current_remote);
-        }
+        SpotifyPlayerLife.getInstance().stopPlaybackAndDisconnect();
     }
 }

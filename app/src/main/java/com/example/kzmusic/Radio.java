@@ -117,55 +117,26 @@ public class Radio extends Fragment {
         musicAdapter=new MusicAdapter(trackList,getContext(),new MusicAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(SearchResponse.Track track){
-                Toast.makeText(getContext(),"Playing Songs Similar to: "+track.getName(),Toast.LENGTH_SHORT).show();
                 //Pausing current player, so no playback overlap
                 if (PlayerManager.getInstance().get_size() > 0) {
                     PlayerManager.getInstance().current_player.pause();
                     btnPlayPause.setImageResource(R.drawable.ic_play);
-                    play_track(track.getUri());
+                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                    open_spotify_overlay();
                 } else {
-                    play_track(track.getUri());
-                }
-                if (PlayerManager.getInstance().spotify_playing != null) {
-                    set_up_spotify_play();
+                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                    open_spotify_overlay();
                 }
             }
         });
         recyclerView.setAdapter(musicAdapter);
         display_random_music(accesstoken);
         //Setting up bottom playback navigator
+        set_up_spotify_play();
         set_up_play_bar();
         return view;
     }
-    //These functions authenticate Spotify remote use
-    @Override
-    public void onStart() {
-        super.onStart();
-        ConnectionParams connectionParams = new ConnectionParams.Builder(CLIENT_ID)
-                .setRedirectUri(REDIRECT_URI)
-                .showAuthView(true)
-                .build();
 
-        SpotifyAppRemote.connect(getContext(), connectionParams,
-                new Connector.ConnectionListener() {
-                    @Override
-                    public void onConnected(SpotifyAppRemote spotifyAppRemote) {
-                        mSpotifyAppRemote = spotifyAppRemote;
-                        Log.d("SpotifyAppRemote", "Connected");
-                    }
-
-                    @Override
-                    public void onFailure(Throwable throwable) {
-                        Log.e("SpotifyAppRemote", throwable.getMessage(), throwable);
-                    }
-                });
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        ;
-    }
     //This function searches for random music using API queries and updates the current tracklist
     public void display_random_music(String token) {
         accesstoken = token;
@@ -187,39 +158,6 @@ public class Radio extends Fragment {
                 Toast.makeText(getContext(), "API call failed: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
-    }
-    //These functions handle song playback
-    private void play_track(String uri) {
-        if (mSpotifyAppRemote != null) {
-            player = mSpotifyAppRemote.getPlayerApi();
-            player.play(uri);
-            player.subscribeToPlayerState()
-                    .setEventCallback(new Subscription.EventCallback<PlayerState>() {
-                        @Override
-                        public void onEvent(PlayerState playerState) {
-                            final Track track = playerState.track;
-                        }
-                    });
-            //Adding player to manager
-            PlayerManager.getInstance().addSpotifyPlayer(player);
-            PlayerManager.getInstance().setSpotify_player(player);
-            PlayerManager.getInstance().setCurrent_remote(mSpotifyAppRemote);
-        }
-    }
-    //This function handles Spotify overlay play/pause
-    public void set_up_spotify_play() {
-        player.subscribeToPlayerState()
-                .setEventCallback(new Subscription.EventCallback<PlayerState>() {
-                    @Override
-                    public void onEvent(PlayerState playerState) {
-                        if (playerState.isPaused) {
-                            ;
-                        } else {
-                            PlayerManager.getInstance().current_player.pause();
-                            btnPlayPause.setImageResource(R.drawable.ic_play);
-                        }
-                    }
-                });
     }
     //This function assigns data from playback overlay to bottom navigation
     public void set_up_play_bar() {
@@ -262,6 +200,9 @@ public class Radio extends Fragment {
             if (PlayerManager.getInstance().get_size() > 0) {
                 if (PlayerManager.getInstance().current_player.isPlaying()) {
                     btnPlayPause.setImageResource(R.drawable.ic_pause);
+                    if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
+                        SpotifyPlayerLife.getInstance().pause_playback();
+                    }
                 } else {
                     btnPlayPause.setImageResource(R.drawable.ic_play);
                 }
@@ -275,8 +216,8 @@ public class Radio extends Fragment {
                             PlayerManager.getInstance().current_player.pause();
                             btnPlayPause.setImageResource(R.drawable.ic_play);
                         } else {
-                            if (player != null) {
-                                player.pause();
+                            if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
+                                SpotifyPlayerLife.getInstance().pause_playback();
                             }
                             PlayerManager.getInstance().current_player.play();
                             btnPlayPause.setImageResource(R.drawable.ic_pause);
@@ -289,6 +230,14 @@ public class Radio extends Fragment {
                 }
             });
         }
+    }
+    //This function opens Spotify player overlay
+    public void open_spotify_overlay() {
+        Fragment spotify_overlay = new SpotifyOverlay();
+        FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.replace(R.id.fragment_container, spotify_overlay);
+        fragmentTransaction.commit();
     }
     //This function opens a new song overlay
     public void open_new_overlay(MusicFile file, int position) {
@@ -303,5 +252,25 @@ public class Radio extends Fragment {
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.fragment_container, media_page);
         fragmentTransaction.commit();
+    }
+    //This function handles Spotify overlay play/pause
+    public void set_up_spotify_play() {
+        if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
+            SpotifyPlayerLife.getInstance().mSpotifyAppRemote.getPlayerApi().subscribeToPlayerState().setEventCallback(new Subscription.EventCallback<PlayerState>() {
+                @Override
+                public void onEvent(PlayerState playerState) {
+                    if (playerState.isPaused) {
+                        ;
+                    } else {
+                        btnPlayPause.setImageResource(R.drawable.ic_play);
+                        if (PlayerManager.getInstance().current_player != null) {
+                            PlayerManager.getInstance().current_player.pause();
+                        } else {
+                            ;
+                        }
+                    }
+                }
+            });
+        }
     }
 }

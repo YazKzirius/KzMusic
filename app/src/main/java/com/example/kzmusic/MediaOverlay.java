@@ -117,8 +117,8 @@ public class MediaOverlay extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         //Pausing spotify player if song is currently playing, to elimnate overlap
-        if (PlayerManager.getInstance().spotify_player != null) {
-            PlayerManager.getInstance().spotify_player.pause();
+        if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
+            SpotifyPlayerLife.getInstance().pause_playback();
         }
         //Implementing player functionality
         view = inflater.inflate(R.layout.fragment_media_overlay, container, false);
@@ -160,9 +160,6 @@ public class MediaOverlay extends Fragment {
         //Setting up reverberation seekbar functionality
         set_up_reverb();
         //Setting up spotify play buttons
-        if (PlayerManager.getInstance().spotify_player != null) {
-            set_up_spotify_play();
-        }
         return view;
     }
     //This function sets up music image view
@@ -234,8 +231,6 @@ public class MediaOverlay extends Fragment {
                     position = rand.nextInt(musicFiles.size());
                 }
                 musicFile = musicFiles.get(position);
-                SongQueue.getInstance().addSong(musicFile);
-                SongQueue.getInstance().setPosition(position);
                 open_new_overlay();
             }
         });
@@ -346,11 +341,15 @@ public class MediaOverlay extends Fragment {
         // Set song details
         player = new ExoPlayer.Builder(getContext()).build();
         session_id = player.getAudioSessionId();
+        String display_title = musicFile.getName().replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", "")+" by "+musicFile.getArtist();
         player.setMediaItem(mediaItem);
         player.prepare();
+        //Adds player to Player session manager
+        PlayerManager.getInstance().addPlayer(player);
+        PlayerManager.getInstance().setCurrent_player(player);
+        overlaySongTitle.setText(display_title);
         //Applying audio effects
         apply_audio_effect();
-        String display_title = musicFile.getName().replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", "")+" by "+musicFile.getArtist();
         player.play();
         //Playing resuming song at previous duration if the same song as last
         if (SongQueue.getInstance().get_size() > 1) {
@@ -364,10 +363,6 @@ public class MediaOverlay extends Fragment {
                 seekBar.setProgress((int) SongQueue.getInstance().current_time);
             }
         }
-        //Adds player to Player session manager
-        PlayerManager.getInstance().addPlayer(player);
-        PlayerManager.getInstance().setCurrent_player(player);
-        overlaySongTitle.setText(display_title);
     }
     //This function assigns audio effects to the exoplayer like speed/reverb
     public void apply_audio_effect() {
@@ -557,27 +552,5 @@ public class MediaOverlay extends Fragment {
         reverb_text.setText("Reverberation: "+(int) percentage / 2+"%");
         seekBar.setProgress(progress);
         SongQueue.getInstance().setReverb_level(reverb_level);
-    }
-    //This function handles Spotify overlay play/pause
-    public void set_up_spotify_play() {
-        PlayerManager.getInstance().spotify_player.subscribeToPlayerState()
-                .setEventCallback(new Subscription.EventCallback<PlayerState>() {
-                    @Override
-                    public void onEvent(PlayerState playerState) {
-                        if (playerState.isPaused) {
-                            ;
-                        } else {
-                            player.pause();
-                            btnPlayPause.setImageResource(R.drawable.ic_play);
-                        }
-                    }
-                });
-    }
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (reverb != null) {
-            reverb.release();
-        }
     }
 }

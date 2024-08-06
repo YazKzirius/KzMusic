@@ -103,13 +103,8 @@ public class HomeFragment extends Fragment {
         if (getArguments() != null) {
             accesstoken = getArguments().getString("Token");
         }
-        //Setting up bottom playback navigator
-        if (PlayerManager.getInstance().spotify_player != null && PlayerManager.getInstance().current_player != null) {
-            set_up_spotify_play();
-            set_up_play_bar();
-        } else {
-            set_up_play_bar();
-        }
+        set_up_spotify_play();
+        set_up_play_bar();
         return view;
     }
     //This function sets up the two image buttons on the homepage
@@ -139,21 +134,6 @@ public class HomeFragment extends Fragment {
             }
         });
     }
-    //This function handles Spotify overlay play/pause
-    public void set_up_spotify_play() {
-        PlayerManager.getInstance().spotify_player.subscribeToPlayerState()
-                .setEventCallback(new Subscription.EventCallback<PlayerState>() {
-                    @Override
-                    public void onEvent(PlayerState playerState) {
-                        if (playerState.isPaused) {
-                            ;
-                        } else {
-                            PlayerManager.getInstance().current_player.pause();
-                            btnPlayPause.setImageResource(R.drawable.ic_play);
-                        }
-                    }
-                });
-    }
     //This function assigns data from playback overlay to bottom navigation
     public void set_up_play_bar() {
         if (SongQueue.getInstance().songs_played.size() == 0) {
@@ -161,11 +141,7 @@ public class HomeFragment extends Fragment {
         } else {
             MusicFile song = SongQueue.getInstance().current_song;
             int pos = SongQueue.getInstance().current_position;
-            Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
-            Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(song.getAlbumId()));
-            Glide.with(getContext()).asBitmap().load(album_uri).circleCrop().into(art);
-            title.setText(song.getName().replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", ""));
-            Artist.setText(song.getArtist());
+            design_bar();
             //When bottom song navigator is clicked, relocate back to playback overlay
             Artist.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -195,6 +171,9 @@ public class HomeFragment extends Fragment {
             if (PlayerManager.getInstance().get_size() > 0) {
                 if (PlayerManager.getInstance().current_player.isPlaying()) {
                     btnPlayPause.setImageResource(R.drawable.ic_pause);
+                    if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
+                        SpotifyPlayerLife.getInstance().pause_playback();
+                    }
                 } else {
                     btnPlayPause.setImageResource(R.drawable.ic_play);
                 }
@@ -208,10 +187,10 @@ public class HomeFragment extends Fragment {
                             PlayerManager.getInstance().current_player.pause();
                             btnPlayPause.setImageResource(R.drawable.ic_play);
                         } else {
-                            if (PlayerManager.getInstance().spotify_player != null) {
-                                PlayerManager.getInstance().spotify_player.pause();
-                            }
                             PlayerManager.getInstance().current_player.play();
+                            if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
+                                SpotifyPlayerLife.getInstance().pause_playback();
+                            }
                             btnPlayPause.setImageResource(R.drawable.ic_pause);
                         }
                     } else {
@@ -223,6 +202,15 @@ public class HomeFragment extends Fragment {
             });
         }
     }
+    //This function designs the bottom playback bar
+    public void design_bar() {
+        MusicFile song = SongQueue.getInstance().current_song;
+        Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
+        Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(song.getAlbumId()));
+        Glide.with(getContext()).asBitmap().load(album_uri).circleCrop().into(art);
+        title.setText(song.getName().replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", ""));
+        Artist.setText(song.getArtist());
+    }
     //This function opens a new song overlay
     public void open_new_overlay(MusicFile file, int position) {
         //Adding song to queue
@@ -233,6 +221,26 @@ public class HomeFragment extends Fragment {
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.fragment_container, media_page);
         fragmentTransaction.commit();
+    }
+    //This function handles Spotify overlay play/pause
+    public void set_up_spotify_play() {
+        if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
+            SpotifyPlayerLife.getInstance().mSpotifyAppRemote.getPlayerApi().subscribeToPlayerState().setEventCallback(new Subscription.EventCallback<PlayerState>() {
+                @Override
+                public void onEvent(PlayerState playerState) {
+                    if (playerState.isPaused) {
+                        ;
+                    } else {
+                        btnPlayPause.setImageResource(R.drawable.ic_play);
+                        if (PlayerManager.getInstance().current_player != null) {
+                            PlayerManager.getInstance().current_player.pause();
+                        } else {
+                            ;
+                        }
+                    }
+                }
+            });
+        }
     }
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
