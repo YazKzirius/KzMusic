@@ -107,7 +107,7 @@ public class LibraryFragment extends Fragment {
             Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
             Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(song.getAlbumId()));
             Glide.with(getContext()).asBitmap().load(album_uri).circleCrop().into(art);
-            title.setText(song.getName().replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", ""));
+            title.setText("Now playing "+song.getName().replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", ""));
             Artist.setText(song.getArtist());
             //When bottom song navigator is clicked, relocate back to playback overlay
             Artist.setOnClickListener(new View.OnClickListener() {

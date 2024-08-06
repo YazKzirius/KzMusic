@@ -208,7 +208,7 @@ public class HomeFragment extends Fragment {
         Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
         Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(song.getAlbumId()));
         Glide.with(getContext()).asBitmap().load(album_uri).circleCrop().into(art);
-        title.setText(song.getName().replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", ""));
+        title.setText("Now playing "+song.getName().replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", ""));
         Artist.setText(song.getArtist());
     }
     //This function opens a new song overlay
