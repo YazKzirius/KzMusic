@@ -1,5 +1,7 @@
 package com.example.kzmusic;
 
+import android.media.audiofx.EnvironmentalReverb;
+
 import com.google.android.exoplayer2.ExoPlayer;
 
 import java.util.ArrayList;
@@ -16,6 +18,7 @@ public class SongQueue {
     int reverb_level = -1000;
     Boolean is_looping = false;
     Boolean shuffle_on = false;
+    EnvironmentalReverb reverb;
     long current_time = 0;
     int pointer = 0;
     private SongQueue() {
@@ -57,6 +60,7 @@ public class SongQueue {
         this.shuffle_on = shuffle_on;
     }
 
+
     public void setCurrent_time(long current_time) {
         this.current_time = current_time;
     }
@@ -65,6 +69,14 @@ public class SongQueue {
     }
     public MusicFile get_specified(int index) {
         return songs_played.get(index);
+    }
+    public void initialize_reverb(int sessionId) {
+        if (reverb != null) {
+            reverb.release();
+            reverb = null;
+        }
+        reverb = new EnvironmentalReverb(0, sessionId);
+        reverb.setEnabled(true);
     }
 
 }

@@ -151,9 +151,11 @@ public class SpotifyOverlay extends Fragment {
             public void onEvent(PlayerState playerState) {
                 if (playerState.isPaused) {
                     btnPlayPause.setImageResource(R.drawable.ic_play);
+                    Glide.with(getContext()).clear(song_gif);
                     is_paused = true;
                 } else {
                     btnPlayPause.setImageResource(R.drawable.ic_pause);
+                    set_up_track_playing(track);
                     is_paused = false;
                 }
             }
@@ -161,9 +163,11 @@ public class SpotifyOverlay extends Fragment {
         btnPlayPause.setOnClickListener(v -> {
             if (is_paused == true) {
                 player.resume();
+                set_up_track_playing(track);
                 btnPlayPause.setImageResource(R.drawable.ic_pause);
             } else {
                 player.pause();
+                Glide.with(getContext()).clear(song_gif);
                 btnPlayPause.setImageResource(R.drawable.ic_play);
             }
         });
@@ -247,7 +251,7 @@ public class SpotifyOverlay extends Fragment {
             //Adding track to manager
             //Adding data to display
             SpotifyPlayerLife.getInstance().setCurrent_track(track);
-            overlaySongTitle.setText("Playing similar songs to: "+track.getName()+" by "+track.getArtists().get(0).getName());
+            overlaySongTitle.setText("Now playing similar songs to: "+track.getName()+" by "+track.getArtists().get(0).getName());
         }
     }
 }

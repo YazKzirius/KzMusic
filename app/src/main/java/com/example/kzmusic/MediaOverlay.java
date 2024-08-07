@@ -2,8 +2,12 @@ package com.example.kzmusic;
 //Imports
 import java.util.Random;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -18,6 +22,11 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.net.Uri;
+
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
 import com.spotify.android.appremote.api.SpotifyAppRemote;
@@ -75,6 +84,7 @@ public class MediaOverlay extends Fragment {
     private TextView textCurrentTime, textTotalDuration;
     private ImageView album_cover;
     private ImageView song_gif;
+    Boolean is_black_image = false;
     private Runnable beatRunnable;
     private Runnable runnable;
     private float[] beatLevels = new float[150];
@@ -341,6 +351,9 @@ public class MediaOverlay extends Fragment {
         // Set song details
         player = new ExoPlayer.Builder(getContext()).build();
         session_id = player.getAudioSessionId();
+        //Initializing reverb from Song manager class
+        SongQueue.getInstance().initialize_reverb(session_id);
+        reverb = SongQueue.getInstance().reverb;
         String display_title = musicFile.getName().replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", "")+" by "+musicFile.getArtist();
         player.setMediaItem(mediaItem);
         player.prepare();
@@ -359,8 +372,8 @@ public class MediaOverlay extends Fragment {
             String s2 = SongQueue.getInstance().get_specified(index-1).getName();
             if (s1.equals(s2)) {
                 //Resuming at left point
-                player.seekTo(SongQueue.getInstance().current_time);
-                seekBar.setProgress((int) SongQueue.getInstance().current_time);
+                player.seekTo(SongQueue.getInstance().current_time+500);
+                seekBar.setProgress((int) SongQueue.getInstance().current_time+500);
             }
         }
     }
@@ -374,7 +387,6 @@ public class MediaOverlay extends Fragment {
         seekBarSpeed.setMin(50);
         seekBarSpeed.setProgress((int)(song_speed*100));
         //Setting reverberation properties
-        initialize_reverb();
         setReverbPreset(reverb_level);
         //Setting reverb bar to lowest
         seekBarReverb.setMax(1000);
@@ -382,20 +394,6 @@ public class MediaOverlay extends Fragment {
         seekBarReverb.setProgress(reverb_level);
     }
 
-    //This function implements reverb settings initialisation
-    public void initialize_reverb() {
-        //Reseting reverb instance is not null
-        if (reverb != null) {
-            reverb.release();
-        }
-        int current_id = player.getAudioSessionId();
-        if (current_id == session_id && current_id != 0) {
-            reverb = new EnvironmentalReverb(0, current_id);
-            reverb.setEnabled(true);
-        } else {
-            ;
-        }
-    }
     //This function updates the seekbar based on the duration of song
     private void startSeekBarUpdate() {
         handler = new Handler(Looper.getMainLooper());
