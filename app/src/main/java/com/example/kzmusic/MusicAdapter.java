@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 
+import java.util.Collections;
 import java.util.List;
 
 //This manages Spotify Music recycler view display
@@ -57,7 +58,8 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
     }
     //This function updates the tracks in the tracklist
     public void updateTracks(List<SearchResponse.Track> newTracks) {
-        trackList = newTracks;
+        trackList.addAll(newTracks);
+        Collections.shuffle(trackList);
         notifyDataSetChanged();
     }
 

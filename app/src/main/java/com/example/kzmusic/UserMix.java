@@ -1,16 +1,20 @@
 package com.example.kzmusic;
 
-//imports
+//Imports
+import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
-import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import android.util.Log;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.SortedList;
+
+import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,22 +25,27 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
-
 import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
+
+import java.util.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
+import java.util.stream.Collectors;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
  * A simple {@link Fragment} subclass.
- * Use the {@link Radio#newInstance} factory method to
+ * Use the {@link UserMix#newInstance} factory method to
  * create an instance of this fragment.
  */
-//This class implements the User radio page
-public class Radio extends Fragment {
+//This class implements the User mix fragment which uses Machine learning
+//To generate Music based on the users current taste and top artists
+public class UserMix extends Fragment {
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -46,15 +55,13 @@ public class Radio extends Fragment {
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
-    List<SearchResponse.Track> trackList = new ArrayList<>();
-    String CLIENT_ID = "21dc131ad4524c6aae75a9d0256b1b70";
-    String REDIRECT_URI = "kzmusic://callback";
-    private static final String TRACK_LIST_KEY = "track_list";
+    //Page attributes
+    private  List<SearchResponse.Track> trackList = new ArrayList<>();
+    private List<MusicFile> musicFiles = new ArrayList<>();
     RecyclerView recyclerView;
-    MusicAdapter musicAdapter;
-    String accesstoken;
+    String access_token;
     View view;
-    Boolean has_premium;
+    MusicAdapter musicAdapter;
     SessionManager sessionManager;
     String email;
     String username;
@@ -63,10 +70,9 @@ public class Radio extends Fragment {
     TextView Artist;
     ImageButton btnPlayPause;
     RelativeLayout playback_bar;
-
-    public Radio(String token) {
+    public UserMix(String token) {
         // Required empty public constructor
-        this.accesstoken = token;
+        this.access_token = token;
     }
 
     /**
@@ -75,11 +81,11 @@ public class Radio extends Fragment {
      *
      * @param param1 Parameter 1.
      * @param param2 Parameter 2.
-     * @return A new instance of fragment Radio.
+     * @return A new instance of fragment UserMix.
      */
     // TODO: Rename and change types and number of parameters
-    public static Radio newInstance(String param1, String param2) {
-        Radio fragment = new Radio(param1);
+    public static UserMix newInstance(String param1, String param2) {
+        UserMix fragment = new UserMix(param1);
         Bundle args = new Bundle();
         args.putString(ARG_PARAM1, param1);
         args.putString(ARG_PARAM2, param2);
@@ -100,13 +106,16 @@ public class Radio extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        view =  inflater.inflate(R.layout.fragment_radio, container, false);
+        view = inflater.inflate(R.layout.fragment_user_mix, container, false);
         art = view.findViewById(R.id.current_song_art);
         title = view.findViewById(R.id.current_song_title);
         Artist = view.findViewById(R.id.current_song_artist);
         btnPlayPause = view.findViewById(R.id.play_pause_button);
         playback_bar = view.findViewById(R.id.playback_bar);
-        recyclerView=view.findViewById(R.id.recycler_view1);
+        sessionManager = new SessionManager(getContext());
+        username = sessionManager.getUsername();
+        email = sessionManager.getEmail();
+        recyclerView=view.findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         musicAdapter=new MusicAdapter(trackList,getContext(),new MusicAdapter.OnItemClickListener() {
             @Override
@@ -124,19 +133,75 @@ public class Radio extends Fragment {
             }
         });
         recyclerView.setAdapter(musicAdapter);
-        display_random_music(accesstoken);
-        //Setting up bottom playback navigator
+        //Load music files
+        loadMusicFiles();
+        String[] randomQueries = generate_top_artists(musicFiles);
+        for (String query : randomQueries) {
+            display_generated_music(access_token, query);
+        }
         set_up_spotify_play();
         set_up_play_bar();
         return view;
     }
+    //This function loads User music audio files from personal directory
+    private void loadMusicFiles() {
+        Uri collection;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            collection = MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL);
+        } else {
+            collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+        }
 
+        String[] projection = new String[]{
+                MediaStore.Audio.Media._ID,
+                MediaStore.Audio.Media.DISPLAY_NAME,
+                MediaStore.Audio.Media.ARTIST,
+                MediaStore.Audio.Media.DATA,
+                MediaStore.Audio.Media.ALBUM_ID
+        };
+
+        String selection = MediaStore.Audio.Media.IS_MUSIC + " != 0";
+
+        try (Cursor cursor = getContext().getContentResolver().query(
+                collection,
+                projection,
+                selection,
+                null,
+                null
+        )) {
+            int idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID);
+            int nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME);
+            int artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST);
+            int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA);
+            int albumIdColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID);
+
+            while (cursor.moveToNext()) {
+                //Getting music information
+                long id = cursor.getLong(idColumn);
+                String name = cursor.getString(nameColumn);
+                String artist = cursor.getString(artistColumn);
+                String data = cursor.getString(dataColumn);
+                long albumId = cursor.getLong(albumIdColumn);
+                //Defining music file
+                MusicFile musicFile = new MusicFile(id, name, artist, data, albumId);
+                //Filtering out music from short sounds and voice recordings
+                if (artist.equals("Voice Recorder")) {
+                    ;
+                } else if (artist.equals("<unknown>")) {
+                    ;
+                } else {
+                    musicFiles.add(musicFile);
+                }
+            }
+        }
+    }
     //This function searches for random music using API queries and updates the current tracklist
-    public void display_random_music(String token) {
-        accesstoken = token;
-        String[] randomQueries = {"happy", "sad", "party", "chill", "love", "workout"};
-        String randomQuery = randomQueries[(int) (Math.random() * randomQueries.length)];
-        SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
+    public void display_generated_music(String token, String artist) {
+        access_token = token;
+        String randomQuery = artist;
+        TextView text = view.findViewById(R.id.made_for_user);
+        text.setText("Suggestsed mix for "+username);
+        SpotifyApiService apiService = RetrofitClient.getClient(access_token).create(SpotifyApiService.class);
         Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
         call.enqueue(new Callback<SearchResponse>() {
             @Override
@@ -152,6 +217,80 @@ public class Radio extends Fragment {
                 Toast.makeText(getContext(), "API call failed: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+    //This function gets the User's top 10 artists and using and algorithm
+    //It then generates music based on that information
+    public String[] generate_top_artists(List<MusicFile> tracklist) {
+        String[] top_artists = new String[10];
+        //Mapping get artist function to each track in list
+        List<String> Artists = tracklist.stream().map(MusicFile::getArtist).collect(Collectors.toList());
+        //Fixing Artist formatting, so there is a full list of artists
+        List<String> New_artists = new ArrayList<>();
+        //Checking for multiple artists
+        for (String artist : Artists) {
+            if (artist.contains(", ") == true) {
+                String[] list = artist.split(", ");
+                for (String element : list) {
+                    New_artists.add(element);
+                }
+            } else {
+                New_artists.add(artist);
+            }
+        }
+        Set<String> Artist_set = new HashSet<>(New_artists);
+        List<String> Artist_list = new ArrayList<>(Artist_set);
+        //Frequency dict hashmap
+        Map<String, Integer> frequency_dict = new HashMap<>();
+        for (String artist : Artist_list) {
+            frequency_dict.put(artist, count(New_artists, artist));
+        }
+        //Creating string occurrence comparator
+        Comparator<String> occurrenceComparator = (s1, s2) -> Integer.compare(frequency_dict.get(s2), frequency_dict.get(s1));
+        Artist_list.sort(occurrenceComparator);
+        for (int i = 0; i < 10; i++) {
+            top_artists[i] = Artist_list.get(i);
+        }
+        return top_artists;
+    }
+    //This function counts the number of an element of a list
+    public int count(List<String> list, String element) {
+        int count = 0;
+        for (String string : list) {
+            if (string.equalsIgnoreCase(element)) {
+                count += 1;
+            } else {
+                ;
+            }
+        }
+        return count;
+    }
+    //This function opens Spotify player overlay
+    public void open_spotify_overlay() {
+        Fragment spotify_overlay = new SpotifyOverlay();
+        FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.replace(R.id.fragment_container, spotify_overlay);
+        fragmentTransaction.commit();
+    }
+    //This function handles Spotify overlay play/pause
+    public void set_up_spotify_play() {
+        if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
+            SpotifyPlayerLife.getInstance().mSpotifyAppRemote.getPlayerApi().subscribeToPlayerState().setEventCallback(new Subscription.EventCallback<PlayerState>() {
+                @Override
+                public void onEvent(PlayerState playerState) {
+                    if (playerState.isPaused) {
+                        ;
+                    } else {
+                        btnPlayPause.setImageResource(R.drawable.ic_play);
+                        if (PlayerManager.getInstance().current_player != null) {
+                            PlayerManager.getInstance().current_player.pause();
+                        } else {
+                            ;
+                        }
+                    }
+                }
+            });
+        }
     }
     //This function assigns data from playback overlay to bottom navigation
     public void set_up_play_bar() {
@@ -225,14 +364,6 @@ public class Radio extends Fragment {
             });
         }
     }
-    //This function opens Spotify player overlay
-    public void open_spotify_overlay() {
-        Fragment spotify_overlay = new SpotifyOverlay();
-        FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.replace(R.id.fragment_container, spotify_overlay);
-        fragmentTransaction.commit();
-    }
     //This function opens a new song overlay
     public void open_new_overlay(MusicFile file, int position) {
         //Adding song to queue
@@ -243,25 +374,5 @@ public class Radio extends Fragment {
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.fragment_container, media_page);
         fragmentTransaction.commit();
-    }
-    //This function handles Spotify overlay play/pause
-    public void set_up_spotify_play() {
-        if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
-            SpotifyPlayerLife.getInstance().mSpotifyAppRemote.getPlayerApi().subscribeToPlayerState().setEventCallback(new Subscription.EventCallback<PlayerState>() {
-                @Override
-                public void onEvent(PlayerState playerState) {
-                    if (playerState.isPaused) {
-                        ;
-                    } else {
-                        btnPlayPause.setImageResource(R.drawable.ic_play);
-                        if (PlayerManager.getInstance().current_player != null) {
-                            PlayerManager.getInstance().current_player.pause();
-                        } else {
-                            ;
-                        }
-                    }
-                }
-            });
-        }
     }
 }

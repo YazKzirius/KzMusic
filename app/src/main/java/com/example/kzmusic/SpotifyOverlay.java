@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -19,6 +20,7 @@ import com.spotify.android.appremote.api.ConnectionParams;
 import com.spotify.android.appremote.api.Connector;
 import com.spotify.android.appremote.api.PlayerApi;
 import com.spotify.android.appremote.api.SpotifyAppRemote;
+import com.spotify.protocol.client.CallResult;
 import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
 import com.spotify.protocol.types.Track;
@@ -50,11 +52,14 @@ public class SpotifyOverlay extends Fragment {
     View view;
     SpotifyAppRemote mSpotifyAppRemote;
     PlayerApi player;
+    private TextView textCurrentTime, textTotalDuration;
     private TextView overlaySongTitle;
     private ImageButton btnPlayPause;
     private ImageButton btnLoop;
     private ImageButton btnSkip_left;
     private ImageButton btnSkip_right;
+    private SeekBar seekBar;
+    private boolean isSeeking = false;
     private ImageButton btnShuffle;
     private ImageView album_cover;
     private ImageView song_gif;
@@ -99,6 +104,8 @@ public class SpotifyOverlay extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         view = inflater.inflate(R.layout.fragment_spotify_overlay, container, false);
+        textCurrentTime = view.findViewById(R.id.textCurrentTime);
+        textTotalDuration = view.findViewById(R.id.textTotalDuration);
         overlaySongTitle = view.findViewById(R.id.songTitle);
         album_cover = view.findViewById(R.id.musicImage);
         btnPlayPause = view.findViewById(R.id.btnPlayPause);
@@ -235,6 +242,27 @@ public class SpotifyOverlay extends Fragment {
             }
         });
     }
+    //This function sets up the duration seek bar
+    public void setupSeekBar() {
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser && mSpotifyAppRemote != null) {
+                    mSpotifyAppRemote.getPlayerApi().seekTo(progress);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                isSeeking = true;
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                isSeeking = false;
+            }
+        });
+    }
 
     //This function handle song playback
     public void play_track(String uri) {
@@ -253,5 +281,12 @@ public class SpotifyOverlay extends Fragment {
             SpotifyPlayerLife.getInstance().setCurrent_track(track);
             overlaySongTitle.setText("Now playing similar songs to: "+track.getName()+" by "+track.getArtists().get(0).getName());
         }
+    }
+    //This function formats string is data and time format 0:00
+    private String formatTime(long timeMs) {
+        int totalSeconds = (int) (timeMs / 1000);
+        int minutes = totalSeconds / 60;
+        int seconds = totalSeconds % 60;
+        return String.format("%02d:%02d", minutes, seconds);
     }
 }
