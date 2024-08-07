@@ -52,14 +52,11 @@ public class SpotifyOverlay extends Fragment {
     View view;
     SpotifyAppRemote mSpotifyAppRemote;
     PlayerApi player;
-    private TextView textCurrentTime, textTotalDuration;
     private TextView overlaySongTitle;
     private ImageButton btnPlayPause;
     private ImageButton btnLoop;
     private ImageButton btnSkip_left;
     private ImageButton btnSkip_right;
-    private SeekBar seekBar;
-    private boolean isSeeking = false;
     private ImageButton btnShuffle;
     private ImageView album_cover;
     private ImageView song_gif;
@@ -104,8 +101,6 @@ public class SpotifyOverlay extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         view = inflater.inflate(R.layout.fragment_spotify_overlay, container, false);
-        textCurrentTime = view.findViewById(R.id.textCurrentTime);
-        textTotalDuration = view.findViewById(R.id.textTotalDuration);
         overlaySongTitle = view.findViewById(R.id.songTitle);
         album_cover = view.findViewById(R.id.musicImage);
         btnPlayPause = view.findViewById(R.id.btnPlayPause);
@@ -239,27 +234,6 @@ public class SpotifyOverlay extends Fragment {
                     player.setShuffle(false);
                     btnShuffle.setImageResource(R.drawable.ic_shuffle);
                 }
-            }
-        });
-    }
-    //This function sets up the duration seek bar
-    public void setupSeekBar() {
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser && mSpotifyAppRemote != null) {
-                    mSpotifyAppRemote.getPlayerApi().seekTo(progress);
-                }
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                isSeeking = true;
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                isSeeking = false;
             }
         });
     }
