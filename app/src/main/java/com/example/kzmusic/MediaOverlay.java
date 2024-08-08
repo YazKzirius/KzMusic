@@ -11,6 +11,7 @@ import androidx.fragment.app.FragmentTransaction;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
+import android.support.v4.media.session.MediaSessionCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -61,6 +62,7 @@ public class MediaOverlay extends Fragment {
     private ImageButton btnSkip_left;
     private ImageButton btnSkip_right;
     private ImageButton btnShuffle;
+    private MediaSessionCompat mediaSession;
     private SeekBar seekBar;
     private SeekBar seekBarReverb;
     private SeekBar seekBarSpeed;
@@ -342,7 +344,7 @@ public class MediaOverlay extends Fragment {
         //Initializing reverb from Song manager class
         SongQueue.getInstance().initialize_reverb(session_id);
         reverb = SongQueue.getInstance().reverb;
-        String display_title = musicFile.getName().replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", "")+" by "+musicFile.getArtist();
+        String display_title = format_title(musicFile.getName())+" by "+musicFile.getArtist().replaceAll("/", ", ");
         player.setMediaItem(mediaItem);
         player.prepare();
         //Adds player to Player session manager
@@ -364,6 +366,35 @@ public class MediaOverlay extends Fragment {
                 seekBar.setProgress((int) SongQueue.getInstance().current_time+500);
             }
         }
+    }
+    //This function checks if a string is only digits
+    public boolean isOnlyDigits(String str) {
+        str = str.replaceAll(" ", "");
+        if (str == null || str.isEmpty()) {
+            return false;
+        }
+
+        for (int i = 0; i < str.length(); i++) {
+            if (!Character.isDigit(str.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+    //This function formats song title, removing unnecessary data
+    public String format_title(String title) {
+        //Removing unnecessary data
+        title = title.replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", "").replaceAll("_", " ").replaceAll("  ", " ").replace(".flac", "").replace(".wav", "");
+        //Checking if prefix is a number
+        String prefix = title.charAt(0)+""+title.charAt(1)+""+title.charAt(2);
+        //Checking if prefix is at the start and if it occurs again
+        if (isOnlyDigits(prefix) && title.indexOf(prefix) == 0 && title.indexOf(prefix, 2) == -1) {
+            //Removing prefix
+            title = title.replaceFirst(prefix, "");
+        } else {
+            ;
+        }
+        return title;
     }
     //This function assigns audio effects to the exoplayer like speed/reverb
     public void apply_audio_effect() {

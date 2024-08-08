@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.os.Bundle;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
@@ -47,8 +48,8 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
     @Override
     public void onBindViewHolder(@NonNull MusicViewHolder holder, int position) {
         MusicFile musicFile = musicFiles.get(position);
-        holder.nameTextView.setText(musicFile.getName().replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", ""));
-        holder.artistTextView.setText(musicFile.getArtist());
+        holder.nameTextView.setText(format_title(musicFile.getName()));
+        holder.artistTextView.setText(musicFile.getArtist().replaceAll("/",", "));
 
         Uri albumArtUri = getAlbumArtUri(musicFile.getAlbumId());
         Glide.with(context)
@@ -68,6 +69,37 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
             }
         });
     }
+    //This function formats song title display
+    //Removes unnecessary data from title
+    public String format_title(String title) {
+        //Removing unnecessary data
+       title = title.replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", "").replaceAll("_", " ").replaceAll("  ", " ").replace(".flac", "").replace(".wav", "");
+       //Checking if prefix is a number
+       String prefix = title.charAt(0)+""+title.charAt(1)+""+title.charAt(2);
+       //Checking if prefix is at the start and if it occurs again
+       if (isOnlyDigits(prefix) && title.indexOf(prefix) == 0 && title.indexOf(prefix, 2) == -1) {
+           //Removing prefix
+           title = title.replaceFirst(prefix, "");
+       } else {
+           ;
+       }
+       return title;
+    }
+    //This function checks if a string is only digits
+    public boolean isOnlyDigits(String str) {
+        str = str.replaceAll(" ", "");
+        if (str == null || str.isEmpty()) {
+            return false;
+        }
+
+        for (int i = 0; i < str.length(); i++) {
+            if (!Character.isDigit(str.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Override
     public int getItemCount() {
         return musicFiles.size();

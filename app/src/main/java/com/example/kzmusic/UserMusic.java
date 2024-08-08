@@ -179,11 +179,7 @@ public class UserMusic extends Fragment {
         } else {
             MusicFile song = SongQueue.getInstance().current_song;
             int pos = SongQueue.getInstance().current_position;
-            Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
-            Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(song.getAlbumId()));
-            Glide.with(getContext()).asBitmap().load(album_uri).circleCrop().into(art);
-            title.setText("Now playing "+song.getName().replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", ""));
-            Artist.setText(song.getArtist());
+            design_bar();
             //When bottom song navigator is clicked, relocate back to playback overlay
             Artist.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -212,10 +208,10 @@ public class UserMusic extends Fragment {
             //Implementing pause button functionality
             if (PlayerManager.getInstance().get_size() > 0) {
                 if (PlayerManager.getInstance().current_player.isPlaying()) {
+                    btnPlayPause.setImageResource(R.drawable.ic_pause);
                     if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
                         SpotifyPlayerLife.getInstance().pause_playback();
                     }
-                    btnPlayPause.setImageResource(R.drawable.ic_pause);
                 } else {
                     btnPlayPause.setImageResource(R.drawable.ic_play);
                 }
@@ -243,6 +239,44 @@ public class UserMusic extends Fragment {
                 }
             });
         }
+    }
+    //This function designs the bottom playback bar
+    public void design_bar() {
+        MusicFile song = SongQueue.getInstance().current_song;
+        Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
+        Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(song.getAlbumId()));
+        Glide.with(getContext()).asBitmap().load(album_uri).circleCrop().into(art);
+        title.setText("Now playing "+format_title(song.getName()));
+        Artist.setText(song.getArtist().replaceAll("/", ", "));
+    }
+    //This function checks if a string is only digits
+    public boolean isOnlyDigits(String str) {
+        str = str.replaceAll(" ", "");
+        if (str == null || str.isEmpty()) {
+            return false;
+        }
+
+        for (int i = 0; i < str.length(); i++) {
+            if (!Character.isDigit(str.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+    //This function formats song title, removing unnecessary data
+    public String format_title(String title) {
+        //Removing unnecessary data
+        title = title.replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", "").replaceAll("_", " ").replaceAll("  ", " ").replace(".flac", "").replace(".wav", "");
+        //Checking if prefix is a number
+        String prefix = title.charAt(0)+""+title.charAt(1)+""+title.charAt(2);
+        //Checking if prefix is at the start and if it occurs again
+        if (isOnlyDigits(prefix) && title.indexOf(prefix) == 0 && title.indexOf(prefix, 2) == -1) {
+            //Removing prefix
+            title = title.replaceFirst(prefix, "");
+        } else {
+            ;
+        }
+        return title;
     }
     //This function opens a new song overlay
     public void open_new_overlay(MusicFile file, int position) {

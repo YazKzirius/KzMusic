@@ -50,6 +50,7 @@ dependencies {
     implementation("com.google.android.exoplayer:exoplayer:2.19.1")
     implementation("com.google.android.exoplayer:exoplayer-ui:2.19.1")
     implementation("com.google.android.exoplayer:exoplayer-core:2.19.1")
+    implementation("com.google.android.exoplayer:extension-mediasession:2.19.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     //Spotify API
     implementation("com.spotify.android:auth:1.2.5")
