@@ -18,6 +18,9 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.graphics.Bitmap;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import android.net.Uri;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.Player;
@@ -30,6 +33,21 @@ import java.util.List;
 import android.widget.ImageButton;
 import com.bumptech.glide.Glide;
 import android.widget.Toast;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Build;
+import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.media.session.MediaControllerCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.media.session.MediaButtonReceiver;
+import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.ui.PlayerNotificationManager;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -81,6 +99,7 @@ public class MediaOverlay extends Fragment {
     float song_speed = (float) 1.0;
     float song_pitch = (float) 1.0;
     int reverb_level = -1000;
+    private PlayerNotificationManager playerNotificationManager;
     public MediaOverlay() {
         // Required empty public constructor
     }
@@ -159,7 +178,6 @@ public class MediaOverlay extends Fragment {
         set_up_speed_and_pitch();
         //Setting up reverberation seekbar functionality
         set_up_reverb();
-        //Setting up spotify play buttons
         return view;
     }
     //This function sets up music image view
@@ -569,5 +587,22 @@ public class MediaOverlay extends Fragment {
         reverb_text.setText("Reverberation: "+(int) percentage / 2+"%");
         seekBar.setProgress(progress);
         SongQueue.getInstance().setReverb_level(reverb_level);
+    }
+    public void playMedia() {
+        Intent intent = new Intent(getActivity(), MediaPlaybackService.class);
+        intent.setAction("PLAY");
+        getActivity().startService(intent);
+    }
+
+    public void pauseMedia() {
+        Intent intent = new Intent(getActivity(), MediaPlaybackService.class);
+        intent.setAction("PAUSE");
+        getActivity().startService(intent);
+    }
+
+    public void stopMedia() {
+        Intent intent = new Intent(getActivity(), MediaPlaybackService.class);
+        intent.setAction("STOP");
+        getActivity().startService(intent);
     }
 }
