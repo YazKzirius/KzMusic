@@ -1,13 +1,23 @@
 package com.example.kzmusic;
 //Imports
+
+import static androidx.core.app.ServiceCompat.startForeground;
+
 import java.util.Random;
+
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
+
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
@@ -18,18 +28,46 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.graphics.Bitmap;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import android.net.Uri;
+
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.ExoPlayer;
+
 import android.media.audiofx.EnvironmentalReverb;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
 import android.widget.ImageButton;
+
 import com.bumptech.glide.Glide;
+
 import android.widget.Toast;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Build;
+import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.media.session.MediaControllerCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
+
+import androidx.core.app.NotificationCompat;
+import androidx.media.session.MediaButtonReceiver;
+
+import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.ui.PlayerNotificationManager;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -62,7 +100,6 @@ public class MediaOverlay extends Fragment {
     private ImageButton btnSkip_left;
     private ImageButton btnSkip_right;
     private ImageButton btnShuffle;
-    private MediaSessionCompat mediaSession;
     private SeekBar seekBar;
     private SeekBar seekBarReverb;
     private SeekBar seekBarSpeed;
@@ -81,6 +118,12 @@ public class MediaOverlay extends Fragment {
     float song_speed = (float) 1.0;
     float song_pitch = (float) 1.0;
     int reverb_level = -1000;
+    private PlayerNotificationManager playerNotificationManager;
+    private static final String CHANNEL_ID = "media_playback_channel";
+    private static final int NOTIFICATION_ID = 1;
+    private MediaSessionCompat mediaSession;
+    private PlaybackStateCompat.Builder stateBuilder;
+
     public MediaOverlay() {
         // Required empty public constructor
     }
@@ -145,8 +188,13 @@ public class MediaOverlay extends Fragment {
         song_speed = SongQueue.getInstance().speed;
         song_pitch = SongQueue.getInstance().pitch;
         reverb_level = SongQueue.getInstance().reverb_level;
+        // Create the notification channel for API 26+
+        createNotificationChannel();
+        // Initialize the Media Session
+        initializeMediaSession();
         //Playing music
         playMusic(musicFile);
+        showNotification();
         //Setting up circular view with beats around for song with album art
         set_up_circular_view(musicFile);
         //Loading previous music files
@@ -159,9 +207,9 @@ public class MediaOverlay extends Fragment {
         set_up_speed_and_pitch();
         //Setting up reverberation seekbar functionality
         set_up_reverb();
-        //Setting up spotify play buttons
         return view;
     }
+
     //This function sets up music image view
     public void set_up_circular_view(MusicFile file) {
         // Load album image
@@ -241,7 +289,7 @@ public class MediaOverlay extends Fragment {
                 //Moving to next song in recycler view if shuffle is off
                 if (shuffle_on == false) {
                     //Handling the event that it's the last song in the recycler view
-                    if (position == musicFiles.size()-1) {
+                    if (position == musicFiles.size() - 1) {
                         ;
                     } else {
                         position += 1;
@@ -282,6 +330,7 @@ public class MediaOverlay extends Fragment {
 
 
     }
+
     //This function sets up and implements a live rewind seekbar
     public void set_up_bar() {
         //Seekbar functionality
@@ -311,7 +360,25 @@ public class MediaOverlay extends Fragment {
                 }
             }
         });
-
+        //If player is already ready then, initialize differently for bottom navigation bar opening
+        if (player.getPlaybackState() == Player.STATE_READY) {
+            long duration = player.getDuration();
+            if (formatTime(duration) == textTotalDuration.getText()) {
+                ;
+            } else {
+                textTotalDuration.setText(formatTime(duration));
+            }
+            seekBar.setMax((int) duration);
+        } else {
+            // Handle unknown duration case, possibly set to live stream duration handling
+            textTotalDuration.setText("0:00");
+        }
+        //Checking if player is currently playing already
+        if (player.isPlaying()) {;
+            startSeekBarUpdate();
+        } else {
+            stopSeekBarUpdate();
+        }
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -332,41 +399,51 @@ public class MediaOverlay extends Fragment {
             }
         });
     }
+
     //This function plays the specified music file
     private void playMusic(MusicFile musicFile) {
-        //Stops all players before playing new song
-        PlayerManager.getInstance().stopAllPlayers();
-        Uri uri = Uri.fromFile(new File(musicFile.getPath()));
-        MediaItem mediaItem = MediaItem.fromUri(uri);
-        // Set song details
-        player = new ExoPlayer.Builder(getContext()).build();
+        //Playing resuming song at previous duration if the same song as last
+        if (SongQueue.getInstance().get_size() > 1) {
+            int index = SongQueue.getInstance().pointer - 1;
+            //Getting current and previous song names
+            String s1 = SongQueue.getInstance().get_specified(index).getName();
+            String s2 = SongQueue.getInstance().get_specified(index - 1).getName();
+            if (s1.equals(s2)) {
+                //Resuming at left point
+                //Use previous player
+                player = PlayerManager.getInstance().current_player;
+                //Resuming at left point
+                if (player.isPlaying()) {
+                    startSeekBarUpdate();
+                }
+            } else {
+                player = new ExoPlayer.Builder(getContext()).build();
+                Uri uri = Uri.fromFile(new File(musicFile.getPath()));
+                MediaItem mediaItem = MediaItem.fromUri(uri);
+                player.setMediaItem(mediaItem);
+            }
+        } else {
+            player = new ExoPlayer.Builder(getContext()).build();
+            Uri uri = Uri.fromFile(new File(musicFile.getPath()));
+            MediaItem mediaItem = MediaItem.fromUri(uri);
+            player.setMediaItem(mediaItem);
+        }
+        //Initializing song properties
         session_id = player.getAudioSessionId();
         //Initializing reverb from Song manager class
         SongQueue.getInstance().initialize_reverb(session_id);
         reverb = SongQueue.getInstance().reverb;
-        String display_title = format_title(musicFile.getName())+" by "+musicFile.getArtist().replaceAll("/", ", ");
-        player.setMediaItem(mediaItem);
+        String display_title = format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", ");
+        //Applying audio effects
+        apply_audio_effect();
         player.prepare();
+        player.play();
+        overlaySongTitle.setText(display_title);
         //Adds player to Player session manager
         PlayerManager.getInstance().addPlayer(player);
         PlayerManager.getInstance().setCurrent_player(player);
-        overlaySongTitle.setText(display_title);
-        //Applying audio effects
-        apply_audio_effect();
-        player.play();
-        //Playing resuming song at previous duration if the same song as last
-        if (SongQueue.getInstance().get_size() > 1) {
-            int index = SongQueue.getInstance().pointer- 1;
-            //Getting current and previous song names
-            String s1 = SongQueue.getInstance().get_specified(index).getName();
-            String s2 = SongQueue.getInstance().get_specified(index-1).getName();
-            if (s1.equals(s2)) {
-                //Resuming at left point
-                player.seekTo(SongQueue.getInstance().current_time+500);
-                seekBar.setProgress((int) SongQueue.getInstance().current_time+500);
-            }
-        }
     }
+
     //This function checks if a string is only digits
     public boolean isOnlyDigits(String str) {
         str = str.replaceAll(" ", "");
@@ -381,12 +458,13 @@ public class MediaOverlay extends Fragment {
         }
         return true;
     }
+
     //This function formats song title, removing unnecessary data
     public String format_title(String title) {
         //Removing unnecessary data
         title = title.replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", "").replaceAll("_", " ").replaceAll("  ", " ").replace(".flac", "").replace(".wav", "");
         //Checking if prefix is a number
-        String prefix = title.charAt(0)+""+title.charAt(1)+""+title.charAt(2);
+        String prefix = title.charAt(0) + "" + title.charAt(1) + "" + title.charAt(2);
         //Checking if prefix is at the start and if it occurs again
         if (isOnlyDigits(prefix) && title.indexOf(prefix) == 0 && title.indexOf(prefix, 2) == -1) {
             //Removing prefix
@@ -396,6 +474,7 @@ public class MediaOverlay extends Fragment {
         }
         return title;
     }
+
     //This function assigns audio effects to the exoplayer like speed/reverb
     public void apply_audio_effect() {
         //Setting playback speed properties
@@ -404,7 +483,7 @@ public class MediaOverlay extends Fragment {
         //Setting up speed+pitch seekbar
         seekBarSpeed.setMax(200);
         seekBarSpeed.setMin(50);
-        seekBarSpeed.setProgress((int)(song_speed*100));
+        seekBarSpeed.setProgress((int) (song_speed * 100));
         //Setting reverberation properties
         setReverbPreset(reverb_level);
         //Setting reverb bar to lowest
@@ -429,12 +508,14 @@ public class MediaOverlay extends Fragment {
         };
         handler.post(runnable);
     }
+
     //This function stops updating seekbar
     private void stopSeekBarUpdate() {
         if (handler != null) {
             handler.removeCallbacks(runnable);
         }
     }
+
     //This function formats string is data and time format 0:00
     private String formatTime(long timeMs) {
         int totalSeconds = (int) (timeMs / 1000);
@@ -442,6 +523,7 @@ public class MediaOverlay extends Fragment {
         int seconds = totalSeconds % 60;
         return String.format("%02d:%02d", minutes, seconds);
     }
+
     //This function loads User music audio files from personal directory
     //This function loads User music audio files from personal directory
     private void loadMusicFiles() {
@@ -495,6 +577,7 @@ public class MediaOverlay extends Fragment {
             }
         }
     }
+
     //This function opens a new overlay
     //This function opens the playback handling overlay
     public void open_new_overlay() {
@@ -511,6 +594,7 @@ public class MediaOverlay extends Fragment {
         fragmentTransaction.replace(R.id.fragment_container, media_page);
         fragmentTransaction.commit();
     }
+
     //This function sets up speed manager seek bar
     public void set_up_speed_and_pitch() {
         // SeekBar for Speed
@@ -537,6 +621,7 @@ public class MediaOverlay extends Fragment {
             }
         });
     }
+
     //This function sets up pitch manager seek bar
     public void set_up_reverb() {
         seekBarReverb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -545,6 +630,7 @@ public class MediaOverlay extends Fragment {
                 //Set reverb parameters
                 setReverbPreset(progress);
             }
+
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
             }
@@ -554,6 +640,7 @@ public class MediaOverlay extends Fragment {
             }
         });
     }
+
     //This function sets reverb level based on seekbar progress level
     private void setReverbPreset(int progress) {
         //Computing reverberation parameters based of reverb level data proportionality
@@ -563,11 +650,91 @@ public class MediaOverlay extends Fragment {
         reverb.setDecayTime((int) decay_level);
         reverb.setRoomLevel((short) room_level);
         //Estimating percentage of seekbar complete
-        double percentage = ((double) (progress+1000) / 2000) * 100;
+        double percentage = ((double) (progress + 1000) / 2000) * 100;
         reverb.setEnabled(true);
         reverb_level = progress;
-        reverb_text.setText("Reverberation: "+(int) percentage / 2+"%");
+        reverb_text.setText("Reverberation: " + (int) percentage / 2 + "%");
         seekBar.setProgress(progress);
         SongQueue.getInstance().setReverb_level(reverb_level);
+    }
+
+    //This function creates the media playback notification channel
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "Media playback",
+                    NotificationManager.IMPORTANCE_LOW);
+            channel.setDescription("Media playback controls");
+
+            NotificationManager notificationManager = getActivity().getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+
+    //This function creates the playback controls for notification channel
+    private void showNotification() {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(getContext(), CHANNEL_ID);
+
+        builder.setContentTitle(format_title(musicFile.getName()))
+                .setContentText(musicFile.getArtist().replaceAll("/", ", "))
+                .setSmallIcon(R.drawable.logo)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
+                        .setMediaSession(mediaSession.getSessionToken())
+                        .setShowActionsInCompactView(0, 1));
+
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getContext());
+        if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        notificationManager.notify(NOTIFICATION_ID, builder.build());
+    }
+    //This function creates a new media session for specific player
+    private void initializeMediaSession() {
+        mediaSession = new MediaSessionCompat(getContext(), "ExoPlayerMediaSession");
+        mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
+                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
+
+        stateBuilder = new PlaybackStateCompat.Builder()
+                .setActions(PlaybackStateCompat.ACTION_PLAY |
+                        PlaybackStateCompat.ACTION_PAUSE |
+                        PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS |
+                        PlaybackStateCompat.ACTION_SKIP_TO_NEXT);
+
+        mediaSession.setPlaybackState(stateBuilder.build());
+        mediaSession.setCallback(new MediaSessionCompat.Callback() {
+            @Override
+            public void onPlay() {
+                super.onPlay();
+                ;
+            }
+
+            @Override
+            public void onPause() {
+                super.onPause();
+                ;
+            }
+
+            @Override
+            public void onSkipToNext() {
+                super.onSkipToNext();
+                ;
+            }
+
+            @Override
+            public void onSkipToPrevious() {
+                super.onSkipToPrevious();
+                ;
+            }
+        });
+        mediaSession.setActive(true);
     }
 }
