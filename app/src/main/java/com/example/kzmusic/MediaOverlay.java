@@ -424,6 +424,7 @@ public class MediaOverlay extends Fragment {
                     startSeekBarUpdate();
                 }
             } else {
+                PlayerManager.getInstance().stopAllPlayers();
                 player = new ExoPlayer.Builder(getContext()).build();
                 Uri uri = Uri.fromFile(new File(musicFile.getPath()));
                 MediaItem mediaItem = MediaItem.fromUri(uri);
