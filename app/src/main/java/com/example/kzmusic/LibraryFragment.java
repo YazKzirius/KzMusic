@@ -112,6 +112,7 @@ public class LibraryFragment extends Fragment {
         set_up_spotify_play();
         set_up_play_bar();
         if (SongQueue.getInstance().current_song != null) {
+            PlayerManager.getInstance().StopAllSessions();
             createNotificationChannel();
             initializeMediaSession();
         } else {
