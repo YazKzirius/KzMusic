@@ -1,15 +1,26 @@
 package com.example.kzmusic;
 
 //imports
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.media.session.MediaButtonReceiver;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
+
+import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -26,6 +37,8 @@ import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -54,14 +67,10 @@ public class Radio extends Fragment {
     MusicAdapter musicAdapter;
     String accesstoken;
     View view;
-    Boolean has_premium;
-    SessionManager sessionManager;
-    String email;
-    String username;
     ImageView art;
     TextView title;
     TextView Artist;
-    ImageButton btnPlayPause;
+    ImageButton ic_down;
     RelativeLayout playback_bar;
 
     public Radio(String token) {
@@ -104,7 +113,7 @@ public class Radio extends Fragment {
         art = view.findViewById(R.id.current_song_art);
         title = view.findViewById(R.id.current_song_title);
         Artist = view.findViewById(R.id.current_song_artist);
-        btnPlayPause = view.findViewById(R.id.play_pause_button);
+        ic_down = view.findViewById(R.id.down_button);
         playback_bar = view.findViewById(R.id.playback_bar);
         recyclerView=view.findViewById(R.id.recycler_view1);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -114,7 +123,6 @@ public class Radio extends Fragment {
                 //Pausing current player, so no playback overlap
                 if (PlayerManager.getInstance().get_size() > 0) {
                     PlayerManager.getInstance().current_player.pause();
-                    btnPlayPause.setImageResource(R.drawable.ic_play);
                     SpotifyPlayerLife.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                 } else {
@@ -186,38 +194,12 @@ public class Radio extends Fragment {
                     open_new_overlay(song, pos);
                 }
             });
-            //Implementing pause button functionality
-            if (PlayerManager.getInstance().get_size() > 0) {
-                if (PlayerManager.getInstance().current_player.isPlaying()) {
-                    btnPlayPause.setImageResource(R.drawable.ic_pause);
-                    if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
-                        SpotifyPlayerLife.getInstance().pause_playback();
-                    }
-                } else {
-                    btnPlayPause.setImageResource(R.drawable.ic_play);
-                }
-            }
-            btnPlayPause.setOnClickListener(new View.OnClickListener() {
+            //Implementing down button functionality
+            ic_down.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    //Checking if they're is already a song currently playing
-                    if (PlayerManager.getInstance().get_size() > 0) {
-                        if (PlayerManager.getInstance().current_player.isPlaying()) {
-                            PlayerManager.getInstance().current_player.pause();
-                            btnPlayPause.setImageResource(R.drawable.ic_play);
-                        } else {
-                            PlayerManager.getInstance().current_player.play();
-                            if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
-                                SpotifyPlayerLife.getInstance().pause_playback();
-                            }
-                            btnPlayPause.setImageResource(R.drawable.ic_pause);
-                        }
-                    } else {
-                        ;
-                    }
-
-
-                }
+                    //Opening song overay
+                    open_new_overlay(song, pos);}
             });
         }
     }
@@ -287,7 +269,6 @@ public class Radio extends Fragment {
                     if (playerState.isPaused) {
                         ;
                     } else {
-                        btnPlayPause.setImageResource(R.drawable.ic_play);
                         if (PlayerManager.getInstance().current_player != null) {
                             PlayerManager.getInstance().current_player.pause();
                         } else {

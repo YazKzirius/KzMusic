@@ -7,6 +7,8 @@ import java.util.Random;
 
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -35,6 +37,8 @@ import androidx.annotation.Nullable;
 
 import android.net.Uri;
 
+import com.bumptech.glide.request.target.CustomTarget;
+import com.bumptech.glide.request.transition.Transition;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.PlaybackParameters;
@@ -163,6 +167,8 @@ public class MediaOverlay extends Fragment {
         if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
             SpotifyPlayerLife.getInstance().pause_playback();
         }
+        //Stopping all notification sessions for single session management
+        PlayerManager.getInstance().StopAllSessions();
         //Implementing player functionality
         view = inflater.inflate(R.layout.fragment_media_overlay, container, false);
         overlaySongTitle = view.findViewById(R.id.songTitle);
@@ -194,9 +200,10 @@ public class MediaOverlay extends Fragment {
         initializeMediaSession();
         //Playing music
         playMusic(musicFile);
-        showNotification();
         //Setting up circular view with beats around for song with album art
         set_up_circular_view(musicFile);
+        //Showing notification channel
+        showNotification(stateBuilder.build());
         //Loading previous music files
         loadMusicFiles();
         //Setting up media buttons
@@ -673,17 +680,42 @@ public class MediaOverlay extends Fragment {
     }
 
     //This function creates the playback controls for notification channel
-    private void showNotification() {
+    private void showNotification(PlaybackStateCompat state) {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(getContext(), CHANNEL_ID);
-
         builder.setContentTitle(format_title(musicFile.getName()))
                 .setContentText(musicFile.getArtist().replaceAll("/", ", "))
-                .setSmallIcon(R.drawable.logo)
+                .setSmallIcon(R.drawable.library)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.logo))
+                .setOnlyAlertOnce(true)
                 .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
-                        .setMediaSession(mediaSession.getSessionToken())
-                        .setShowActionsInCompactView(0, 1));
+                .setMediaSession(mediaSession.getSessionToken())
+                .setShowActionsInCompactView(0));
+        // Load album image
+        Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
+        Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(musicFile.getAlbumId()));
+        Glide.with(getContext()).asBitmap().load(album_uri).into(new CustomTarget<Bitmap>() {
+            @Override
+            public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                //Once the resource loads, it changes to that background picture
+                builder.setLargeIcon(resource);
+            }
 
+            @Override
+            public void onLoadCleared(@Nullable Drawable placeholder) {
+                ;
+            }
+        });
+        if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
+            builder.addAction(new NotificationCompat.Action(
+                    R.drawable.ic_pause, "Pause", MediaButtonReceiver.buildMediaButtonPendingIntent(
+                    getContext(), PlaybackStateCompat.ACTION_PAUSE)));
+        } else {
+            builder.addAction(new NotificationCompat.Action(
+                    R.drawable.ic_play, "Play", MediaButtonReceiver.buildMediaButtonPendingIntent(
+                    getContext(), PlaybackStateCompat.ACTION_PLAY)));
+        }
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getContext());
         if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
@@ -702,39 +734,44 @@ public class MediaOverlay extends Fragment {
         mediaSession = new MediaSessionCompat(getContext(), "ExoPlayerMediaSession");
         mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
                 MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
-
+        Random rand = new Random();
         stateBuilder = new PlaybackStateCompat.Builder()
-                .setActions(PlaybackStateCompat.ACTION_PLAY |
-                        PlaybackStateCompat.ACTION_PAUSE |
-                        PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS |
-                        PlaybackStateCompat.ACTION_SKIP_TO_NEXT);
-
+                .setActions(PlaybackStateCompat.ACTION_PLAY_PAUSE | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_PLAY)
+                        .setState(PlaybackStateCompat.STATE_PLAYING, 0, song_speed);
         mediaSession.setPlaybackState(stateBuilder.build());
+        PlayerManager.getInstance().addSession(mediaSession);
         mediaSession.setCallback(new MediaSessionCompat.Callback() {
             @Override
             public void onPlay() {
                 super.onPlay();
-                ;
+                // Update playback state to playing
+                PlayerManager.getInstance().current_player.play();
+                stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING, 0, 1.0f);
+                mediaSession.setPlaybackState(stateBuilder.build());
+                btnPlayPause.setImageResource(R.drawable.ic_pause);
+                showNotification(stateBuilder.build());
             }
 
             @Override
             public void onPause() {
                 super.onPause();
-                ;
-            }
-
-            @Override
-            public void onSkipToNext() {
-                super.onSkipToNext();
-                ;
-            }
-
-            @Override
-            public void onSkipToPrevious() {
-                super.onSkipToPrevious();
-                ;
+                //Update playback state to paused
+                PlayerManager.getInstance().current_player.pause();
+                stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, 0, 1.0f);
+                mediaSession.setPlaybackState(stateBuilder.build());
+                btnPlayPause.setImageResource(R.drawable.ic_play);
+                showNotification(stateBuilder.build());
             }
         });
         mediaSession.setActive(true);
+    }
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        //Destroying current media session when created
+        if (mediaSession != null) {
+            mediaSession.getController().getTransportControls().stop();
+            mediaSession.release();
+        }
     }
 }

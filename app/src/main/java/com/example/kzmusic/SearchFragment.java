@@ -1,18 +1,32 @@
 package com.example.kzmusic;
 
 //Imports
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.media.session.MediaButtonReceiver;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.view.inputmethod.EditorInfo;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -28,6 +42,8 @@ import android.widget.Toast;
 import android.widget.Button;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.CustomTarget;
+import com.bumptech.glide.request.transition.Transition;
 import com.spotify.android.appremote.api.ConnectionParams;
 import com.spotify.android.appremote.api.Connector;
 import com.spotify.android.appremote.api.PlayerApi;
@@ -38,6 +54,7 @@ import com.spotify.protocol.types.Track;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -70,8 +87,12 @@ public class SearchFragment extends Fragment {
     ImageView art;
     TextView title;
     TextView Artist;
-    ImageButton btnPlayPause;
+    ImageButton ic_down;
     RelativeLayout playback_bar;
+    private static final String CHANNEL_ID = "media_playback_channel3";
+    private static final int NOTIFICATION_ID = 3;
+    private MediaSessionCompat mediaSession;
+    private PlaybackStateCompat.Builder stateBuilder;
 
     public SearchFragment() {
         // Required empty public constructor
@@ -112,7 +133,7 @@ public class SearchFragment extends Fragment {
         art = view.findViewById(R.id.current_song_art);
         title = view.findViewById(R.id.current_song_title);
         Artist = view.findViewById(R.id.current_song_artist);
-        btnPlayPause = view.findViewById(R.id.play_pause_button);
+        ic_down = view.findViewById(R.id.down_button);
         playback_bar = view.findViewById(R.id.playback_bar);
         RecyclerView recyclerView = view.findViewById(R.id.recycler_view3);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -122,7 +143,6 @@ public class SearchFragment extends Fragment {
                 //Pausing current player, so no playback overlap
                 if (PlayerManager.getInstance().get_size() > 0) {
                     PlayerManager.getInstance().current_player.pause();
-                    btnPlayPause.setImageResource(R.drawable.ic_play);
                     SpotifyPlayerLife.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                 } else {
@@ -142,6 +162,12 @@ public class SearchFragment extends Fragment {
         //Setting up bottom playback navigator
         set_up_spotify_play();
         set_up_play_bar();
+        if (SongQueue.getInstance().current_song != null) {
+            createNotificationChannel();
+            initializeMediaSession();
+        } else {
+            ;
+        }
         Button search_button = view.findViewById(R.id.search_button);
         search_button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -279,38 +305,12 @@ public class SearchFragment extends Fragment {
                     open_new_overlay(song, pos);
                 }
             });
-            //Implementing pause button functionality
-            if (PlayerManager.getInstance().get_size() > 0) {
-                if (PlayerManager.getInstance().current_player.isPlaying()) {
-                    btnPlayPause.setImageResource(R.drawable.ic_pause);
-                    if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
-                        SpotifyPlayerLife.getInstance().pause_playback();
-                    }
-                } else {
-                    btnPlayPause.setImageResource(R.drawable.ic_play);
-                }
-            }
-            btnPlayPause.setOnClickListener(new View.OnClickListener() {
+            //Implementing down button functionality
+            ic_down.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    //Checking if they're is already a song currently playing
-                    if (PlayerManager.getInstance().get_size() > 0) {
-                        if (PlayerManager.getInstance().current_player.isPlaying()) {
-                            PlayerManager.getInstance().current_player.pause();
-                            btnPlayPause.setImageResource(R.drawable.ic_play);
-                        } else {
-                            PlayerManager.getInstance().current_player.play();
-                            if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
-                                SpotifyPlayerLife.getInstance().pause_playback();
-                            }
-                            btnPlayPause.setImageResource(R.drawable.ic_pause);
-                        }
-                    } else {
-                        ;
-                    }
-
-
-                }
+                    //Opening song overay
+                    open_new_overlay(song, pos);}
             });
         }
     }
@@ -372,7 +372,6 @@ public class SearchFragment extends Fragment {
                     if (playerState.isPaused) {
                         ;
                     } else {
-                        btnPlayPause.setImageResource(R.drawable.ic_play);
                         if (PlayerManager.getInstance().current_player != null) {
                             PlayerManager.getInstance().current_player.pause();
                         } else {
@@ -381,6 +380,114 @@ public class SearchFragment extends Fragment {
                     }
                 }
             });
+        }
+    }
+    //This function creates the media playback notification channel
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "Media playback",
+                    NotificationManager.IMPORTANCE_LOW);
+            channel.setDescription("Media playback controls");
+
+            NotificationManager notificationManager = getActivity().getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+
+    //This function creates the playback controls for notification channel
+    private void showNotification(PlaybackStateCompat state) {
+        // Load album image
+        Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
+        Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(SongQueue.getInstance().current_song.getAlbumId()));
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(getContext(), CHANNEL_ID);
+        builder.setContentTitle(format_title(SongQueue.getInstance().current_song.getName()))
+                .setContentText(SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", "))
+                .setSmallIcon(R.drawable.library)
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.logo))
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setOnlyAlertOnce(true)
+                .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
+                        .setMediaSession(mediaSession.getSessionToken())
+                        .setShowActionsInCompactView(0));
+        Glide.with(getContext()).asBitmap().load(album_uri).into(new CustomTarget<Bitmap>() {
+            @Override
+            public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                //Once the resource loads, it changes to that background picture
+                builder.setLargeIcon(resource);
+            }
+
+            @Override
+            public void onLoadCleared(@Nullable Drawable placeholder) {
+                ;
+            }
+        });
+        if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
+            builder.addAction(new NotificationCompat.Action(
+                    R.drawable.ic_pause, "Pause", MediaButtonReceiver.buildMediaButtonPendingIntent(
+                    getContext(), PlaybackStateCompat.ACTION_PAUSE)));
+        } else {
+            builder.addAction(new NotificationCompat.Action(
+                    R.drawable.ic_play, "Play", MediaButtonReceiver.buildMediaButtonPendingIntent(
+                    getContext(), PlaybackStateCompat.ACTION_PLAY)));
+        }
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getContext());
+        if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        notificationManager.notify(NOTIFICATION_ID, builder.build());
+    }
+    //This function creates a new media session for specific player
+    private void initializeMediaSession() {
+        mediaSession = new MediaSessionCompat(getContext(), "ExoPlayerMediaSession");
+        mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
+                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
+        Random rand = new Random();
+        stateBuilder = new PlaybackStateCompat.Builder()
+                .setActions(PlaybackStateCompat.ACTION_PLAY_PAUSE | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_PLAY)
+                .setState(PlaybackStateCompat.STATE_PLAYING, 0, SongQueue.getInstance().speed);
+        mediaSession.setPlaybackState(stateBuilder.build());
+        PlayerManager.getInstance().addSession(mediaSession);
+
+        showNotification(stateBuilder.build());
+        mediaSession.setCallback(new MediaSessionCompat.Callback() {
+            @Override
+            public void onPlay() {
+                super.onPlay();
+                // Update playback state to playing
+                PlayerManager.getInstance().current_player.play();
+                stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING, 0, 1.0f);
+                mediaSession.setPlaybackState(stateBuilder.build());
+                showNotification(stateBuilder.build());
+            }
+
+            @Override
+            public void onPause() {
+                super.onPause();
+                //Update playback state to paused
+                PlayerManager.getInstance().current_player.pause();
+                stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, 0, 1.0f);
+                mediaSession.setPlaybackState(stateBuilder.build());
+                showNotification(stateBuilder.build());
+            }
+        });
+        mediaSession.setActive(true);
+    }
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (mediaSession != null) {
+            mediaSession.getController().getTransportControls().stop();
+            mediaSession.release();
         }
     }
 }

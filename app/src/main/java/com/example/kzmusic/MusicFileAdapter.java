@@ -61,8 +61,6 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
                 if (currentlyPlayingHolder != null && currentlyPlayingHolder != holder) {
                     player.release();
                 }
-                //Stopping all players and resetting player
-                PlayerManager.getInstance().stopAllPlayers();
                 //Opening media playback overlay
                 open_overlay(musicFile, holder.getAdapterPosition());
                 currentlyPlayingHolder = holder;

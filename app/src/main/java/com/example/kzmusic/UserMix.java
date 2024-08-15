@@ -1,20 +1,29 @@
 package com.example.kzmusic;
 
 //Imports
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.media.session.MediaButtonReceiver;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SortedList;
 
 import android.provider.MediaStore;
+import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -68,7 +77,7 @@ public class UserMix extends Fragment {
     ImageView art;
     TextView title;
     TextView Artist;
-    ImageButton btnPlayPause;
+    ImageButton ic_down;
     RelativeLayout playback_bar;
     public UserMix(String token) {
         // Required empty public constructor
@@ -110,7 +119,7 @@ public class UserMix extends Fragment {
         art = view.findViewById(R.id.current_song_art);
         title = view.findViewById(R.id.current_song_title);
         Artist = view.findViewById(R.id.current_song_artist);
-        btnPlayPause = view.findViewById(R.id.play_pause_button);
+        ic_down = view.findViewById(R.id.down_button);
         playback_bar = view.findViewById(R.id.playback_bar);
         sessionManager = new SessionManager(getContext());
         username = sessionManager.getUsername();
@@ -123,7 +132,6 @@ public class UserMix extends Fragment {
                 //Pausing current player, so no playback overlap
                 if (PlayerManager.getInstance().get_size() > 0) {
                     PlayerManager.getInstance().current_player.pause();
-                    btnPlayPause.setImageResource(R.drawable.ic_play);
                     SpotifyPlayerLife.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                 } else {
@@ -281,7 +289,6 @@ public class UserMix extends Fragment {
                     if (playerState.isPaused) {
                         ;
                     } else {
-                        btnPlayPause.setImageResource(R.drawable.ic_play);
                         if (PlayerManager.getInstance().current_player != null) {
                             PlayerManager.getInstance().current_player.pause();
                         } else {
@@ -325,38 +332,12 @@ public class UserMix extends Fragment {
                     open_new_overlay(song, pos);
                 }
             });
-            //Implementing pause button functionality
-            if (PlayerManager.getInstance().get_size() > 0) {
-                if (PlayerManager.getInstance().current_player.isPlaying()) {
-                    btnPlayPause.setImageResource(R.drawable.ic_pause);
-                    if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
-                        SpotifyPlayerLife.getInstance().pause_playback();
-                    }
-                } else {
-                    btnPlayPause.setImageResource(R.drawable.ic_play);
-                }
-            }
-            btnPlayPause.setOnClickListener(new View.OnClickListener() {
+            //Implementing down button functionality
+            ic_down.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    //Checking if they're is already a song currently playing
-                    if (PlayerManager.getInstance().get_size() > 0) {
-                        if (PlayerManager.getInstance().current_player.isPlaying()) {
-                            PlayerManager.getInstance().current_player.pause();
-                            btnPlayPause.setImageResource(R.drawable.ic_play);
-                        } else {
-                            PlayerManager.getInstance().current_player.play();
-                            if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
-                                SpotifyPlayerLife.getInstance().pause_playback();
-                            }
-                            btnPlayPause.setImageResource(R.drawable.ic_pause);
-                        }
-                    } else {
-                        ;
-                    }
-
-
-                }
+                    //Opening song overay
+                    open_new_overlay(song, pos);}
             });
         }
     }
