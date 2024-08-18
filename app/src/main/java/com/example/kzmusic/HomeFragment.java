@@ -128,6 +128,8 @@ public class HomeFragment extends Fragment {
         if (getArguments() != null) {
             accesstoken = getArguments().getString("Token");
         }
+        //Setting up Homepage and getting given accesstoken
+        set_up_buttons();
         set_up_spotify_play();
         set_up_play_bar();
         if (SongQueue.getInstance().current_song != null) {

@@ -118,27 +118,22 @@ public class Radio extends Fragment {
         recyclerView=view.findViewById(R.id.recycler_view1);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         //Checking if access token is not null and setting up spotify for that
-        if (accesstoken != null) {
-            musicAdapter=new MusicAdapter(trackList,getContext(),new MusicAdapter.OnItemClickListener() {
-                @Override
-                public void onItemClick(SearchResponse.Track track){
-                    //Pausing current player, so no playback overlap
-                    if (PlayerManager.getInstance().get_size() > 0) {
-                        PlayerManager.getInstance().current_player.pause();
-                        SpotifyPlayerLife.getInstance().setCurrent_track(track);
-                        open_spotify_overlay();
-                    } else {
-                        SpotifyPlayerLife.getInstance().setCurrent_track(track);
-                        open_spotify_overlay();
-                    }
+        musicAdapter=new MusicAdapter(trackList,getContext(),new MusicAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(SearchResponse.Track track){
+                //Pausing current player, so no playback overlap
+                if (PlayerManager.getInstance().get_size() > 0) {
+                    PlayerManager.getInstance().current_player.pause();
+                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                    open_spotify_overlay();
+                } else {
+                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                    open_spotify_overlay();
                 }
-            });
-            recyclerView.setAdapter(musicAdapter);
-            display_random_music(accesstoken);
-        } else {
-            TextView made_for_user = view.findViewById(R.id.made_for_user);
-            made_for_user.setText("No internet connection, please try again later");
-        }
+            }
+        });
+        recyclerView.setAdapter(musicAdapter);
+        display_random_music(accesstoken);
         //Setting up bottom playback navigator
         set_up_spotify_play();
         set_up_play_bar();
