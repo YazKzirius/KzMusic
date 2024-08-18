@@ -45,6 +45,9 @@ public class MainPage extends AppCompatActivity {
         }
         //Default fragment
         //Setting token refresh time 2 minutes before expiration
+        if (savedInstanceState == null) {
+            getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new HomeFragment()).commit();
+        }
         create_fragments();
     }
     //This function sends user data to fragments
