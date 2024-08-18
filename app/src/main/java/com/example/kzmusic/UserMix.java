@@ -126,26 +126,31 @@ public class UserMix extends Fragment {
         email = sessionManager.getEmail();
         recyclerView=view.findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        musicAdapter=new MusicAdapter(trackList,getContext(),new MusicAdapter.OnItemClickListener() {
-            @Override
-            public void onItemClick(SearchResponse.Track track){
-                //Pausing current player, so no playback overlap
-                if (PlayerManager.getInstance().get_size() > 0) {
-                    PlayerManager.getInstance().current_player.pause();
-                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
-                    open_spotify_overlay();
-                } else {
-                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
-                    open_spotify_overlay();
+        if (access_token != null) {
+            musicAdapter=new MusicAdapter(trackList,getContext(),new MusicAdapter.OnItemClickListener() {
+                @Override
+                public void onItemClick(SearchResponse.Track track){
+                    //Pausing current player, so no playback overlap
+                    if (PlayerManager.getInstance().get_size() > 0) {
+                        PlayerManager.getInstance().current_player.pause();
+                        SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                        open_spotify_overlay();
+                    } else {
+                        SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                        open_spotify_overlay();
+                    }
                 }
+            });
+            recyclerView.setAdapter(musicAdapter);
+            //Load music files
+            loadMusicFiles();
+            String[] randomQueries = generate_top_artists(musicFiles);
+            for (String query : randomQueries) {
+                display_generated_music(access_token, query);
             }
-        });
-        recyclerView.setAdapter(musicAdapter);
-        //Load music files
-        loadMusicFiles();
-        String[] randomQueries = generate_top_artists(musicFiles);
-        for (String query : randomQueries) {
-            display_generated_music(access_token, query);
+        } else {
+            TextView made_for_user = view.findViewById(R.id.made_for_user);
+            made_for_user.setText("No internet connection, please try again later");
         }
         set_up_spotify_play();
         set_up_play_bar();

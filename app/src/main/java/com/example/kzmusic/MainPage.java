@@ -37,19 +37,18 @@ public class MainPage extends AppCompatActivity {
         if (bundle != null) {
             token = bundle.getString("Token");
             expiration_time = bundle.getLong("expiration_time");
+            schedule_token_refresh(expiration_time-120);
             Toast.makeText(this, "Welcome " + username+"!", Toast.LENGTH_SHORT).show();
             send_data();
         }
         //Default fragment
         //Setting token refresh time 2 minutes before expiration
-        schedule_token_refresh(expiration_time-120);
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new HomeFragment()).commit();
         }
         create_fragments();
         if (token == null) {
-            Intent intent = new Intent(getApplicationContext(), GetStarted.class);
-            startActivity(intent);
+            ;
         }
     }
     //This function sends user data to fragments

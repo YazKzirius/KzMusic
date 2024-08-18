@@ -137,28 +137,71 @@ public class SearchFragment extends Fragment {
         playback_bar = view.findViewById(R.id.playback_bar);
         RecyclerView recyclerView = view.findViewById(R.id.recycler_view3);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        musicAdapter = new MusicAdapter(trackList, getContext(), new MusicAdapter.OnItemClickListener() {
-            @Override
-            public void onItemClick(SearchResponse.Track track) {
-                //Pausing current player, so no playback overlap
-                if (PlayerManager.getInstance().get_size() > 0) {
-                    PlayerManager.getInstance().current_player.pause();
-                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
-                    open_spotify_overlay();
-                } else {
-                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
-                    open_spotify_overlay();
-                }
-            }
-        });
-        recyclerView.setAdapter(musicAdapter);
         if (getArguments() != null) {
             accesstoken = getArguments().getString("Token");
         }
-        TextView View = view.findViewById(R.id.results);
-        EditText search = view.findViewById(R.id.search_input);
-        View.setText("Search results:");
-        display_random(accesstoken);
+        if (accesstoken != null) {
+            musicAdapter = new MusicAdapter(trackList, getContext(), new MusicAdapter.OnItemClickListener() {
+                @Override
+                public void onItemClick(SearchResponse.Track track) {
+                    //Pausing current player, so no playback overlap
+                    if (PlayerManager.getInstance().get_size() > 0) {
+                        PlayerManager.getInstance().current_player.pause();
+                        SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                        open_spotify_overlay();
+                    } else {
+                        SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                        open_spotify_overlay();
+                    }
+                }
+            });
+            recyclerView.setAdapter(musicAdapter);
+            TextView View = view.findViewById(R.id.results);
+            EditText search = view.findViewById(R.id.search_input);
+            View.setText("Search results:");
+            display_random(accesstoken);
+            Button search_button = view.findViewById(R.id.search_button);
+            search_button.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    //Searching for random tracks based on the name input
+                    String input = search.getText().toString();
+                    if (input.equals("")) {
+                        display_random(accesstoken);
+                        View.setText("Search results:");
+                    } else {
+                        //Displaying results
+                        search_track(input, accesstoken);
+                        View.setText("Search results:");
+                        display_random(accesstoken);
+                    }
+                }
+            });
+            //Implementing functionality for enter button clicking
+            search.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+                @Override
+                public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                    if (actionId == EditorInfo.IME_ACTION_DONE ||
+                            (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
+                        // Handle the Enter key event here
+                        String input = search.getText().toString();
+                        //Displaying search results
+                        if (input.equals("")) {
+                            display_random(accesstoken);
+                        } else {
+                            search_track(input, accesstoken);
+                        }
+                        View.setText("Search results:");
+                        return true; // Return true to indicate the event was handled
+                    }
+                    return false; // Return false if the event is not handled
+                }
+            });
+        } else {
+            TextView View = view.findViewById(R.id.results);
+            EditText search = view.findViewById(R.id.search_input);
+            View.setText("No internet connection, please try again");
+        }
         //Setting up bottom playback navigator
         set_up_spotify_play();
         set_up_play_bar();
@@ -169,43 +212,6 @@ public class SearchFragment extends Fragment {
         } else {
             ;
         }
-        Button search_button = view.findViewById(R.id.search_button);
-        search_button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //Searching for random tracks based on the name input
-                String input = search.getText().toString();
-                if (input.equals("")) {
-                    display_random(accesstoken);
-                    View.setText("Search results:");
-                } else {
-                    //Displaying results
-                    search_track(input, accesstoken);
-                    View.setText("Search results:");
-                    display_random(accesstoken);
-                }
-            }
-        });
-        //Implementing functionality for enter button clicking
-        search.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if (actionId == EditorInfo.IME_ACTION_DONE ||
-                        (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
-                    // Handle the Enter key event here
-                    String input = search.getText().toString();
-                    //Displaying search results
-                    if (input.equals("")) {
-                        display_random(accesstoken);
-                    } else {
-                        search_track(input, accesstoken);
-                    }
-                    View.setText("Search results:");
-                    return true; // Return true to indicate the event was handled
-                }
-                return false; // Return false if the event is not handled
-            }
-        });
         return view;
     }
 

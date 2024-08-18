@@ -28,6 +28,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.RemoteViews;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.graphics.Bitmap;
@@ -737,7 +738,9 @@ public class MediaOverlay extends Fragment {
                 MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
         Random rand = new Random();
         stateBuilder = new PlaybackStateCompat.Builder()
-                .setActions(PlaybackStateCompat.ACTION_PLAY_PAUSE | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_PLAY)
+                .setActions(PlaybackStateCompat.ACTION_PLAY_PAUSE | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_PLAY
+                | PlaybackStateCompat.ACTION_SEEK_TO | PlaybackStateCompat.ACTION_FAST_FORWARD | PlaybackStateCompat.ACTION_SET_SHUFFLE_MODE
+                |PlaybackStateCompat.ACTION_SET_REPEAT_MODE)
                         .setState(PlaybackStateCompat.STATE_PLAYING, 0, song_speed);
         mediaSession.setPlaybackState(stateBuilder.build());
         PlayerManager.getInstance().addSession(mediaSession);
