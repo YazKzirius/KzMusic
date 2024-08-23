@@ -121,6 +121,9 @@ public class GetStarted extends AppCompatActivity {
                 case ERROR:
                     // Handle error response
                     Toast.makeText(this, "Spotify Authorisation error: No internet connection", Toast.LENGTH_SHORT).show();
+                    Intent intent2 = new Intent(GetStarted.this, MainPage.class);
+                    startActivity(intent2);
+
                     break;
 
                 // Most likely auth flow was cancelled

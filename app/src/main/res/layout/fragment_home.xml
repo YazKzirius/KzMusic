@@ -151,7 +151,6 @@
             android:layout_centerVertical="true"
             android:layout_marginStart="10dp"
             android:background="?attr/selectableItemBackground"/>
-
     </RelativeLayout>
 
 </FrameLayout>

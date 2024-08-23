@@ -84,6 +84,7 @@ public class SearchFragment extends Fragment {
     private List<SearchResponse.Track> trackList = new ArrayList<>();
     String accesstoken;
     PlayerApi player;
+    View view;
     ImageView art;
     TextView title;
     TextView Artist;
@@ -129,7 +130,7 @@ public class SearchFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view =  inflater.inflate(R.layout.fragment_search, container, false);
+        view =  inflater.inflate(R.layout.fragment_search, container, false);
         art = view.findViewById(R.id.current_song_art);
         title = view.findViewById(R.id.current_song_title);
         Artist = view.findViewById(R.id.current_song_artist);
@@ -243,7 +244,8 @@ public class SearchFragment extends Fragment {
             }
             @Override
             public void onFailure(Call<SearchResponse> call, Throwable t) {
-                Toast.makeText(getContext(), "API call failed: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                TextView text1 = view.findViewById(R.id.results);
+                text1.setText("No internet connection, please try again.");
             }
         });
     }
@@ -269,7 +271,8 @@ public class SearchFragment extends Fragment {
             }
             @Override
             public void onFailure(Call<SearchResponse> call, Throwable t) {
-                Toast.makeText(getContext(), "API call failed: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                TextView text1 = view.findViewById(R.id.results);
+                text1.setText("No internet connection, please try again.");
             }
         });
     }

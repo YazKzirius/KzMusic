@@ -222,7 +222,8 @@ public class UserMix extends Fragment {
             }
             @Override
             public void onFailure(Call<SearchResponse> call, Throwable t) {
-                Toast.makeText(getContext(), "API call failed: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                TextView text1 = view.findViewById(R.id.made_for_user);
+                text1.setText("No internet connection, please try again.");
             }
         });
     }

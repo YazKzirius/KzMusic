@@ -34,11 +34,11 @@ public class MainPage extends AppCompatActivity {
         sessionManager = new SessionManager(getApplicationContext());
         username = sessionManager.getUsername();
         email = sessionManager.getEmail();
+        Toast.makeText(this, "Welcome " + username+"!", Toast.LENGTH_SHORT).show();
         if (bundle != null) {
             token = bundle.getString("Token");
             expiration_time = bundle.getLong("expiration_time");
             schedule_token_refresh(expiration_time-120);
-            Toast.makeText(this, "Welcome " + username+"!", Toast.LENGTH_SHORT).show();
             send_data();
         } else {
             ;
