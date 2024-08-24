@@ -63,20 +63,10 @@ public class SpotifyOverlay extends Fragment {
     View view;
     SpotifyAppRemote mSpotifyAppRemote;
     PlayerApi player;
-    String video_id;
     private TextView overlaySongTitle;
-    private ImageButton btnPlayPause;
-    private ImageButton btnLoop;
-    private ImageButton btnSkip_left;
-    private ImageButton btnSkip_right;
-    private ImageButton btnShuffle;
     private WebView youtubeWebView;
     private ImageView album_cover;
-    private ImageView song_gif;
     SearchResponse.Track track;
-    Boolean is_paused = false;
-    Boolean is_looping = false;
-    Boolean shuffle_on = false;
 
     public SpotifyOverlay() {
         // Required empty public constructor
@@ -116,11 +106,6 @@ public class SpotifyOverlay extends Fragment {
         view = inflater.inflate(R.layout.fragment_spotify_overlay, container, false);
         overlaySongTitle = view.findViewById(R.id.songTitle);
         album_cover = view.findViewById(R.id.musicImage);
-        btnPlayPause = view.findViewById(R.id.btnPlayPause);
-        btnLoop = view.findViewById(R.id.btnLoop);
-        btnShuffle = view.findViewById(R.id.btnShuffle);
-        btnSkip_left = view.findViewById(R.id.btnSkipLeft);
-        btnSkip_right = view.findViewById(R.id.btnSkipRight);
         track = SpotifyPlayerLife.getInstance().current_track;
         youtubeWebView = view.findViewById(R.id.youtube_webview);
         WebSettings webSettings = youtubeWebView.getSettings();
@@ -224,6 +209,7 @@ public class SpotifyOverlay extends Fragment {
             @Override
             public void onFailure(Call<YoutubeResponse> call, Throwable t) {
                 Toast.makeText(getContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                play_track(track.getUri());
             }
         });
     }

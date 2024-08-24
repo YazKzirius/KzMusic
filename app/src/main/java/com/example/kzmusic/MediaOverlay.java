@@ -1,17 +1,14 @@
 package com.example.kzmusic;
 //Imports
 
-import static androidx.core.app.ServiceCompat.startForeground;
 
 import java.util.Random;
-
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationManagerCompat;
@@ -116,14 +113,11 @@ public class MediaOverlay extends Fragment {
     private TextView textCurrentTime, textTotalDuration;
     private ImageView album_cover;
     private ImageView song_gif;
-    Boolean is_black_image = false;
-    private Runnable beatRunnable;
     private Runnable runnable;
     private float[] beatLevels = new float[150];
     float song_speed = (float) 1.0;
     float song_pitch = (float) 1.0;
     int reverb_level = -1000;
-    private PlayerNotificationManager playerNotificationManager;
     private static final String CHANNEL_ID = "media_playback_channel";
     private static final int NOTIFICATION_ID = 1;
     private MediaSessionCompat mediaSession;
@@ -203,8 +197,6 @@ public class MediaOverlay extends Fragment {
         playMusic(musicFile);
         //Setting up circular view with beats around for song with album art
         set_up_circular_view(musicFile);
-        //Showing notification channel
-        showNotification(stateBuilder.build());
         //Loading previous music files
         loadMusicFiles();
         //Setting up media buttons
@@ -237,10 +229,16 @@ public class MediaOverlay extends Fragment {
                 Glide.with(getContext()).clear(song_gif);
                 song_gif.setImageDrawable(null);
                 btnPlayPause.setImageResource(R.drawable.ic_play);
+                stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, 0, song_speed);
+                mediaSession.setPlaybackState(stateBuilder.build());
+                showNotification(stateBuilder.build());
             } else {
                 player.play();
                 btnPlayPause.setImageResource(R.drawable.ic_pause);
                 set_up_circular_view(musicFile);
+                stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING, 0, song_speed);
+                mediaSession.setPlaybackState(stateBuilder.build());
+                showNotification(stateBuilder.build());
             }
         });
         //Loop functionality
@@ -744,6 +742,8 @@ public class MediaOverlay extends Fragment {
                         .setState(PlaybackStateCompat.STATE_PLAYING, 0, song_speed);
         mediaSession.setPlaybackState(stateBuilder.build());
         PlayerManager.getInstance().addSession(mediaSession);
+        //Showing notification channel
+        showNotification(stateBuilder.build());
         mediaSession.setCallback(new MediaSessionCompat.Callback() {
             @Override
             public void onPlay() {
