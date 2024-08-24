@@ -127,6 +127,7 @@ public class UserMusic extends Fragment {
         } else {
             //Loading music files into recycler view
             loadMusicFiles();
+            SongQueue.getInstance().setSong_list(musicFiles);
         }
         musicAdapter.notifyDataSetChanged();
         //Setting up bottom playback navigator

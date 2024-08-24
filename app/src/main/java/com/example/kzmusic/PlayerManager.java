@@ -13,7 +13,7 @@ public class PlayerManager {
 
     private static PlayerManager instance;
     private final List<ExoPlayer> playerList;
-    private final List<MediaSessionCompat> sessions;
+    List<MediaSessionCompat> sessions;
     ExoPlayer current_player;
     PlaybackStateCompat.Builder current_builder;
     Boolean spotify_playing = false;

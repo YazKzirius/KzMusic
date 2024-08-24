@@ -10,6 +10,7 @@ import java.util.List;
 //This class implements a queue data structure for the songs played
 public class SongQueue {
     private static SongQueue instance;
+    List<MusicFile> song_list;
     List<MusicFile> songs_played;
     MusicFile current_song;
     int current_position = -1;
@@ -37,6 +38,11 @@ public class SongQueue {
         this.current_song = song;
         this.pointer += 1;
     }
+
+    public void setSong_list(List<MusicFile> song_list) {
+        this.song_list = song_list;
+    }
+
     public void setPosition(int pos) {
         current_position = pos;
     }

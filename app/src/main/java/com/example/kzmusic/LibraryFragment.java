@@ -254,11 +254,11 @@ public class LibraryFragment extends Fragment {
         // Load album image
         Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
         Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(SongQueue.getInstance().current_song.getAlbumId()));
+        //Once the resource loads, it changes to that background picture
         NotificationCompat.Builder builder = new NotificationCompat.Builder(getContext(), CHANNEL_ID);
         builder.setContentTitle(format_title(SongQueue.getInstance().current_song.getName()))
                 .setContentText(SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", "))
                 .setSmallIcon(R.drawable.library)
-                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.logo))
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setOnlyAlertOnce(true)
@@ -268,36 +268,61 @@ public class LibraryFragment extends Fragment {
         Glide.with(getContext()).asBitmap().load(album_uri).into(new CustomTarget<Bitmap>() {
             @Override
             public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
-                //Once the resource loads, it changes to that background picture
                 builder.setLargeIcon(resource);
+                if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
+                    builder.addAction(new NotificationCompat.Action(
+                            R.drawable.ic_pause, "Pause", MediaButtonReceiver.buildMediaButtonPendingIntent(
+                            getContext(), PlaybackStateCompat.ACTION_PAUSE)));
+                } else {
+                    builder.addAction(new NotificationCompat.Action(
+                            R.drawable.ic_play, "Play", MediaButtonReceiver.buildMediaButtonPendingIntent(
+                            getContext(), PlaybackStateCompat.ACTION_PLAY)));
+                }
+                NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getContext());
+                if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    // TODO: Consider calling
+                    //    ActivityCompat#requestPermissions
+                    // here to request the missing permissions, and then overriding
+                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                    //                                          int[] grantResults)
+                    // to handle the case where the user grants the permission. See the documentation
+                    // for ActivityCompat#requestPermissions for more details.
+                    return;
+                }
+                notificationManager.notify(NOTIFICATION_ID, builder.build());
             }
 
             @Override
             public void onLoadCleared(@Nullable Drawable placeholder) {
                 ;
             }
+            @Override
+            public void onLoadFailed(@Nullable Drawable errorDrawable) {
+                // Handle the load failure, you can use a default or error bitmap here
+                builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.logo));
+                if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
+                    builder.addAction(new NotificationCompat.Action(
+                            R.drawable.ic_pause, "Pause", MediaButtonReceiver.buildMediaButtonPendingIntent(
+                            getContext(), PlaybackStateCompat.ACTION_PAUSE)));
+                } else {
+                    builder.addAction(new NotificationCompat.Action(
+                            R.drawable.ic_play, "Play", MediaButtonReceiver.buildMediaButtonPendingIntent(
+                            getContext(), PlaybackStateCompat.ACTION_PLAY)));
+                }
+                NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getContext());
+                if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    // TODO: Consider calling
+                    //    ActivityCompat#requestPermissions
+                    // here to request the missing permissions, and then overriding
+                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                    //                                          int[] grantResults)
+                    // to handle the case where the user grants the permission. See the documentation
+                    // for ActivityCompat#requestPermissions for more details.
+                    return;
+                }
+                notificationManager.notify(NOTIFICATION_ID, builder.build());
+            }
         });
-        if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
-            builder.addAction(new NotificationCompat.Action(
-                    R.drawable.ic_pause, "Pause", MediaButtonReceiver.buildMediaButtonPendingIntent(
-                    getContext(), PlaybackStateCompat.ACTION_PAUSE)));
-        } else {
-            builder.addAction(new NotificationCompat.Action(
-                    R.drawable.ic_play, "Play", MediaButtonReceiver.buildMediaButtonPendingIntent(
-                    getContext(), PlaybackStateCompat.ACTION_PLAY)));
-        }
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getContext());
-        if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        notificationManager.notify(NOTIFICATION_ID, builder.build());
     }
     //This function creates a new media session for specific player
     private void initializeMediaSession() {
@@ -306,7 +331,8 @@ public class LibraryFragment extends Fragment {
                 MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
         Random rand = new Random();
         stateBuilder = new PlaybackStateCompat.Builder()
-                .setActions(PlaybackStateCompat.ACTION_PLAY_PAUSE | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_PLAY)
+                .setActions(PlaybackStateCompat.ACTION_PLAY_PAUSE | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_PLAY
+                        | PlaybackStateCompat.ACTION_SKIP_TO_NEXT | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)
                 .setState(PlaybackStateCompat.STATE_PLAYING, 0, SongQueue.getInstance().speed);
         mediaSession.setPlaybackState(stateBuilder.build());
         PlayerManager.getInstance().addSession(mediaSession);
@@ -330,6 +356,40 @@ public class LibraryFragment extends Fragment {
                 stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, 0, 1.0f);
                 mediaSession.setPlaybackState(stateBuilder.build());
                 showNotification(stateBuilder.build());
+            }
+            @Override
+            public void onSkipToNext() {
+                super.onSkipToNext();
+                int pos;
+                if (SongQueue.getInstance().current_position == SongQueue.getInstance().song_list.size() - 1 &&
+                        SongQueue.getInstance().shuffle_on != true) {
+                    ;
+                } else {
+                    if (SongQueue.getInstance().shuffle_on != true) {
+                        pos = SongQueue.getInstance().current_position + 1;
+                    } else {
+                        pos = rand.nextInt(SongQueue.getInstance().song_list.size());
+                    }
+                    MusicFile song = SongQueue.getInstance().song_list.get(pos);
+                    open_new_overlay(song, pos);
+                }
+            }
+            @Override
+            public void onSkipToPrevious() {
+                super.onSkipToPrevious();
+                int pos;
+                if (SongQueue.getInstance().current_position == 0 &&
+                        SongQueue.getInstance().shuffle_on != true) {
+                    ;
+                } else {
+                    if (SongQueue.getInstance().shuffle_on != true) {
+                        pos = SongQueue.getInstance().current_position + 1;
+                    } else {
+                        pos = rand.nextInt(SongQueue.getInstance().song_list.size());
+                    }
+                    MusicFile song = SongQueue.getInstance().song_list.get(pos);
+                    open_new_overlay(song, pos);
+                }
             }
         });
         mediaSession.setActive(true);

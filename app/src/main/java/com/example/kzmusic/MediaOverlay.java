@@ -163,7 +163,9 @@ public class MediaOverlay extends Fragment {
             SpotifyPlayerLife.getInstance().pause_playback();
         }
         //Stopping all notification sessions for single session management
-        PlayerManager.getInstance().StopAllSessions();
+        if (PlayerManager.getInstance().sessions.size() > 0) {
+            PlayerManager.getInstance().StopAllSessions();
+        }
         //Implementing player functionality
         view = inflater.inflate(R.layout.fragment_media_overlay, container, false);
         overlaySongTitle = view.findViewById(R.id.songTitle);
@@ -189,10 +191,6 @@ public class MediaOverlay extends Fragment {
         song_speed = SongQueue.getInstance().speed;
         song_pitch = SongQueue.getInstance().pitch;
         reverb_level = SongQueue.getInstance().reverb_level;
-        // Create the notification channel for API 26+
-        createNotificationChannel();
-        // Initialize the Media Session
-        initializeMediaSession();
         //Playing music
         playMusic(musicFile);
         //Setting up circular view with beats around for song with album art
@@ -207,6 +205,10 @@ public class MediaOverlay extends Fragment {
         set_up_speed_and_pitch();
         //Setting up reverberation seekbar functionality
         set_up_reverb();
+        // Create the notification channel for API 26+
+        createNotificationChannel();
+        // Initialize the Media Session
+        initializeMediaSession();
         return view;
     }
 
@@ -681,53 +683,78 @@ public class MediaOverlay extends Fragment {
 
     //This function creates the playback controls for notification channel
     private void showNotification(PlaybackStateCompat state) {
+        // Load album image
+        Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
+        Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(musicFile.getAlbumId()));
+        //Once the resource loads, it changes to that background picture
         NotificationCompat.Builder builder = new NotificationCompat.Builder(getContext(), CHANNEL_ID);
         builder.setContentTitle(format_title(musicFile.getName()))
                 .setContentText(musicFile.getArtist().replaceAll("/", ", "))
                 .setSmallIcon(R.drawable.library)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.logo))
                 .setOnlyAlertOnce(true)
                 .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
-                .setMediaSession(mediaSession.getSessionToken())
-                .setShowActionsInCompactView(0));
-        // Load album image
-        Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
-        Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(musicFile.getAlbumId()));
+                        .setMediaSession(mediaSession.getSessionToken())
+                        .setShowActionsInCompactView(0));
         Glide.with(getContext()).asBitmap().load(album_uri).into(new CustomTarget<Bitmap>() {
             @Override
             public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
-                //Once the resource loads, it changes to that background picture
-                builder.setLargeIcon(resource);
+                        builder.setLargeIcon(resource);
+                if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
+                    builder.addAction(new NotificationCompat.Action(
+                            R.drawable.ic_pause, "Pause", MediaButtonReceiver.buildMediaButtonPendingIntent(
+                            getContext(), PlaybackStateCompat.ACTION_PAUSE)));
+                } else {
+                    builder.addAction(new NotificationCompat.Action(
+                            R.drawable.ic_play, "Play", MediaButtonReceiver.buildMediaButtonPendingIntent(
+                            getContext(), PlaybackStateCompat.ACTION_PLAY)));
+                }
+                NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getContext());
+                if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    // TODO: Consider calling
+                    //    ActivityCompat#requestPermissions
+                    // here to request the missing permissions, and then overriding
+                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                    //                                          int[] grantResults)
+                    // to handle the case where the user grants the permission. See the documentation
+                    // for ActivityCompat#requestPermissions for more details.
+                    return;
+                }
+                notificationManager.notify(NOTIFICATION_ID, builder.build());
             }
 
             @Override
             public void onLoadCleared(@Nullable Drawable placeholder) {
                 ;
             }
+            @Override
+            public void onLoadFailed(@Nullable Drawable errorDrawable) {
+                // Handle the load failure, you can use a default or error bitmap here
+                builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.logo));
+                if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
+                    builder.addAction(new NotificationCompat.Action(
+                            R.drawable.ic_pause, "Pause", MediaButtonReceiver.buildMediaButtonPendingIntent(
+                            getContext(), PlaybackStateCompat.ACTION_PAUSE)));
+                } else {
+                    builder.addAction(new NotificationCompat.Action(
+                            R.drawable.ic_play, "Play", MediaButtonReceiver.buildMediaButtonPendingIntent(
+                            getContext(), PlaybackStateCompat.ACTION_PLAY)));
+                }
+                NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getContext());
+                if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    // TODO: Consider calling
+                    //    ActivityCompat#requestPermissions
+                    // here to request the missing permissions, and then overriding
+                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                    //                                          int[] grantResults)
+                    // to handle the case where the user grants the permission. See the documentation
+                    // for ActivityCompat#requestPermissions for more details.
+                    return;
+                }
+                notificationManager.notify(NOTIFICATION_ID, builder.build());
+            }
         });
-        if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
-            builder.addAction(new NotificationCompat.Action(
-                    R.drawable.ic_pause, "Pause", MediaButtonReceiver.buildMediaButtonPendingIntent(
-                    getContext(), PlaybackStateCompat.ACTION_PAUSE)));
-        } else {
-            builder.addAction(new NotificationCompat.Action(
-                    R.drawable.ic_play, "Play", MediaButtonReceiver.buildMediaButtonPendingIntent(
-                    getContext(), PlaybackStateCompat.ACTION_PLAY)));
-        }
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getContext());
-        if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        notificationManager.notify(NOTIFICATION_ID, builder.build());
     }
     //This function creates a new media session for specific player
     private void initializeMediaSession() {
@@ -737,8 +764,7 @@ public class MediaOverlay extends Fragment {
         Random rand = new Random();
         stateBuilder = new PlaybackStateCompat.Builder()
                 .setActions(PlaybackStateCompat.ACTION_PLAY_PAUSE | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_PLAY
-                | PlaybackStateCompat.ACTION_SEEK_TO | PlaybackStateCompat.ACTION_FAST_FORWARD | PlaybackStateCompat.ACTION_SET_SHUFFLE_MODE
-                |PlaybackStateCompat.ACTION_SET_REPEAT_MODE)
+                | PlaybackStateCompat.ACTION_SKIP_TO_NEXT | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)
                         .setState(PlaybackStateCompat.STATE_PLAYING, 0, song_speed);
         mediaSession.setPlaybackState(stateBuilder.build());
         PlayerManager.getInstance().addSession(mediaSession);
@@ -765,6 +791,42 @@ public class MediaOverlay extends Fragment {
                 mediaSession.setPlaybackState(stateBuilder.build());
                 btnPlayPause.setImageResource(R.drawable.ic_play);
                 showNotification(stateBuilder.build());
+            }
+            @Override
+            public void onSkipToNext() {
+                super.onSkipToNext();
+                player.pause();
+                //Moving to next song in recycler view if shuffle is off
+                if (shuffle_on == false) {
+                    //Handling the event that it's the last song in the recycler view
+                    if (position == musicFiles.size() - 1) {
+                        ;
+                    } else {
+                        position += 1;
+                    }
+                } else {
+                    position = rand.nextInt(musicFiles.size());
+                }
+                musicFile = musicFiles.get(position);
+                open_new_overlay();
+            }
+            @Override
+            public void onSkipToPrevious() {
+                super.onSkipToPrevious();
+                player.pause();
+                //Moving to next song in recycler view if shuffle is off
+                if (shuffle_on == false) {
+                    //Handling the event that it's the last song in the recycler view
+                    if (position == 0) {
+                        ;
+                    } else {
+                        position -= 1;
+                    }
+                } else {
+                    position = rand.nextInt(musicFiles.size());
+                }
+                musicFile = musicFiles.get(position);
+                open_new_overlay();
             }
         });
         mediaSession.setActive(true);
