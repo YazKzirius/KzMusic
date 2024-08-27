@@ -13,6 +13,8 @@ public class SongQueue {
     List<MusicFile> song_list;
     List<MusicFile> songs_played;
     MusicFile current_song;
+    String CHANNEL_ID = "media_playback_channel";
+    int NOTIFICATION_ID = 1;
     int current_position = -1;
     Float speed = (float) 1;
     Float pitch = (float) 1;
@@ -77,12 +79,18 @@ public class SongQueue {
         return songs_played.get(index);
     }
     public void initialize_reverb(int sessionId) {
-        if (reverb != null) {
-            reverb.release();
-            reverb = null;
+        if (this.reverb != null) {
+            this.reverb.release();
+            this.reverb = null;
         }
-        reverb = new EnvironmentalReverb(0, sessionId);
-        reverb.setEnabled(true);
+        this.reverb = new EnvironmentalReverb(0, sessionId);
+    }
+
+    public void stop_reverb() {
+    }
+    public void update_id() {
+        NOTIFICATION_ID += 1;
+        CHANNEL_ID += ""+NOTIFICATION_ID;
     }
 
 }

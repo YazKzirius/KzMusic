@@ -58,9 +58,6 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (currentlyPlayingHolder != null && currentlyPlayingHolder != holder) {
-                    player.release();
-                }
                 //Opening media playback overlay
                 open_overlay(musicFile, holder.getAdapterPosition());
                 currentlyPlayingHolder = holder;

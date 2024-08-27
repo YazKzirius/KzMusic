@@ -24,6 +24,12 @@
             android:layout_height="140dp"
             android:background="#090909"
             android:src="@drawable/ic_account2"/>
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Sign out"
+            android:id="@+id/sign_out_btn"/>
     </LinearLayout>
     <RelativeLayout
         android:id="@+id/playback_bar"

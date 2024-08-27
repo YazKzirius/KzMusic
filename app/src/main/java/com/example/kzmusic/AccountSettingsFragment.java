@@ -3,6 +3,7 @@ package com.example.kzmusic;
 //Imports
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -26,6 +27,7 @@ import android.support.v4.media.session.PlaybackStateCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -68,6 +70,7 @@ public class AccountSettingsFragment extends Fragment {
     private static final int NOTIFICATION_ID = 5;
     private MediaSessionCompat mediaSession;
     private PlaybackStateCompat.Builder stateBuilder;
+    SessionManager sessionManager;
 
     public AccountSettingsFragment() {
         // Required empty public constructor
@@ -110,6 +113,9 @@ public class AccountSettingsFragment extends Fragment {
         Artist = view.findViewById(R.id.current_song_artist);
         ic_down = view.findViewById(R.id.down_button);
         playback_bar = view.findViewById(R.id.playback_bar);
+        sessionManager = new SessionManager(getContext());
+        username = sessionManager.getUsername();
+        email = sessionManager.getEmail();
         //Setting up bottom playback navigator
         set_up_spotify_play();
         set_up_play_bar();
@@ -120,6 +126,14 @@ public class AccountSettingsFragment extends Fragment {
         } else {
             ;
         }
+        Button sign_out = view.findViewById(R.id.sign_out_btn);
+        sign_out.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sessionManager.logoutUser();
+                navigate_to_activity(MainActivity.class);
+            }
+        });
         return view;
     }
     @Override
@@ -395,6 +409,11 @@ public class AccountSettingsFragment extends Fragment {
             }
         });
         mediaSession.setActive(true);
+    }
+    //This function navigates to a new activity given parameters
+    public void navigate_to_activity(Class <?> target) {
+        Intent intent = new Intent(getActivity(), target);
+        startActivity(intent);
     }
     @Override
     public void onDestroy() {

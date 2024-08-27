@@ -4,6 +4,7 @@ package com.example.kzmusic;
 
 import java.util.Random;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
@@ -24,7 +25,9 @@ import android.support.v4.media.session.MediaSessionCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RemoteViews;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -71,6 +74,12 @@ import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.ui.PlayerNotificationManager;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+
 /**
  * A simple {@link Fragment} subclass.
  * Use the {@link MediaOverlay#newInstance} factory method to
@@ -114,14 +123,15 @@ public class MediaOverlay extends Fragment {
     private ImageView album_cover;
     private ImageView song_gif;
     private Runnable runnable;
-    private float[] beatLevels = new float[150];
     float song_speed = (float) 1.0;
     float song_pitch = (float) 1.0;
     int reverb_level = -1000;
-    private static final String CHANNEL_ID = "media_playback_channel";
-    private static final int NOTIFICATION_ID = 1;
+    String CHANNEL_ID;
+    int NOTIFICATION_ID;
     private MediaSessionCompat mediaSession;
     private PlaybackStateCompat.Builder stateBuilder;
+    private static final String BASE_URL = "https://www.googleapis.com/youtube/v3/";
+    private static final String API_KEY = "AIzaSyD8vgA5jBm6VC0b6UYVRZ8yYahMq1YrR5E"; // Replace with your YouTube Data API key
 
     public MediaOverlay() {
         // Required empty public constructor
@@ -158,6 +168,8 @@ public class MediaOverlay extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
+        //Updating channel ID settings
+        SongQueue.getInstance().update_id();
         //Pausing spotify player if song is currently playing, to elimnate overlap
         if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
             SpotifyPlayerLife.getInstance().pause_playback();
@@ -191,6 +203,8 @@ public class MediaOverlay extends Fragment {
         song_speed = SongQueue.getInstance().speed;
         song_pitch = SongQueue.getInstance().pitch;
         reverb_level = SongQueue.getInstance().reverb_level;
+        NOTIFICATION_ID = SongQueue.getInstance().NOTIFICATION_ID;
+        CHANNEL_ID = SongQueue.getInstance().CHANNEL_ID;
         //Playing music
         playMusic(musicFile);
         //Setting up circular view with beats around for song with album art
@@ -205,6 +219,8 @@ public class MediaOverlay extends Fragment {
         set_up_speed_and_pitch();
         //Setting up reverberation seekbar functionality
         set_up_reverb();
+        //Allowing music video streaming
+        set_up_stream();
         // Create the notification channel for API 26+
         createNotificationChannel();
         // Initialize the Media Session
@@ -440,8 +456,6 @@ public class MediaOverlay extends Fragment {
         //Initializing song properties
         session_id = player.getAudioSessionId();
         //Initializing reverb from Song manager class
-        SongQueue.getInstance().initialize_reverb(session_id);
-        reverb = SongQueue.getInstance().reverb;
         String display_title = format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", ");
         //Applying audio effects
         apply_audio_effect();
@@ -486,6 +500,9 @@ public class MediaOverlay extends Fragment {
 
     //This function assigns audio effects to the exoplayer like speed/reverb
     public void apply_audio_effect() {
+        //Initialising reverb settings
+        SongQueue.getInstance().initialize_reverb(session_id);
+        reverb = SongQueue.getInstance().reverb;
         //Setting playback speed properties
         player.setPlaybackParameters(new PlaybackParameters(song_speed, song_pitch));
         speed_text.setText(String.format("Speed + pitch: %.1fx", song_speed));
@@ -590,10 +607,6 @@ public class MediaOverlay extends Fragment {
     //This function opens a new overlay
     //This function opens the playback handling overlay
     public void open_new_overlay() {
-        //Resetting if not null
-        if (reverb != null) {
-            reverb.release();
-        }
         //Adding new song to queue
         SongQueue.getInstance().addSong(musicFile);
         SongQueue.getInstance().setPosition(position);
@@ -653,18 +666,23 @@ public class MediaOverlay extends Fragment {
     //This function sets reverb level based on seekbar progress level
     private void setReverbPreset(int progress) {
         //Computing reverberation parameters based of reverb level data proportionality
-        int room_level = -2000 + (progress + 1000);
-        double decay_level = 10000;
-        reverb.setReverbLevel((short) progress);
-        reverb.setDecayTime((int) decay_level);
-        reverb.setRoomLevel((short) room_level);
-        //Estimating percentage of seekbar complete
-        double percentage = ((double) (progress + 1000) / 2000) * 100;
-        reverb.setEnabled(true);
-        reverb_level = progress;
-        reverb_text.setText("Reverberation: " + (int) percentage / 2 + "%");
-        seekBar.setProgress(progress);
-        SongQueue.getInstance().setReverb_level(reverb_level);
+        try {
+            int room_level = -2000 + (progress + 1000);
+            double decay_level = 10000;
+            reverb.setReverbLevel((short) progress);
+            reverb.setDecayTime((int) decay_level);
+            reverb.setRoomLevel((short) room_level);
+            reverb.setEnabled(true);
+            //Estimating percentage of seekbar complete
+            double percentage = ((double) (progress + 1000) / 2000) * 100;
+            reverb_level = progress;
+            reverb_text.setText("Reverberation: " + (int) percentage / 2 + "%");
+            seekBar.setProgress(progress);
+            SongQueue.getInstance().setReverb_level(reverb_level);
+        } catch (Exception e) {
+            Toast.makeText(getContext(), "Something went wrong with audio effects", Toast.LENGTH_SHORT).show();
+        }
+
     }
 
     //This function creates the media playback notification channel
@@ -765,7 +783,7 @@ public class MediaOverlay extends Fragment {
         stateBuilder = new PlaybackStateCompat.Builder()
                 .setActions(PlaybackStateCompat.ACTION_PLAY_PAUSE | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_PLAY
                 | PlaybackStateCompat.ACTION_SKIP_TO_NEXT | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)
-                        .setState(PlaybackStateCompat.STATE_PLAYING, 0, song_speed);
+                        .setState(PlaybackStateCompat.STATE_PLAYING, 0, (float) 1.0);
         mediaSession.setPlaybackState(stateBuilder.build());
         PlayerManager.getInstance().addSession(mediaSession);
         //Showing notification channel
@@ -816,7 +834,7 @@ public class MediaOverlay extends Fragment {
                 player.pause();
                 //Moving to next song in recycler view if shuffle is off
                 if (shuffle_on == false) {
-                    //Handling the event that it's the last song in the recycler view
+                    //Handling the event that current song is top of recycler view
                     if (position == 0) {
                         ;
                     } else {
@@ -831,13 +849,99 @@ public class MediaOverlay extends Fragment {
         });
         mediaSession.setActive(true);
     }
+    //This function sets up stream button
+    //Setting clicking events to the entire layout
+    public void set_up_stream() {
+        ImageView yt = view.findViewById(R.id.yt_icon);
+        yt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getVideoIdByName(format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", "));
+            }
+        });
+        Button btn2 = view.findViewById(R.id.yt_btn);
+        btn2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getVideoIdByName(format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", "));
+            }
+        });
+        ImageButton btn3 = view.findViewById(R.id.btn_video);
+        btn3.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getVideoIdByName(format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", "));
+            }
+        });
+    }
+    //This function gets video id by song name
+    public void getVideoIdByName(String songName) {
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(BASE_URL)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+        YoutubeService service = retrofit.create(YoutubeService.class);
+        Call<YoutubeResponse> call = service.searchVideos("snippet", songName, "video", API_KEY);
+
+        call.enqueue(new Callback<YoutubeResponse>() {
+            @Override
+            public void onResponse(Call<YoutubeResponse> call, Response<YoutubeResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    YoutubeResponse body = response.body();
+                    if (body.items.length > 0 && body.items[0].id.videoId != null) {
+                        String videoId = body.items[0].id.videoId;
+                        String url = "https://www.youtube.com/watch?v=" + videoId;
+                        stream_on_yt(url);
+                        // Update UI or perform other actions with videoId
+                    } else {
+                        ;
+
+                    }
+                } else {
+                    ;
+                }
+            }
+
+            @Override
+            public void onFailure(Call<YoutubeResponse> call, Throwable t) {
+                Toast.makeText(getContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    //This function allows user to stream song on youtube
+    public void stream_on_yt(String url) {
+        //Pausing player
+        player.pause();
+        btnPlayPause.setImageResource(R.drawable.ic_play);
+        stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, 0, song_speed);
+        mediaSession.setPlaybackState(stateBuilder.build());
+        showNotification(stateBuilder.build());
+        // Create the intent to open YouTube with the video ID
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+
+        // Check if the YouTube app is available to handle the intent
+        PackageManager packageManager = getContext().getPackageManager();
+        List<ResolveInfo> resolveInfos = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+
+        boolean isYouTubeAppInstalled = false;
+        for (ResolveInfo resolveInfo : resolveInfos) {
+            if (resolveInfo.activityInfo.packageName.contains("youtube")) {
+                isYouTubeAppInstalled = true;
+                break;
+            }
+        }
+
+        if (isYouTubeAppInstalled) {
+            // Launch YouTube app with the video
+            intent.setPackage("com.google.android.youtube");
+            startActivity(intent);
+        } else {
+            // If YouTube app is not installed, open the video in the default web browser
+            startActivity(intent);
+        }
+    }
     @Override
     public void onDestroy() {
         super.onDestroy();
-        //Destroying current media session when created
-        if (mediaSession != null) {
-            mediaSession.getController().getTransportControls().stop();
-            mediaSession.release();
-        }
     }
 }
