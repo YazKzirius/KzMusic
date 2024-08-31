@@ -38,7 +38,11 @@ import androidx.annotation.Nullable;
 
 import android.net.Uri;
 
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.CustomTarget;
+import com.bumptech.glide.request.target.Target;
 import com.bumptech.glide.request.transition.Transition;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.Player;
@@ -168,15 +172,9 @@ public class MediaOverlay extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        //Updating channel ID settings
-        SongQueue.getInstance().update_id();
         //Pausing spotify player if song is currently playing, to elimnate overlap
         if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
             SpotifyPlayerLife.getInstance().pause_playback();
-        }
-        //Stopping all notification sessions for single session management
-        if (PlayerManager.getInstance().sessions.size() > 0) {
-            PlayerManager.getInstance().StopAllSessions();
         }
         //Implementing player functionality
         view = inflater.inflate(R.layout.fragment_media_overlay, container, false);
@@ -207,24 +205,16 @@ public class MediaOverlay extends Fragment {
         CHANNEL_ID = SongQueue.getInstance().CHANNEL_ID;
         //Playing music
         playMusic(musicFile);
-        //Setting up circular view with beats around for song with album art
-        set_up_circular_view(musicFile);
         //Loading previous music files
         loadMusicFiles();
         //Setting up media buttons
         set_up_media_buttons();
-        //Setting up seekbar
-        set_up_bar();
         //Setting up speed+pitch seekbar functionality
         set_up_speed_and_pitch();
         //Setting up reverberation seekbar functionality
         set_up_reverb();
         //Allowing music video streaming
         set_up_stream();
-        // Create the notification channel for API 26+
-        createNotificationChannel();
-        // Initialize the Media Session
-        initializeMediaSession();
         return view;
     }
 
@@ -233,7 +223,33 @@ public class MediaOverlay extends Fragment {
         // Load album image
         Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
         Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(file.getAlbumId()));
-        Glide.with(getContext()).asBitmap().load(album_uri).circleCrop().into(album_cover);
+        //Loading images into views
+        Glide.with(getContext())
+                .asBitmap()
+                .load(album_uri)
+                .circleCrop()
+                .into(new CustomTarget<Bitmap>() {
+                    @Override
+                    public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                        // Set the loaded image
+                        album_cover.setImageBitmap(resource);
+                    }
+
+                    @Override
+                    public void onLoadCleared(@Nullable Drawable placeholder) {
+                        // Handle the case when the image is cleared (e.g., when the view is recycled)
+                    }
+
+                    @Override
+                    public void onLoadFailed(@Nullable Drawable errorDrawable) {
+                        // Load a backup image if the main image fails to load
+                        Glide.with(getContext())
+                                .asBitmap()
+                                .load(R.drawable.logo) // Backup image resource
+                                .circleCrop()
+                                .into(album_cover);
+                    }
+                });
         Glide.with(getContext()).asGif().load(R.drawable.media_playing).circleCrop().into(song_gif);
     }
 
@@ -457,6 +473,8 @@ public class MediaOverlay extends Fragment {
         session_id = player.getAudioSessionId();
         //Initializing reverb from Song manager class
         String display_title = format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", ");
+        //Setting up circular view with beats around for song with album art
+        set_up_circular_view(musicFile);
         //Applying audio effects
         apply_audio_effect();
         player.prepare();
@@ -465,6 +483,18 @@ public class MediaOverlay extends Fragment {
         //Adds player to Player session manager
         PlayerManager.getInstance().addPlayer(player);
         PlayerManager.getInstance().setCurrent_player(player);
+        //Updating channel ID settings
+        SongQueue.getInstance().update_id();
+        //Stopping all notification sessions for single session management
+        if (PlayerManager.getInstance().sessions.size() > 0) {
+            PlayerManager.getInstance().StopAllSessions();
+        }
+        // Create the notification channel for API 26+
+        createNotificationChannel();
+        // Initialize the Media Session
+        initializeMediaSession();
+        //Setting up seekbar
+        set_up_bar();
     }
 
     //This function checks if a string is only digits
@@ -816,8 +846,8 @@ public class MediaOverlay extends Fragment {
                 player.pause();
                 //Moving to next song in recycler view if shuffle is off
                 if (shuffle_on == false) {
-                    //Handling the event that it's the last song in the recycler view
-                    if (position == musicFiles.size() - 1) {
+                    //Handling the event that current song is top of recycler view
+                    if (position == musicFiles.size() -1) {
                         ;
                     } else {
                         position += 1;
@@ -826,7 +856,13 @@ public class MediaOverlay extends Fragment {
                     position = rand.nextInt(musicFiles.size());
                 }
                 musicFile = musicFiles.get(position);
-                open_new_overlay();
+                //Using error handling
+                try {
+                    open_new_overlay();
+                } catch (Exception e) {
+                    playMusic(musicFile);
+                    updateNotification(musicFile);
+                }
             }
             @Override
             public void onSkipToPrevious() {
@@ -844,10 +880,36 @@ public class MediaOverlay extends Fragment {
                     position = rand.nextInt(musicFiles.size());
                 }
                 musicFile = musicFiles.get(position);
-                open_new_overlay();
+                //Using error handling
+                try {
+                    open_new_overlay();
+                } catch (Exception e) {
+                    playMusic(musicFile);
+                    updateNotification(musicFile);
+                }
             }
         });
         mediaSession.setActive(true);
+    }
+    //This function updates the current notification view holder when a song is skipped
+    private void updateNotification(MusicFile musicFile) {
+        //Updating current notification with new details and meta data
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(getContext(), CHANNEL_ID)
+                .setSmallIcon(R.drawable.library)
+                .setContentTitle(format_title(musicFile.getName()))
+                .setContentText(musicFile.getArtist().replaceAll("/", ", "))
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.logo))
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setOnlyAlertOnce(true)
+                .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
+                        .setMediaSession(mediaSession.getSessionToken())
+                        .setShowActionsInCompactView(0));
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getContext());
+        if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        notificationManager.notify(NOTIFICATION_ID, builder.build());
     }
     //This function sets up stream button
     //Setting clicking events to the entire layout

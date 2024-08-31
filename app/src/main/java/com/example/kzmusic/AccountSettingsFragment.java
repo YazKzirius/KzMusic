@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
+import android.media.audiofx.EnvironmentalReverb;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -32,13 +33,18 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
+import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.MediaItem;
+import com.google.android.exoplayer2.PlaybackParameters;
 import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
 
+import java.io.File;
 import java.util.Random;
 
 /**
@@ -71,6 +77,9 @@ public class AccountSettingsFragment extends Fragment {
     private MediaSessionCompat mediaSession;
     private PlaybackStateCompat.Builder stateBuilder;
     SessionManager sessionManager;
+    ExoPlayer exo_player;
+    private EnvironmentalReverb reverb;
+    int session_id;
 
     public AccountSettingsFragment() {
         // Required empty public constructor
@@ -121,6 +130,7 @@ public class AccountSettingsFragment extends Fragment {
         set_up_play_bar();
         if (SongQueue.getInstance().current_song != null) {
             PlayerManager.getInstance().StopAllSessions();
+            SongQueue.getInstance().update_id();
             createNotificationChannel();
             initializeMediaSession();
         } else {
@@ -140,6 +150,65 @@ public class AccountSettingsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         ;
+    }
+    //This function plays the specified music file
+    private void playMusic(MusicFile musicFile) {
+        //Playing resuming song at previous duration if the same song as last
+        if (SongQueue.getInstance().get_size() > 1) {
+            int index = SongQueue.getInstance().pointer - 1;
+            //Getting current and previous song names
+            String s1 = SongQueue.getInstance().get_specified(index).getName();
+            String s2 = SongQueue.getInstance().get_specified(index - 1).getName();
+            if (s1.equals(s2)) {
+                //Resuming at left point
+                //Use previous player
+                exo_player = PlayerManager.getInstance().current_player;
+            } else {
+                PlayerManager.getInstance().stopAllPlayers();
+                exo_player = new ExoPlayer.Builder(getContext()).build();
+                Uri uri = Uri.fromFile(new File(musicFile.getPath()));
+                MediaItem mediaItem = MediaItem.fromUri(uri);
+                exo_player.setMediaItem(mediaItem);
+            }
+        } else {
+            exo_player = new ExoPlayer.Builder(getContext()).build();
+            Uri uri = Uri.fromFile(new File(musicFile.getPath()));
+            MediaItem mediaItem = MediaItem.fromUri(uri);
+            exo_player.setMediaItem(mediaItem);
+        }
+        //Initializing song properties
+        session_id = exo_player.getAudioSessionId();
+        //Applying audio effects
+        apply_audio_effect();
+        exo_player.prepare();
+        exo_player.play();
+        //Adds player to Player session manager
+        PlayerManager.getInstance().addPlayer(exo_player);
+        PlayerManager.getInstance().setCurrent_player(exo_player);
+    }
+    //This function assigns audio effects to the exoplayer like speed/reverb
+    public void apply_audio_effect() {
+        //Initialising reverb settings
+        SongQueue.getInstance().initialize_reverb(session_id);
+        reverb = SongQueue.getInstance().reverb;
+        //Setting playback speed properties
+        exo_player.setPlaybackParameters(new PlaybackParameters(SongQueue.getInstance().speed, SongQueue.getInstance().pitch));
+        //Setting reverberation properties
+        setReverbPreset(SongQueue.getInstance().reverb_level);
+    }
+    //This function sets reverb level based on seekbar progress level
+    private void setReverbPreset(int progress) {
+        //Computing reverberation parameters based of reverb level data proportionality
+        try {
+            int room_level = -2000 + (progress + 1000);
+            double decay_level = 10000;
+            reverb.setReverbLevel((short) progress);
+            reverb.setDecayTime((int) decay_level);
+            reverb.setRoomLevel((short) room_level);
+            reverb.setEnabled(true);
+        } catch (Exception e) {
+            Toast.makeText(getContext(), "Something went wrong with audio effects", Toast.LENGTH_SHORT).show();
+        }
     }
     //This function assigns data from playback overlay to bottom navigation
     public void set_up_play_bar() {
@@ -387,7 +456,13 @@ public class AccountSettingsFragment extends Fragment {
                         pos = rand.nextInt(SongQueue.getInstance().song_list.size());
                     }
                     MusicFile song = SongQueue.getInstance().song_list.get(pos);
-                    open_new_overlay(song, pos);
+                    //Error handling
+                    try {
+                        open_new_overlay(song, pos);
+                    } catch (Exception e) {
+                        playMusic(song);
+                        updateNotification(song);
+                    }
                 }
             }
             @Override
@@ -399,16 +474,42 @@ public class AccountSettingsFragment extends Fragment {
                     ;
                 } else {
                     if (SongQueue.getInstance().shuffle_on != true) {
-                        pos = SongQueue.getInstance().current_position + 1;
+                        pos = SongQueue.getInstance().current_position - 1;
                     } else {
                         pos = rand.nextInt(SongQueue.getInstance().song_list.size());
                     }
                     MusicFile song = SongQueue.getInstance().song_list.get(pos);
-                    open_new_overlay(song, pos);
+                    //Error handling
+                    try {
+                        open_new_overlay(song, pos);
+                    } catch (Exception e) {
+                        playMusic(song);
+                        updateNotification(song);
+                    }
                 }
             }
         });
         mediaSession.setActive(true);
+    }
+    //This function updates the current notification view holder when a song is skipped
+    private void updateNotification(MusicFile musicFile) {
+        //Updating current notification with new details and meta data
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(getContext(), CHANNEL_ID)
+                .setSmallIcon(R.drawable.library)
+                .setContentTitle(format_title(musicFile.getName()))
+                .setContentText(musicFile.getArtist().replaceAll("/", ", "))
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.logo))
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setOnlyAlertOnce(true)
+                .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
+                        .setMediaSession(mediaSession.getSessionToken())
+                        .setShowActionsInCompactView(0));
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getContext());
+        if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        notificationManager.notify(NOTIFICATION_ID, builder.build());
     }
     //This function navigates to a new activity given parameters
     public void navigate_to_activity(Class <?> target) {
