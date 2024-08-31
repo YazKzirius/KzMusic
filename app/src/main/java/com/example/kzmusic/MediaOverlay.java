@@ -2,6 +2,7 @@ package com.example.kzmusic;
 //Imports
 
 
+import java.util.Map;
 import java.util.Random;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -48,12 +49,16 @@ import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.analytics.AnalyticsListener;
+import com.google.android.exoplayer2.metadata.Metadata;
+import com.google.android.exoplayer2.metadata.id3.TextInformationFrame;
 
 import android.media.audiofx.EnvironmentalReverb;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeMap;
 
 import android.widget.ImageButton;
 
@@ -136,6 +141,8 @@ public class MediaOverlay extends Fragment {
     private PlaybackStateCompat.Builder stateBuilder;
     private static final String BASE_URL = "https://www.googleapis.com/youtube/v3/";
     private static final String API_KEY = "AIzaSyD8vgA5jBm6VC0b6UYVRZ8yYahMq1YrR5E"; // Replace with your YouTube Data API key
+    private TreeMap<Long, String> lyricsMap;
+    private TextView lyricsTextView;
 
     public MediaOverlay() {
         // Required empty public constructor
@@ -172,6 +179,12 @@ public class MediaOverlay extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
+        //Updating channel ID settings
+        SongQueue.getInstance().update_id();
+        //Stopping all notification sessions for single session management
+        if (PlayerManager.getInstance().sessions.size() > 0) {
+            PlayerManager.getInstance().StopAllSessions();
+        }
         //Pausing spotify player if song is currently playing, to elimnate overlap
         if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
             SpotifyPlayerLife.getInstance().pause_playback();
@@ -193,6 +206,7 @@ public class MediaOverlay extends Fragment {
         seekBarSpeed = view.findViewById(R.id.seekBarSpeed);
         textCurrentTime = view.findViewById(R.id.textCurrentTime);
         textTotalDuration = view.findViewById(R.id.textTotalDuration);
+        lyricsTextView = view.findViewById(R.id.lyrics_view);
         //Retrieving data from song queue
         musicFile = SongQueue.getInstance().current_song;
         position = SongQueue.getInstance().current_position;
@@ -205,6 +219,8 @@ public class MediaOverlay extends Fragment {
         CHANNEL_ID = SongQueue.getInstance().CHANNEL_ID;
         //Playing music
         playMusic(musicFile);
+        //Displaying circular view
+        set_up_circular_view(musicFile);
         //Loading previous music files
         loadMusicFiles();
         //Setting up media buttons
@@ -213,8 +229,6 @@ public class MediaOverlay extends Fragment {
         set_up_speed_and_pitch();
         //Setting up reverberation seekbar functionality
         set_up_reverb();
-        //Allowing music video streaming
-        set_up_stream();
         return view;
     }
 
@@ -252,7 +266,6 @@ public class MediaOverlay extends Fragment {
                 });
         Glide.with(getContext()).asGif().load(R.drawable.media_playing).circleCrop().into(song_gif);
     }
-
     //This function sets up and implements button functionality
     public void set_up_media_buttons() {
         //Pause/play functionality
@@ -473,8 +486,6 @@ public class MediaOverlay extends Fragment {
         session_id = player.getAudioSessionId();
         //Initializing reverb from Song manager class
         String display_title = format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", ");
-        //Setting up circular view with beats around for song with album art
-        set_up_circular_view(musicFile);
         //Applying audio effects
         apply_audio_effect();
         player.prepare();
@@ -483,12 +494,6 @@ public class MediaOverlay extends Fragment {
         //Adds player to Player session manager
         PlayerManager.getInstance().addPlayer(player);
         PlayerManager.getInstance().setCurrent_player(player);
-        //Updating channel ID settings
-        SongQueue.getInstance().update_id();
-        //Stopping all notification sessions for single session management
-        if (PlayerManager.getInstance().sessions.size() > 0) {
-            PlayerManager.getInstance().StopAllSessions();
-        }
         // Create the notification channel for API 26+
         createNotificationChannel();
         // Initialize the Media Session
@@ -910,97 +915,6 @@ public class MediaOverlay extends Fragment {
             return;
         }
         notificationManager.notify(NOTIFICATION_ID, builder.build());
-    }
-    //This function sets up stream button
-    //Setting clicking events to the entire layout
-    public void set_up_stream() {
-        ImageView yt = view.findViewById(R.id.yt_icon);
-        yt.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                getVideoIdByName(format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", "));
-            }
-        });
-        Button btn2 = view.findViewById(R.id.yt_btn);
-        btn2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                getVideoIdByName(format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", "));
-            }
-        });
-        ImageButton btn3 = view.findViewById(R.id.btn_video);
-        btn3.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                getVideoIdByName(format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", "));
-            }
-        });
-    }
-    //This function gets video id by song name
-    public void getVideoIdByName(String songName) {
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-        YoutubeService service = retrofit.create(YoutubeService.class);
-        Call<YoutubeResponse> call = service.searchVideos("snippet", songName, "video", API_KEY);
-
-        call.enqueue(new Callback<YoutubeResponse>() {
-            @Override
-            public void onResponse(Call<YoutubeResponse> call, Response<YoutubeResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    YoutubeResponse body = response.body();
-                    if (body.items.length > 0 && body.items[0].id.videoId != null) {
-                        String videoId = body.items[0].id.videoId;
-                        String url = "https://www.youtube.com/watch?v=" + videoId;
-                        stream_on_yt(url);
-                        // Update UI or perform other actions with videoId
-                    } else {
-                        ;
-
-                    }
-                } else {
-                    ;
-                }
-            }
-
-            @Override
-            public void onFailure(Call<YoutubeResponse> call, Throwable t) {
-                Toast.makeText(getContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-    //This function allows user to stream song on youtube
-    public void stream_on_yt(String url) {
-        //Pausing player
-        player.pause();
-        btnPlayPause.setImageResource(R.drawable.ic_play);
-        stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, 0, song_speed);
-        mediaSession.setPlaybackState(stateBuilder.build());
-        showNotification(stateBuilder.build());
-        // Create the intent to open YouTube with the video ID
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-
-        // Check if the YouTube app is available to handle the intent
-        PackageManager packageManager = getContext().getPackageManager();
-        List<ResolveInfo> resolveInfos = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
-
-        boolean isYouTubeAppInstalled = false;
-        for (ResolveInfo resolveInfo : resolveInfos) {
-            if (resolveInfo.activityInfo.packageName.contains("youtube")) {
-                isYouTubeAppInstalled = true;
-                break;
-            }
-        }
-
-        if (isYouTubeAppInstalled) {
-            // Launch YouTube app with the video
-            intent.setPackage("com.google.android.youtube");
-            startActivity(intent);
-        } else {
-            // If YouTube app is not installed, open the video in the default web browser
-            startActivity(intent);
-        }
     }
     @Override
     public void onDestroy() {

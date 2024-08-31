@@ -161,37 +161,14 @@
             android:textColor="@color/white"
             android:max="1000"
             android:min="-1000"/>
-        <LinearLayout
+
+        <TextView
             android:layout_width="wrap_content"
-            android:layout_height="50dp"
-            android:id="@+id/stream_btn"
-            android:layout_marginTop="20dp"
-            android:orientation="horizontal"
-            android:background="@color/white"
-            android:gravity="center_vertical">
-
-            <ImageView
-                android:id="@+id/yt_icon"
-                android:layout_width="56dp"
-                android:layout_height="50dp"
-                android:src="@drawable/ic_youtube"/>
-
-            <Button
-                android:id="@+id/yt_btn"
-                android:layout_width="260dp"
-                android:layout_height="50dp"
-                android:text="Stream on Youtube"
-                android:backgroundTint="@color/white"
-                android:textColor="@android:color/black"
-                android:textSize="18sp"/>
-            <ImageButton
-                android:id="@+id/btn_video"
-                android:layout_width="70dp"
-                android:layout_height="70dp"
-                android:layout_marginRight="2dp"
-                android:src="@drawable/ic_music_video"
-                android:background="?attr/selectableItemBackground" />
-        </LinearLayout>
+            android:layout_height="match_parent"
+            android:layout_marginTop="10dp"
+            android:textSize="30dp"
+            android:text="lyrics"
+            android:id="@+id/lyrics_view"/>
 
     </LinearLayout>
 
