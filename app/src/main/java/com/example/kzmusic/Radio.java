@@ -15,6 +15,7 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.media.session.MediaButtonReceiver;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -72,6 +73,7 @@ public class Radio extends Fragment {
     TextView Artist;
     ImageButton ic_down;
     RelativeLayout playback_bar;
+    private SharedViewModel sharedViewModel;
 
     public Radio(String token) {
         // Required empty public constructor
@@ -138,6 +140,15 @@ public class Radio extends Fragment {
         set_up_spotify_play();
         set_up_play_bar();
         return view;
+    }
+    //This function sets up media notification bar skip events
+    public void set_up_skipping() {
+        sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
+        SharedViewModelProvider.initViewModel(this);  // Initialize the ViewModelProvider
+
+        sharedViewModel.getSkipEvent().observe(getViewLifecycleOwner(), skip -> {
+            set_up_play_bar();
+        });
     }
 
     //This function searches for random music using API queries and updates the current tracklist

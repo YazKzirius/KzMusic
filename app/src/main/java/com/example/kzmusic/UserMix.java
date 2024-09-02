@@ -16,6 +16,7 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.media.session.MediaButtonReceiver;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -79,6 +80,7 @@ public class UserMix extends Fragment {
     TextView Artist;
     ImageButton ic_down;
     RelativeLayout playback_bar;
+    private SharedViewModel sharedViewModel;
     public UserMix(String token) {
         // Required empty public constructor
         this.access_token = token;
@@ -202,6 +204,15 @@ public class UserMix extends Fragment {
                 }
             }
         }
+    }
+    //This function sets up media notification bar skip events
+    public void set_up_skipping() {
+        sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
+        SharedViewModelProvider.initViewModel(this);  // Initialize the ViewModelProvider
+
+        sharedViewModel.getSkipEvent().observe(getViewLifecycleOwner(), skip -> {
+            set_up_play_bar();
+        });
     }
     //This function searches for random music using API queries and updates the current tracklist
     public void display_generated_music(String token, String artist) {

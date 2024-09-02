@@ -21,6 +21,7 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.media.session.MediaButtonReceiver;
 
 import android.support.v4.media.session.MediaSessionCompat;
@@ -75,6 +76,7 @@ public class LibraryFragment extends Fragment {
     ExoPlayer exo_player;
     private EnvironmentalReverb reverb;
     int session_id;
+    private SharedViewModel sharedViewModel;
 
     public LibraryFragment() {
         // Required empty public constructor
@@ -120,20 +122,21 @@ public class LibraryFragment extends Fragment {
         //Setting up bottom playback navigator
         set_up_spotify_play();
         set_up_play_bar();
-        if (SongQueue.getInstance().current_song != null) {
-            PlayerManager.getInstance().StopAllSessions();
-            SongQueue.getInstance().update_id();
-            createNotificationChannel();
-            initializeMediaSession();
-        } else {
-            ;
-        }
         return view;
     }
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         ;
+    }
+    //This function sets up media notification bar skip events
+    public void set_up_skipping() {
+        sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
+        SharedViewModelProvider.initViewModel(this);  // Initialize the ViewModelProvider
+
+        sharedViewModel.getSkipEvent().observe(getViewLifecycleOwner(), skip -> {
+            set_up_play_bar();
+        });
     }
     //This function plays the specified music file
     private void playMusic(MusicFile musicFile) {

@@ -23,6 +23,7 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.media.session.MediaButtonReceiver;
 
 import com.bumptech.glide.Glide;
@@ -74,6 +75,7 @@ public class HomeFragment extends Fragment {
     ExoPlayer player;
     private EnvironmentalReverb reverb;
     int session_id;
+    private SharedViewModel sharedViewModel;
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -140,16 +142,16 @@ public class HomeFragment extends Fragment {
         set_up_buttons();
         set_up_spotify_play();
         set_up_play_bar();
-        if (SongQueue.getInstance().current_song != null) {
-            PlayerManager.getInstance().StopAllSessions();
-            //Updating channel ID settings
-            SongQueue.getInstance().update_id();
-            createNotificationChannel();
-            initializeMediaSession();
-        } else {
-            ;
-        }
         return view;
+    }
+    //This function sets up media notification bar skip events
+    public void set_up_skipping() {
+        sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
+        SharedViewModelProvider.initViewModel(this);  // Initialize the ViewModelProvider
+
+        sharedViewModel.getSkipEvent().observe(getViewLifecycleOwner(), skip -> {
+            Toast.makeText(getContext(), "Clicked", Toast.LENGTH_LONG).show();
+        });
     }
     //This function plays the specified music file
     private void playMusic(MusicFile musicFile) {

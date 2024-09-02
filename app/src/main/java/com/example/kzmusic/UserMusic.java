@@ -32,6 +32,7 @@ import android.media.MediaMetadataRetriever;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.media.session.MediaButtonReceiver;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -74,6 +75,7 @@ public class UserMusic extends Fragment {
     private static final int NOTIFICATION_ID = 4;
     private MediaSessionCompat mediaSession;
     private PlaybackStateCompat.Builder stateBuilder;
+    private SharedViewModel sharedViewModel;
 
     public UserMusic() {
         // Required empty public constructor
@@ -134,6 +136,15 @@ public class UserMusic extends Fragment {
         set_up_spotify_play();
         set_up_play_bar();
         return view;
+    }
+    //This function sets up media notification bar skip events
+    public void set_up_skipping() {
+        sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
+        SharedViewModelProvider.initViewModel(this);  // Initialize the ViewModelProvider
+
+        sharedViewModel.getSkipEvent().observe(getViewLifecycleOwner(), skip -> {
+            set_up_play_bar();
+        });
     }
     //This function loads User music audio files from personal directory
     private void loadMusicFiles() {
