@@ -103,5 +103,7 @@ public class MainPage extends AppCompatActivity {
     public void onDestroy() {
         super.onDestroy();
         SpotifyPlayerLife.getInstance().stopPlaybackAndDisconnect();
+        PlayerManager.getInstance().StopAllSessions();
+        PlayerManager.getInstance().stopAllPlayers();
     }
 }

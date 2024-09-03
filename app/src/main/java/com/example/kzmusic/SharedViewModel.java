@@ -5,15 +5,13 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 public class SharedViewModel extends ViewModel {
-    private final MutableLiveData<Boolean> skipEvent = new MutableLiveData<>();
-
+    private final MutableLiveData<Event<Boolean>> skipEvent = new MutableLiveData<>();
 
     public void triggerSkipEvent() {
-        skipEvent.setValue(true);
+        skipEvent.setValue(new Event<>(true));
     }
 
-
-    public LiveData<Boolean> getSkipEvent() {
+    public LiveData<Event<Boolean>> getSkipEvent() {
         return skipEvent;
     }
 }

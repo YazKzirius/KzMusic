@@ -3,6 +3,10 @@ package com.example.kzmusic;
 //Imports
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -11,6 +15,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
 
+import android.os.IBinder;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.view.LayoutInflater;
@@ -76,6 +81,9 @@ public class UserMusic extends Fragment {
     private MediaSessionCompat mediaSession;
     private PlaybackStateCompat.Builder stateBuilder;
     private SharedViewModel sharedViewModel;
+    PlayerService playerService;
+    Boolean isBound;
+    ServiceConnection serviceConnection;
 
     public UserMusic() {
         // Required empty public constructor
@@ -135,15 +143,46 @@ public class UserMusic extends Fragment {
         //Setting up bottom playback navigator
         set_up_spotify_play();
         set_up_play_bar();
+        if (SongQueue.getInstance().get_size() > 0) {
+            set_up_skipping();
+        }
         return view;
     }
     //This function sets up media notification bar skip events
     public void set_up_skipping() {
-        sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
-        SharedViewModelProvider.initViewModel(this);  // Initialize the ViewModelProvider
+        serviceConnection = new ServiceConnection() {
 
-        sharedViewModel.getSkipEvent().observe(getViewLifecycleOwner(), skip -> {
-            set_up_play_bar();
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                PlayerService.LocalBinder binder = (PlayerService.LocalBinder) service;
+                playerService = binder.getService();
+                isBound = true;
+
+                // Pass the ViewModel to the service
+                sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+                playerService.setViewModel(sharedViewModel);
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                isBound = false;
+            }
+        };
+        sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+
+        Intent intent = new Intent(getActivity(), PlayerService.class);
+        getActivity().startService(intent);
+        getActivity().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+
+        // Observe the skip event
+        sharedViewModel.getSkipEvent().observe(getViewLifecycleOwner(), event -> {
+            if (event != null) {
+                Boolean shouldSkip = event.getContentIfNotHandled();
+                if (shouldSkip != null && shouldSkip) {
+                    // Handle the skip event in the fragment
+                    set_up_play_bar();
+                }
+            }
         });
     }
     //This function loads User music audio files from personal directory
@@ -281,6 +320,7 @@ public class UserMusic extends Fragment {
     //This function opens a new song overlay
     public void open_new_overlay(MusicFile file, int position) {
         //Adding song to queue
+        stopPlayerService();
         SongQueue.getInstance().addSong(file);
         SongQueue.getInstance().setPosition(position);
         Fragment media_page = new MediaOverlay();
@@ -308,94 +348,8 @@ public class UserMusic extends Fragment {
             });
         }
     }
-    //This function creates the media playback notification channel
-    private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "Media playback",
-                    NotificationManager.IMPORTANCE_LOW);
-            channel.setDescription("Media playback controls");
-
-            NotificationManager notificationManager = getActivity().getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
-        }
-    }
-
-    //This function creates the playback controls for notification channel
-    private void showNotification(PlaybackStateCompat state) {
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(getContext(), CHANNEL_ID);
-        builder.setContentTitle(format_title(SongQueue.getInstance().current_song.getName()))
-                .setContentText(SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", "))
-                .setSmallIcon(R.drawable.library)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setOnlyAlertOnce(true)
-                .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
-                        .setMediaSession(mediaSession.getSessionToken())
-                        .setShowActionsInCompactView(0));
-        if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
-            builder.addAction(new NotificationCompat.Action(
-                    R.drawable.ic_pause, "Pause", MediaButtonReceiver.buildMediaButtonPendingIntent(
-                    getContext(), PlaybackStateCompat.ACTION_PAUSE)));
-        } else {
-            builder.addAction(new NotificationCompat.Action(
-                    R.drawable.ic_play, "Play", MediaButtonReceiver.buildMediaButtonPendingIntent(
-                    getContext(), PlaybackStateCompat.ACTION_PLAY)));
-        }
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getContext());
-        if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        notificationManager.notify(NOTIFICATION_ID, builder.build());
-    }
-    //This function creates a new media session for specific player
-    private void initializeMediaSession() {
-        mediaSession = new MediaSessionCompat(getContext(), "ExoPlayerMediaSession");
-        mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
-                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
-        Random rand = new Random();
-        stateBuilder = new PlaybackStateCompat.Builder()
-                .setActions(PlaybackStateCompat.ACTION_PLAY_PAUSE | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_PLAY)
-                .setState(PlaybackStateCompat.STATE_PLAYING, 0, SongQueue.getInstance().speed);
-        mediaSession.setPlaybackState(stateBuilder.build());
-        showNotification(stateBuilder.build());
-        mediaSession.setCallback(new MediaSessionCompat.Callback() {
-            @Override
-            public void onPlay() {
-                super.onPlay();
-                // Update playback state to playing
-                PlayerManager.getInstance().current_player.play();
-                stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING, 0, 1.0f);
-                mediaSession.setPlaybackState(stateBuilder.build());
-                showNotification(stateBuilder.build());
-            }
-
-            @Override
-            public void onPause() {
-                super.onPause();
-                //Update playback state to paused
-                PlayerManager.getInstance().current_player.pause();
-                stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, 0, 1.0f);
-                mediaSession.setPlaybackState(stateBuilder.build());
-                showNotification(stateBuilder.build());
-            }
-        });
-        mediaSession.setActive(true);
-    }
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (mediaSession != null) {
-            mediaSession.getController().getTransportControls().stop();
-            mediaSession.release();
-        }
+    private void stopPlayerService() {
+        Intent intent = new Intent(requireContext(), PlayerService.class);
+        requireContext().stopService(intent);
     }
 }

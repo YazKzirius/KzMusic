@@ -46,7 +46,7 @@ public class PlayerService extends Service {
     String CHANNEL_ID = "player_channel_id";
     int NOTIFICATION_ID = 1;
     private MediaSessionCompat mediaSession;
-    private PlaybackStateCompat.Builder stateBuilder;
+    PlaybackStateCompat.Builder stateBuilder;
     private EnvironmentalReverb reverb;
     int session_id;
     ExoPlayer player;
@@ -75,11 +75,73 @@ public class PlayerService extends Service {
         initializeMediaSession();
         createNotificationChannel();
     }
+    //This function plays the specified music file
+    private void playMusic(MusicFile musicFile) {
+        //Playing resuming song at previous duration if the same song as last
+        if (SongQueue.getInstance().get_size() > 1) {
+            int index = SongQueue.getInstance().pointer - 1;
+            //Getting current and previous song names
+            String s1 = SongQueue.getInstance().get_specified(index).getName();
+            String s2 = SongQueue.getInstance().get_specified(index - 1).getName();
+            if (s1.equals(s2)) {
+                //Resuming at left point
+                //Use previous player
+                player = PlayerManager.getInstance().current_player;
+            } else {
+                PlayerManager.getInstance().stopAllPlayers();
+                player = new ExoPlayer.Builder(getApplicationContext()).build();
+                Uri uri = Uri.fromFile(new File(musicFile.getPath()));
+                MediaItem mediaItem = MediaItem.fromUri(uri);
+                player.setMediaItem(mediaItem);
+            }
+        } else {
+            player = new ExoPlayer.Builder(getApplicationContext()).build();
+            Uri uri = Uri.fromFile(new File(musicFile.getPath()));
+            MediaItem mediaItem = MediaItem.fromUri(uri);
+            player.setMediaItem(mediaItem);
+        }
+        //Initializing song properties
+        session_id = player.getAudioSessionId();
+        //Applying audio effects
+        apply_audio_effect();
+        player.prepare();
+        player.play();
+        //Adds player to Player session manager
+        PlayerManager.getInstance().addPlayer(player);
+        PlayerManager.getInstance().setCurrent_player(player);
+    }
+    //This function assigns audio effects to the exoplayer like speed/reverb
+    public void apply_audio_effect() {
+        //Initialising reverb settings
+        SongQueue.getInstance().initialize_reverb(session_id);
+        reverb = SongQueue.getInstance().reverb;
+        //Setting playback speed properties
+        player.setPlaybackParameters(new PlaybackParameters(SongQueue.getInstance().speed, SongQueue.getInstance().pitch));
+        //Setting reverberation properties
+        setReverbPreset(SongQueue.getInstance().reverb_level);
+    }
+    //This function sets reverb level based on seekbar progress level
+    private void setReverbPreset(int progress) {
+        //Computing reverberation parameters based of reverb level data proportionality
+        try {
+            int room_level = -2000 + (progress + 1000);
+            double decay_level = 10000;
+            reverb.setReverbLevel((short) progress);
+            reverb.setDecayTime((int) decay_level);
+            reverb.setRoomLevel((short) room_level);
+            reverb.setEnabled(true);
+        } catch (Exception e) {
+            Toast.makeText(getApplicationContext(), "Something went wrong with audio effects", Toast.LENGTH_SHORT).show();
+        }
+    }
     private void handleSkip() {
         // Trigger the skip event in the ViewModel
         if (sharedViewModel != null) {
             sharedViewModel.triggerSkipEvent();
         }
+    }
+    public void setViewModel(SharedViewModel viewModel) {
+        this.sharedViewModel = viewModel;
     }
 
     @Override
@@ -173,15 +235,11 @@ public class PlayerService extends Service {
                         pos = rand.nextInt(SongQueue.getInstance().song_list.size());
                     }
                     MusicFile song = SongQueue.getInstance().song_list.get(pos);
-                    //Error handling
-                    try {
-                        open_new_overlay(song, pos);
-                    } catch (Exception e) {
-                        SongQueue.getInstance().addSong(song);
-                        SongQueue.getInstance().setPosition(pos);
-                        updateNotification(song);
-                        handleSkip();
-                    }
+                    SongQueue.getInstance().addSong(song);
+                    SongQueue.getInstance().setPosition(pos);
+                    updateNotification(song);
+                    playMusic(song);
+                    handleSkip();
                 }
             }
             @Override
@@ -198,15 +256,11 @@ public class PlayerService extends Service {
                         pos = rand.nextInt(SongQueue.getInstance().song_list.size());
                     }
                     MusicFile song = SongQueue.getInstance().song_list.get(pos);
-                    //Error handling
-                    try {
-                        open_new_overlay(song, pos);
-                    } catch (Exception e) {
-                        SongQueue.getInstance().addSong(song);
-                        SongQueue.getInstance().setPosition(pos);
-                        updateNotification(song);
-                        handleSkip();
-                    }
+                    SongQueue.getInstance().addSong(song);
+                    SongQueue.getInstance().setPosition(pos);
+                    playMusic(song);
+                    updateNotification(song);
+                    handleSkip();
                 }
             }
         });
@@ -307,10 +361,8 @@ public class PlayerService extends Service {
             public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
                 builder.setLargeIcon(resource);
                 NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                if (ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                    return;
-                }
                 notificationManager.notify(NOTIFICATION_ID, builder.build());
+                startForeground(NOTIFICATION_ID, builder.build());
             }
 
             @Override
@@ -321,10 +373,8 @@ public class PlayerService extends Service {
             public void onLoadFailed(@Nullable Drawable errorDrawable) {
                 builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.logo));
                 NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                if (ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                    return;
-                }
                 notificationManager.notify(NOTIFICATION_ID, builder.build());
+                startForeground(NOTIFICATION_ID, builder.build());
             }
         });
     }

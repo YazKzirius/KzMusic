@@ -3,6 +3,10 @@ package com.example.kzmusic;
 //imports
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
@@ -20,6 +24,7 @@ import androidx.media.session.MediaButtonReceiver;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import android.os.IBinder;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
@@ -74,6 +79,9 @@ public class Radio extends Fragment {
     ImageButton ic_down;
     RelativeLayout playback_bar;
     private SharedViewModel sharedViewModel;
+    PlayerService playerService;
+    Boolean isBound;
+    ServiceConnection serviceConnection;
 
     public Radio(String token) {
         // Required empty public constructor
@@ -139,15 +147,46 @@ public class Radio extends Fragment {
         //Setting up bottom playback navigator
         set_up_spotify_play();
         set_up_play_bar();
+        if (SongQueue.getInstance().get_size() > 0) {
+            set_up_skipping();
+        }
         return view;
     }
     //This function sets up media notification bar skip events
     public void set_up_skipping() {
-        sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
-        SharedViewModelProvider.initViewModel(this);  // Initialize the ViewModelProvider
+        serviceConnection = new ServiceConnection() {
 
-        sharedViewModel.getSkipEvent().observe(getViewLifecycleOwner(), skip -> {
-            set_up_play_bar();
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                PlayerService.LocalBinder binder = (PlayerService.LocalBinder) service;
+                playerService = binder.getService();
+                isBound = true;
+
+                // Pass the ViewModel to the service
+                sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+                playerService.setViewModel(sharedViewModel);
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                isBound = false;
+            }
+        };
+        sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+
+        Intent intent = new Intent(getActivity(), PlayerService.class);
+        getActivity().startService(intent);
+        getActivity().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+
+        // Observe the skip event
+        sharedViewModel.getSkipEvent().observe(getViewLifecycleOwner(), event -> {
+            if (event != null) {
+                Boolean shouldSkip = event.getContentIfNotHandled();
+                if (shouldSkip != null && shouldSkip) {
+                    // Handle the skip event in the fragment
+                    set_up_play_bar();
+                }
+            }
         });
     }
 
@@ -265,6 +304,7 @@ public class Radio extends Fragment {
     //This function opens a new song overlay
     public void open_new_overlay(MusicFile file, int position) {
         //Adding song to queue
+        stopPlayerService();
         SongQueue.getInstance().addSong(file);
         SongQueue.getInstance().setPosition(position);
         Fragment media_page = new MediaOverlay();
@@ -291,5 +331,9 @@ public class Radio extends Fragment {
                 }
             });
         }
+    }
+    private void stopPlayerService() {
+        Intent intent = new Intent(requireContext(), PlayerService.class);
+        requireContext().stopService(intent);
     }
 }

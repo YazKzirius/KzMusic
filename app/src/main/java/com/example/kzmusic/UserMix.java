@@ -3,6 +3,10 @@ package com.example.kzmusic;
 //Imports
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
@@ -22,6 +26,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SortedList;
 
+import android.os.IBinder;
 import android.provider.MediaStore;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
@@ -81,6 +86,9 @@ public class UserMix extends Fragment {
     ImageButton ic_down;
     RelativeLayout playback_bar;
     private SharedViewModel sharedViewModel;
+    PlayerService playerService;
+    Boolean isBound;
+    ServiceConnection serviceConnection;
     public UserMix(String token) {
         // Required empty public constructor
         this.access_token = token;
@@ -151,6 +159,9 @@ public class UserMix extends Fragment {
         }
         set_up_spotify_play();
         set_up_play_bar();
+        if (SongQueue.getInstance().get_size() > 0) {
+            set_up_skipping();
+        }
         return view;
     }
     //This function loads User music audio files from personal directory
@@ -207,11 +218,39 @@ public class UserMix extends Fragment {
     }
     //This function sets up media notification bar skip events
     public void set_up_skipping() {
-        sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
-        SharedViewModelProvider.initViewModel(this);  // Initialize the ViewModelProvider
+        serviceConnection = new ServiceConnection() {
 
-        sharedViewModel.getSkipEvent().observe(getViewLifecycleOwner(), skip -> {
-            set_up_play_bar();
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                PlayerService.LocalBinder binder = (PlayerService.LocalBinder) service;
+                playerService = binder.getService();
+                isBound = true;
+
+                // Pass the ViewModel to the service
+                sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+                playerService.setViewModel(sharedViewModel);
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                isBound = false;
+            }
+        };
+        sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+
+        Intent intent = new Intent(getActivity(), PlayerService.class);
+        getActivity().startService(intent);
+        getActivity().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+
+        // Observe the skip event
+        sharedViewModel.getSkipEvent().observe(getViewLifecycleOwner(), event -> {
+            if (event != null) {
+                Boolean shouldSkip = event.getContentIfNotHandled();
+                if (shouldSkip != null && shouldSkip) {
+                    // Handle the skip event in the fragment
+                    set_up_play_bar();
+                }
+            }
         });
     }
     //This function searches for random music using API queries and updates the current tracklist
@@ -394,6 +433,7 @@ public class UserMix extends Fragment {
     //This function opens a new song overlay
     public void open_new_overlay(MusicFile file, int position) {
         //Adding song to queue
+        stopPlayerService();
         SongQueue.getInstance().addSong(file);
         SongQueue.getInstance().setPosition(position);
         Fragment media_page = new MediaOverlay();
@@ -401,5 +441,9 @@ public class UserMix extends Fragment {
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.fragment_container, media_page);
         fragmentTransaction.commit();
+    }
+    private void stopPlayerService() {
+        Intent intent = new Intent(requireContext(), PlayerService.class);
+        requireContext().stopService(intent);
     }
 }

@@ -178,6 +178,8 @@ public class MediaOverlay extends Fragment {
         reverb_level = SongQueue.getInstance().reverb_level;
         //Playing music
         playMusic(musicFile);
+        //Displaying circular view
+        set_up_circular_view(musicFile);
         //Loading previous music files
         loadMusicFiles();
         //Setting up media buttons
@@ -188,21 +190,6 @@ public class MediaOverlay extends Fragment {
         set_up_reverb();
         //Setting up media bar skipping in notifications
         set_up_skipping();
-        serviceConnection = new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName name, IBinder service) {
-                PlayerService.LocalBinder binder = (PlayerService.LocalBinder) service;
-                playerService = binder.getService();
-                isBound = true;
-                // Now you can call service methods
-            }
-
-            @Override
-            public void onServiceDisconnected(ComponentName name) {
-                isBound = false;
-            }
-        };
-        startPlayerService();
         return view;
     }
 
@@ -242,11 +229,59 @@ public class MediaOverlay extends Fragment {
     }
     //This function sets up media notification bar skip events
     public void set_up_skipping() {
-        sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
-        SharedViewModelProvider.initViewModel(this);  // Initialize the ViewModelProvider
+        //Connecting to service
+        serviceConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                PlayerService.LocalBinder binder = (PlayerService.LocalBinder) service;
+                playerService = binder.getService();
+                //This updates notifcation ui every new call
+                playerService.updateNotification(musicFile);
+                isBound = true;
+                // Pass the ViewModel to the service
+                sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+                playerService.setViewModel(sharedViewModel);
+                // Now you can call service methods
+            }
 
-        sharedViewModel.getSkipEvent().observe(getViewLifecycleOwner(), skip -> {
-            playMusic(SongQueue.getInstance().current_song);
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                isBound = false;
+            }
+        };
+        sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+
+        Intent intent = new Intent(getActivity(), PlayerService.class);
+        getActivity().startService(intent);
+        getActivity().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+
+        // Observe the skip event
+        sharedViewModel.getSkipEvent().observe(getViewLifecycleOwner(), event -> {
+            if (event != null) {
+                Boolean shouldSkip = event.getContentIfNotHandled();
+                if (shouldSkip != null && shouldSkip) {
+                    // Handle the skip event in the fragment
+                    musicFile = SongQueue.getInstance().current_song;
+                    position = SongQueue.getInstance().current_position;
+                    player = PlayerManager.getInstance().current_player;
+                    //Initializing song properties
+                    session_id = player.getAudioSessionId();
+                    //Initializing reverb from Song manager class
+                    String display_title = format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", ");
+                    //Applying audio effects
+                    apply_audio_effect();
+                    player.prepare();
+                    player.play();
+                    overlaySongTitle.setText(display_title);
+                    //Displaying circular view
+                    set_up_circular_view(musicFile);
+                    //Adds player to Player session manager
+                    PlayerManager.getInstance().addPlayer(player);
+                    PlayerManager.getInstance().setCurrent_player(player);
+                    //Setting up seekbar
+                    set_up_bar();
+                }
+            }
         });
     }
     //This function sets up and implements button functionality
@@ -438,7 +473,7 @@ public class MediaOverlay extends Fragment {
         if (SongQueue.getInstance().get_size() > 1) {
             int index = SongQueue.getInstance().pointer - 1;
             //Getting current and previous song names
-            String s1 = SongQueue.getInstance().get_specified(index).getName();
+            String s1 = musicFile.getName();
             String s2 = SongQueue.getInstance().get_specified(index - 1).getName();
             if (s1.equals(s2)) {
                 //Resuming at left point
@@ -472,6 +507,24 @@ public class MediaOverlay extends Fragment {
         overlaySongTitle.setText(display_title);
         //Displaying circular view
         set_up_circular_view(musicFile);
+        //Adds player to Player session manager
+        PlayerManager.getInstance().addPlayer(player);
+        PlayerManager.getInstance().setCurrent_player(player);
+        //Setting up seekbar
+        set_up_bar();
+    }
+    //This function implements skip functionality for event
+    public void play_for_skipped(MusicFile musicFile) {
+        player = PlayerManager.getInstance().current_player;
+        //Initializing song properties
+        session_id = player.getAudioSessionId();
+        //Initializing reverb from Song manager class
+        String display_title = format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", ");
+        //Applying audio effects
+        apply_audio_effect();
+        player.prepare();
+        player.play();
+        overlaySongTitle.setText(display_title);
         //Adds player to Player session manager
         PlayerManager.getInstance().addPlayer(player);
         PlayerManager.getInstance().setCurrent_player(player);
@@ -699,6 +752,7 @@ public class MediaOverlay extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        stopPlayerService();
     }
     private void startPlayerService() {
         Intent intent = new Intent(requireContext(), PlayerService.class);
