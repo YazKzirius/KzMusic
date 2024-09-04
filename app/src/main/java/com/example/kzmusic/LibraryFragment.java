@@ -74,10 +74,6 @@ public class LibraryFragment extends Fragment {
     TextView Artist;
     ImageButton ic_down;
     RelativeLayout playback_bar;
-    private static final String CHANNEL_ID = "media_playback_channel4";
-    private static final int NOTIFICATION_ID = 4;
-    private MediaSessionCompat mediaSession;
-    private PlaybackStateCompat.Builder stateBuilder;
     ExoPlayer exo_player;
     private EnvironmentalReverb reverb;
     int session_id;
@@ -133,6 +129,7 @@ public class LibraryFragment extends Fragment {
         if (SongQueue.getInstance().get_size() > 0) {
             set_up_skipping();
         }
+        set_up_library();
         return view;
     }
     @Override
@@ -327,6 +324,20 @@ public class LibraryFragment extends Fragment {
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.fragment_container, media_page);
         fragmentTransaction.commit();
+    }
+    //This function sets up library button functionality
+    public void set_up_library() {
+        ImageView button = view.findViewById(R.id.library_btn);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Fragment music_page = new UserMusic();
+                FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
+                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                fragmentTransaction.replace(R.id.fragment_container, music_page);
+                fragmentTransaction.commit();
+            }
+        });
     }
     //This function handles Spotify overlay play/pause
     public void set_up_spotify_play() {

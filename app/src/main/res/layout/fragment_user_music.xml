@@ -24,14 +24,27 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Your music:"
+            android:gravity="center"
             android:textColor="@color/white"
             android:textSize="25sp"/>
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:layout_marginTop="10dp"
-            android:id="@+id/recycler_view2"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="500dp" />
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:layout_marginTop="10dp"
+                android:id="@+id/recycler_view2"
+                android:layout_width="200dp"
+                android:layout_height="500dp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:layout_marginTop="10dp"
+                android:id="@+id/recycler_view3"
+                android:layout_width="match_parent"
+                android:layout_height="500dp" />
+
+        </LinearLayout>
     </LinearLayout>
     <RelativeLayout
         android:id="@+id/playback_bar"

@@ -40,7 +40,9 @@ public class SongQueue {
         this.current_song = song;
         this.pointer += 1;
     }
-
+    public void clear_songs() {
+        this.songs_played.clear();
+    }
     public void setSong_list(List<MusicFile> song_list) {
         this.song_list = song_list;
     }

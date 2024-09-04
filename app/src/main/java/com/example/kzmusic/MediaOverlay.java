@@ -1,22 +1,15 @@
 package com.example.kzmusic;
 //Imports
-import static androidx.core.app.ServiceCompat.startForeground;
-
 import java.util.Random;
-
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
@@ -24,7 +17,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.provider.MediaStore;
-import android.support.v4.media.session.MediaSessionCompat;
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -45,20 +38,17 @@ import android.media.audiofx.EnvironmentalReverb;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.TreeMap;
 import android.widget.ImageButton;
 import com.bumptech.glide.Glide;
 import android.widget.Toast;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.support.v4.media.session.PlaybackStateCompat;
-import androidx.core.app.NotificationCompat;
-import androidx.media.session.MediaButtonReceiver;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 
 /**
@@ -111,6 +101,7 @@ public class MediaOverlay extends Fragment {
     private PlayerService playerService;
     private boolean isBound = false;
     ServiceConnection serviceConnection;
+    private static final String API_KEY = "2ae10e3784a6e96d12c87d11692e8089";
 
     public MediaOverlay() {
         // Required empty public constructor
@@ -747,12 +738,12 @@ public class MediaOverlay extends Fragment {
         } catch (Exception e) {
             Toast.makeText(getContext(), "Something went wrong with audio effects", Toast.LENGTH_SHORT).show();
         }
-
     }
     @Override
     public void onDestroy() {
         super.onDestroy();
         stopPlayerService();
+
     }
     private void startPlayerService() {
         Intent intent = new Intent(requireContext(), PlayerService.class);

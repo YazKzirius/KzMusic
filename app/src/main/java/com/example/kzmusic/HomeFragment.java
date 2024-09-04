@@ -136,11 +136,9 @@ public class HomeFragment extends Fragment {
         //Setting up Homepage and getting given accesstoken
         set_up_buttons();
         TextView text1 = view.findViewById(R.id.your_radio);
-        TextView text2 = view.findViewById(R.id.user_music);
         TextView text3 = view.findViewById(R.id.made_for_x);
         TextView text4 = view.findViewById(R.id.top_songs);
         text1.setText(username+" radio:");
-        text2.setText(username+" music:");
         text3.setText(username+" mix");
         text4.setText(username+" Top 10");
         if (getArguments() != null) {
@@ -254,7 +252,6 @@ public class HomeFragment extends Fragment {
     //This function sets up the two image buttons on the homepage
     public void set_up_buttons() {
         ImageView button1 = view.findViewById(R.id.ic_radio);
-        ImageView button2 = view.findViewById(R.id.ic_library);
         ImageView button3 = view.findViewById(R.id.ic_for_you);
         button1.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -266,18 +263,7 @@ public class HomeFragment extends Fragment {
                 fragmentTransaction.addToBackStack(null);  // Optional: adds the transaction to the back stack
                 fragmentTransaction.commit();
             }
-        });
-        button2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Fragment newFragment = new UserMusic();
-                FragmentManager fragmentManager = getParentFragmentManager();
-                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                fragmentTransaction.replace(R.id.fragment_container, newFragment);
-                fragmentTransaction.addToBackStack(null);  // Optional: adds the transaction to the back stack
-                fragmentTransaction.commit();
-            }
-        });
+        });;
         button3.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

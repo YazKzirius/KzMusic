@@ -18,6 +18,36 @@
             android:layout_width="143dp"
             android:layout_height="143dp"
             android:src="@drawable/logo" />
+        <ImageView
+            android:layout_marginTop="20dp"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:id="@+id/library_btn"
+            android:src="@drawable/ic_library"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Song Library"
+            android:textSize="20sp"
+            android:textColor="@color/white"
+            android:gravity="center"/>
+
+        <ImageButton
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:layout_marginTop="60dp"
+            android:background="@color/white"
+            android:id="@+id/liked_btn"
+            android:src="@drawable/ic_liked"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Liked songs"
+            android:textSize="20sp"
+            android:textColor="@color/white"
+            android:gravity="center"/>
+
+
 
     </LinearLayout>
     <RelativeLayout

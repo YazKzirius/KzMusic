@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 //This class implemnents the main Kzmusic database
 //Used for user data collection
 public class KzmusicDatabase extends SQLiteOpenHelper {
+    private static final int DATABASE_VERSION = 2;
     //Listing database attributes
     public static final String DATABASE_NAME = "Kzmusic.db";
 
@@ -19,11 +20,13 @@ public class KzmusicDatabase extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         db.execSQL("PRAGMA foreign_keys = ON");
         create_users(db);
+        create_songs(db);
+        create_liked(db);
     }
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         //List of table names
-        String[] tables = {"Users", "Security", "Songs", "Artists", "Albums", "Playlists", "PlaylistSongs"};
+        String[] tables = {"Users",};
         // Drop table if exists
         for (String table : tables) {
             db.execSQL("DROP TABLE IF EXISTS " + table);
@@ -42,27 +45,14 @@ public class KzmusicDatabase extends SQLiteOpenHelper {
     }
     //This function creates Songs table
     public void create_songs(SQLiteDatabase db) {
-        db.execSQL("CREATE TABLE Songs (SongID INTEGER PRIMARY KEY AUTOINCREMENT, TITLE TEXT, ArtistID INTEGER, AlbumID INTEGER, GENRE TEXT, DURATION INTEGER, RELEASE_DATE DATE, " +
-                "FOREIGN KEY (ArtistID) REFERENCES Artists(ArtistID), FOREIGN KEY (AlbumnID) REFERENCES Albumns(AlbumID))");
-    }
-    //This function creates the Artists table
-    public void create_artists(SQLiteDatabase db) {
-        db.execSQL("CREATE TABLE Artists (ArtistID INTEGER PRIMARY KEY AUTOINCREMENT, NAME TEXT, COUNTRY TEXT, DEBUTE DATE)");
-    }
-    //This function creates the Albums table
-    public void create_albums(SQLiteDatabase db) {
-        db.execSQL("CREATE TABLE Albums (AlbumID INTEGER PRIMARY KEY AUTOINCREMENT, TITLE TEXT, ArtistID INTEGER, RELEASE_DATE DATE, GENRE TEXT," +
-                "FOREIGN KEY (ArtistID) REFERENCES Artists(ArtistID))");
-    }
-    //This function creates the Playlists table
-    public void create_playlists(SQLiteDatabase db) {
-        db.execSQL("CREATE TABLE Playlists (PlaylistID INTEGER PRIMARY KEY AUTOINCREMENT, UserID INTEGER, NAME TEXT, DESCRIPTION TEXT, DATE_CREATED DATE, " +
+        db.execSQL("CREATE TABLE Songs (SongID INTEGER PRIMARY KEY AUTOINCREMENT, UserID INTEGER, TITLE TEXT, TOTAL_DURATION INTEGER, TIMES_PLAYED INTEGER, " +
                 "FOREIGN KEY (UserID) REFERENCES Users(UserID))");
     }
-    //This function creates the Playlist Songs table
-    public void create_playlist_songs(SQLiteDatabase db) {
-        db.execSQL("CREATE TABLE PlaylistSongs (PlaylistID INTEGER, SongID INTEGER," +
-                "FOREIGN KEY (PlaylistID) REFERENCES Playlists(PlaylistID), FOREIGN KEY (SongID) REFERENCES Songs(SongID))");
+    //This function creates liked songs table
+    public void create_liked(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE LikedSongs (UserID INTEGER, likedSongID INTEGER PRIMARY KEY AUTOINCREMENT, TITLE TEXT, TIMES_PLAYED INTEGER, " +
+                "FOREIGN KEY (UserID) REFERENCES Users(UserID))");
     }
+
 
 }

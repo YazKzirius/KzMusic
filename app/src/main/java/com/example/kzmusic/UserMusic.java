@@ -67,23 +67,27 @@ public class UserMusic extends Fragment {
     private String mParam1;
     private String mParam2;
     private static final int REQUEST_CODE = 1;
-    private List<MusicFile> musicFiles = new ArrayList<>();
-    private RecyclerView recyclerView;
-    private MusicFileAdapter musicAdapter;
+    private List<MusicFile> musicFiles_odd = new ArrayList<>();
+    private List<MusicFile> musicFiles_even = new ArrayList<>();
+    private List<MusicFile> musicFiles_original = new ArrayList<>();
+    private RecyclerView recyclerView1;
+    private MusicFileAdapter musicAdapter1;
+    private RecyclerView recyclerView2;
+    private MusicFileAdapter musicAdapter2;
     View view;
     ImageView art;
     TextView title;
     TextView Artist;
     ImageButton ic_down;
     RelativeLayout playback_bar;
-    private static final String CHANNEL_ID = "media_playback_channel4";
-    private static final int NOTIFICATION_ID = 4;
-    private MediaSessionCompat mediaSession;
-    private PlaybackStateCompat.Builder stateBuilder;
     private SharedViewModel sharedViewModel;
     PlayerService playerService;
     Boolean isBound;
     ServiceConnection serviceConnection;
+    String email;
+    String username;
+    String token;
+    SessionManager sessionManager;
 
     public UserMusic() {
         // Required empty public constructor
@@ -126,10 +130,22 @@ public class UserMusic extends Fragment {
         Artist = view.findViewById(R.id.current_song_artist);
         ic_down = view.findViewById(R.id.down_button);
         playback_bar = view.findViewById(R.id.playback_bar);
-        recyclerView = view.findViewById(R.id.recycler_view2);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        musicAdapter = new MusicFileAdapter(getContext(), musicFiles);
-        recyclerView.setAdapter(musicAdapter);
+        //Getting user info
+        sessionManager = new SessionManager(getContext());
+        username = sessionManager.getUsername();
+        email = sessionManager.getEmail();
+        TextView text = view.findViewById(R.id.x_music);
+        text.setText(username+" media");
+        //First recycler view
+        recyclerView1 = view.findViewById(R.id.recycler_view2);
+        recyclerView1.setLayoutManager(new LinearLayoutManager(getContext()));
+        musicAdapter1 = new MusicFileAdapter(getContext(), musicFiles_odd);
+        recyclerView1.setAdapter(musicAdapter1);
+        //Second recycler view
+        recyclerView2 = view.findViewById(R.id.recycler_view3);
+        recyclerView2.setLayoutManager(new LinearLayoutManager(getContext()));
+        musicAdapter2 = new MusicFileAdapter(getContext(), musicFiles_even);
+        recyclerView2.setAdapter(musicAdapter2);
         //Checks for manifest external storage permissions
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_MEDIA_AUDIO)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -137,9 +153,10 @@ public class UserMusic extends Fragment {
         } else {
             //Loading music files into recycler view
             loadMusicFiles();
-            SongQueue.getInstance().setSong_list(musicFiles);
+            SongQueue.getInstance().setSong_list(musicFiles_original);
         }
-        musicAdapter.notifyDataSetChanged();
+        musicAdapter1.notifyDataSetChanged();
+        musicAdapter2.notifyDataSetChanged();
         //Setting up bottom playback navigator
         set_up_spotify_play();
         set_up_play_bar();
@@ -216,7 +233,7 @@ public class UserMusic extends Fragment {
             int artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST);
             int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA);
             int albumIdColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID);
-
+            int count = 1;
             while (cursor.moveToNext()) {
                 //Getting music information
                 long id = cursor.getLong(idColumn);
@@ -232,7 +249,13 @@ public class UserMusic extends Fragment {
                 } else if (artist.equals("<unknown>")) {
                     ;
                 } else {
-                    musicFiles.add(musicFile);
+                    musicFiles_original.add(musicFile);
+                    if ((count % 2) != 0 || count == 1) {
+                        musicFiles_odd.add(musicFile);
+                    } else {
+                        musicFiles_even.add(musicFile);
+                    }
+                    count += 1;
                 }
             }
         }
