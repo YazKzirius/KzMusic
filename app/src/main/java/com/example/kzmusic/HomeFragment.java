@@ -190,65 +190,6 @@ public class HomeFragment extends Fragment {
             }
         });
     }
-    //This function plays the specified music file
-    private void playMusic(MusicFile musicFile) {
-        //Playing resuming song at previous duration if the same song as last
-        if (SongQueue.getInstance().get_size() > 1) {
-            int index = SongQueue.getInstance().pointer - 1;
-            //Getting current and previous song names
-            String s1 = SongQueue.getInstance().get_specified(index).getName();
-            String s2 = SongQueue.getInstance().get_specified(index - 1).getName();
-            if (s1.equals(s2)) {
-                //Resuming at left point
-                //Use previous player
-                player = PlayerManager.getInstance().current_player;
-            } else {
-                PlayerManager.getInstance().stopAllPlayers();
-                player = new ExoPlayer.Builder(getContext()).build();
-                Uri uri = Uri.fromFile(new File(musicFile.getPath()));
-                MediaItem mediaItem = MediaItem.fromUri(uri);
-                player.setMediaItem(mediaItem);
-            }
-        } else {
-            player = new ExoPlayer.Builder(getContext()).build();
-            Uri uri = Uri.fromFile(new File(musicFile.getPath()));
-            MediaItem mediaItem = MediaItem.fromUri(uri);
-            player.setMediaItem(mediaItem);
-        }
-        //Initializing song properties
-        session_id = player.getAudioSessionId();
-        //Applying audio effects
-        apply_audio_effect();
-        player.prepare();
-        player.play();
-        //Adds player to Player session manager
-        PlayerManager.getInstance().addPlayer(player);
-        PlayerManager.getInstance().setCurrent_player(player);
-    }
-    //This function assigns audio effects to the exoplayer like speed/reverb
-    public void apply_audio_effect() {
-        //Initialising reverb settings
-        SongQueue.getInstance().initialize_reverb(session_id);
-        reverb = SongQueue.getInstance().reverb;
-        //Setting playback speed properties
-        player.setPlaybackParameters(new PlaybackParameters(SongQueue.getInstance().speed, SongQueue.getInstance().pitch));
-        //Setting reverberation properties
-        setReverbPreset(SongQueue.getInstance().reverb_level);
-    }
-    //This function sets reverb level based on seekbar progress level
-    private void setReverbPreset(int progress) {
-        //Computing reverberation parameters based of reverb level data proportionality
-        try {
-            int room_level = -2000 + (progress + 1000);
-            double decay_level = 10000;
-            reverb.setReverbLevel((short) progress);
-            reverb.setDecayTime((int) decay_level);
-            reverb.setRoomLevel((short) room_level);
-            reverb.setEnabled(true);
-        } catch (Exception e) {
-            Toast.makeText(getContext(), "Something went wrong with audio effects", Toast.LENGTH_SHORT).show();
-        }
-    }
     //This function sets up the two image buttons on the homepage
     public void set_up_buttons() {
         ImageView button1 = view.findViewById(R.id.ic_radio);

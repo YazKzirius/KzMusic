@@ -95,6 +95,64 @@ public class UsersTable {
         cursor.close();
         return username;
     }
+    //This function finds account usernames by email
+    public int find_id_by_email(String email) {
+        String[] columns = {"UserID"};
+        String selection = "EMAIL = ?";
+        String[] args = {email};
+        int id = -1;
+        Cursor cursor = db.query("Users", columns, selection, args, null, null, null);
+        if (cursor != null && cursor.moveToNext()) {
+             id = cursor.getInt(cursor.getColumnIndex("UserID"));
+        }
+        cursor.close();
+        return id;
+    }
+    //This function adds new account to Users table
+    public long add_liked_song(String email, String title) {
+        ContentValues values = new ContentValues();
+        values.put("UserID", find_id_by_email(email));
+        values.put("TITLE", title);
+        values.put("TIMES_PLAYED", 0);
+        return db.insert("LikedSongs", null, values);
+    }
+    //This function checks if song is in liked songs
+    public Boolean song_liked(String title, String email) {
+        String[] columns = {"likedSongID"};
+        String selection = "TITLE = ? AND UserID = "+find_id_by_email(email);
+        String[] args = {title};
+        Cursor cursor = db.query("LikedSongs", columns, selection, args, null, null, null);
+        int count = cursor.getCount();
+        cursor.close();
+        return count > 0;
+
+    }
+    //This function fetches all the data in Users table
+    public Cursor fetchAllLiked(String email) {
+        String[] columns = {
+                "UserID",
+                "likedSongID",
+                "TITLE",
+                "TIMES_PLAYED"
+        };
+        String selection = "UserID = "+find_id_by_email(email);
+        Cursor cursor = db.query("LikedSongs", columns, selection, null, null, null, null);
+        return cursor;
+    }
+    //This function removes a liked song
+    public void remove_liked(String email, String name) {
+        SQLiteDatabase db = main_db.getWritableDatabase();
+        // Find the user ID based on the email
+        int userId = find_id_by_email(email);
+
+        // Define the whereClause with placeholders
+        String whereClause = "UserID = ? AND TITLE = ?";
+        // Define the whereArgs with actual values
+        String[] whereArgs = new String[]{String.valueOf(userId), name};
+
+        // Execute the delete operation
+        db.delete("LikedSongs", whereClause, whereArgs);
+    }
     //This function deletes an account by ID
     public void deleteAccount(long id) {
         db.delete("Users", "UserID" + "=" + id, null);

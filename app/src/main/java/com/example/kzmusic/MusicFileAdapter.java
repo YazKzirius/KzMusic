@@ -57,9 +57,10 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
     @Override
     public void onBindViewHolder(@NonNull MusicViewHolder holder, int position) {
         MusicFile musicFile = musicFiles.get(position);
-        holder.nameTextView.setText(format_title(musicFile.getName()));
+        //Updating song position
+        int new_position = SongQueue.getInstance().song_list.indexOf(musicFile);
+        holder.nameTextView.setText(new_position+1+". "+format_title(musicFile.getName()));
         holder.artistTextView.setText(musicFile.getArtist().replaceAll("/",", "));
-
         Uri albumArtUri = getAlbumArtUri(musicFile.getAlbumId());
         Glide.with(context).asBitmap().load(albumArtUri).into(new CustomTarget<Bitmap>() {
             @Override
@@ -85,7 +86,7 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
             @Override
             public void onClick(View v) {
                 //Opening media playback overlay
-                open_overlay(musicFile, holder.getAdapterPosition());
+                open_overlay(musicFile, new_position);
                 currentlyPlayingHolder = holder;
             }
         });

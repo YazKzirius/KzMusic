@@ -46,5 +46,9 @@ public class SessionManager {
     public void logoutUser() {
         editor.clear();
         editor.commit();
+        UsersTable table = new UsersTable(context);
+        table.open();
+        table.deleteAll();
+        table.close();
     }
 }

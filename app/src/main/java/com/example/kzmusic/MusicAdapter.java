@@ -5,6 +5,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -22,6 +23,9 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
     private List<SearchResponse.Track> trackList;
     private Context context;
     private OnItemClickListener Listener;
+    SessionManager sessionManager;
+    String email;
+    String username;
     public interface OnItemClickListener {
         void onItemClick(SearchResponse.Track track);
     }
@@ -35,6 +39,7 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_music, parent, false);
+
         return new ViewHolder(view);
     }
 
@@ -42,13 +47,50 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         SearchResponse.Track track = trackList.get(position);
         holder.bind(track, Listener);
-        holder.trackName.setText(track.getName());
+        holder.trackName.setText(position+1+". "+track.getName());
         holder.artistName.setText(track.getArtists().get(0).getName());
-
+        UsersTable table = new UsersTable(context);
+        sessionManager = new SessionManager(context);
+        username = sessionManager.getUsername();
+        email = sessionManager.getEmail();
+        //Checking if song is liked and displaying necessary icons
+        String title = track.getName()+" by "+track.getArtists().get(0).getName();
+        table.open();
+        if (table.song_liked(title, email) == true) {
+            holder.liked.setImageResource(R.drawable.ic_liked);
+        } else {
+            holder.liked.setImageResource(R.drawable.ic_liked_off);
+        }
         // Use Glide to load album image
         Glide.with(context)
                 .load(track.getAlbum().getImages().get(0).getUrl())
                 .into(holder.albumImage);
+        //Implementing liked button functionality
+        holder.liked.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                UsersTable table = new UsersTable(context);
+                sessionManager = new SessionManager(context);
+                username = sessionManager.getUsername();
+                email = sessionManager.getEmail();
+                String title = track.getName()+" by "+track.getArtists().get(0).getName();
+                table.open();
+                //If song is already liked, remove it from liked database
+                if (table.song_liked(title, email) == true) {
+                    holder.liked.setImageResource(R.drawable.ic_liked_off);
+                    table.remove_liked(email, title);
+                //Otherwise, add it to liked database
+                } else {
+                    if (track.getName().contains("(feat.")) {
+                        title = track.getName();
+                    }
+                    table.add_liked_song(email, title);
+                    holder.liked.setImageResource(R.drawable.ic_liked);
+                }
+                table.close();
+
+            }
+        });
     }
 
     @Override
@@ -68,12 +110,14 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
         public TextView trackName;
         public TextView artistName;
         public ImageView albumImage;
+        ImageButton liked;
 
         public ViewHolder(View itemView) {
             super(itemView);
             trackName = itemView.findViewById(R.id.track_name);
             artistName = itemView.findViewById(R.id.artist_name);
             albumImage = itemView.findViewById(R.id.album_image);
+            liked = itemView.findViewById(R.id.liked_btn);
         }
         //This function manages music item view clicking
         public void bind(final SearchResponse.Track track, final OnItemClickListener listener) {

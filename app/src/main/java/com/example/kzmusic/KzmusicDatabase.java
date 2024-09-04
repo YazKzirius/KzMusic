@@ -13,7 +13,7 @@ public class KzmusicDatabase extends SQLiteOpenHelper {
     public static final String DATABASE_NAME = "Kzmusic.db";
 
     public KzmusicDatabase(Context context) {
-        super(context, DATABASE_NAME, null, 1);
+        super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
     @Override
     //Creating Database Tables
@@ -25,13 +25,13 @@ public class KzmusicDatabase extends SQLiteOpenHelper {
     }
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        //List of table names
-        String[] tables = {"Users",};
-        // Drop table if exists
-        for (String table : tables) {
-            db.execSQL("DROP TABLE IF EXISTS " + table);
+        if (oldVersion < 2) {
+            // For example, handle updates from version 1 to 2
+            db.execSQL("CREATE TABLE IF NOT EXISTS Songs (SongID INTEGER PRIMARY KEY AUTOINCREMENT, UserID INTEGER, TITLE TEXT, TOTAL_DURATION INTEGER, TIMES_PLAYED INTEGER, " +
+                    "FOREIGN KEY (UserID) REFERENCES Users(UserID))");
+            db.execSQL("CREATE TABLE IF NOT EXISTS LikedSongs (UserID INTEGER, likedSongID INTEGER PRIMARY KEY AUTOINCREMENT, TITLE TEXT, TIMES_PLAYED INTEGER, " +
+                    "FOREIGN KEY (UserID) REFERENCES Users(UserID))");
         }
-        onCreate(db);
     }
     @Override
     public void onConfigure(SQLiteDatabase db) {

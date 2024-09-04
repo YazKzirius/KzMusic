@@ -1,35 +1,22 @@
 package com.example.kzmusic;
 
-//Imports
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.media.session.MediaButtonReceiver;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.recyclerview.widget.SortedList;
 
 import android.os.IBinder;
-import android.provider.MediaStore;
-import android.support.v4.media.session.MediaSessionCompat;
-import android.support.v4.media.session.PlaybackStateCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -43,11 +30,8 @@ import com.bumptech.glide.Glide;
 import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
 
-import java.util.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.HashMap;
-import java.util.stream.Collectors;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -55,12 +39,10 @@ import retrofit2.Response;
 
 /**
  * A simple {@link Fragment} subclass.
- * Use the {@link UserMix#newInstance} factory method to
+ * Use the {@link LikedSongs#newInstance} factory method to
  * create an instance of this fragment.
  */
-//This class implements the User mix fragment which uses Machine learning
-//To generate Music based on the users current taste and top artists
-public class UserMix extends Fragment {
+public class LikedSongs extends Fragment {
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -70,28 +52,31 @@ public class UserMix extends Fragment {
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
-    //Page attributes
-    private  List<SearchResponse.Track> trackList = new ArrayList<>();
-    private List<MusicFile> musicFiles = new ArrayList<>();
-    RecyclerView recyclerView;
-    String access_token;
+    private RecyclerView recyclerView1;
+    private MusicAdapter musicAdapter1;
+    private RecyclerView recyclerView2;
+    private MusicAdapter musicAdapter2;
     View view;
-    MusicAdapter musicAdapter;
-    SessionManager sessionManager;
-    String email;
-    String username;
     ImageView art;
     TextView title;
     TextView Artist;
     ImageButton ic_down;
     RelativeLayout playback_bar;
+    String email;
+    String username;
+    String token;
+    SessionManager sessionManager;
+    private List<SearchResponse.Track> tracklist = new ArrayList<>();
+    private List<SearchResponse.Track> tracklist_odd = new ArrayList<>();
+    private List<SearchResponse.Track> tracklist_even = new ArrayList<>();
     private SharedViewModel sharedViewModel;
     PlayerService playerService;
     Boolean isBound;
     ServiceConnection serviceConnection;
-    public UserMix(String token) {
+
+    public LikedSongs(String token) {
         // Required empty public constructor
-        this.access_token = token;
+        this.token = token;
     }
 
     /**
@@ -100,11 +85,11 @@ public class UserMix extends Fragment {
      *
      * @param param1 Parameter 1.
      * @param param2 Parameter 2.
-     * @return A new instance of fragment UserMix.
+     * @return A new instance of fragment LikedSongs.
      */
     // TODO: Rename and change types and number of parameters
-    public static UserMix newInstance(String param1, String param2) {
-        UserMix fragment = new UserMix(param1);
+    public static LikedSongs newInstance(String param1, String param2) {
+        LikedSongs fragment = new LikedSongs(param1);
         Bundle args = new Bundle();
         args.putString(ARG_PARAM1, param1);
         args.putString(ARG_PARAM2, param2);
@@ -125,98 +110,89 @@ public class UserMix extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        view = inflater.inflate(R.layout.fragment_user_mix, container, false);
+        // Inflate the layout for this fragment
+        view = inflater.inflate(R.layout.fragment_liked_songs, container, false);
         art = view.findViewById(R.id.current_song_art);
         title = view.findViewById(R.id.current_song_title);
         Artist = view.findViewById(R.id.current_song_artist);
         ic_down = view.findViewById(R.id.down_button);
         playback_bar = view.findViewById(R.id.playback_bar);
+        //Getting user info
         sessionManager = new SessionManager(getContext());
         username = sessionManager.getUsername();
         email = sessionManager.getEmail();
-        recyclerView=view.findViewById(R.id.recycler_view);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        musicAdapter=new MusicAdapter(trackList,getContext(),new MusicAdapter.OnItemClickListener() {
+        TextView text = view.findViewById(R.id.x_liked);
+        text.setText("liked by "+username);
+        //First recycler view
+        recyclerView1 = view.findViewById(R.id.recycler_view1);
+        recyclerView1.setLayoutManager(new LinearLayoutManager(getContext()));
+        musicAdapter1 = new MusicAdapter(tracklist, getContext(), new MusicAdapter.OnItemClickListener() {
             @Override
-            public void onItemClick(SearchResponse.Track track){
+            public void onItemClick(SearchResponse.Track track) {
                 //Pausing current player, so no playback overlap
                 if (PlayerManager.getInstance().get_size() > 0) {
                     PlayerManager.getInstance().current_player.pause();
+                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
+                    ;
                 } else {
+                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
+                    ;
                 }
             }
         });
-        recyclerView.setAdapter(musicAdapter);
-        //Load music files
-        loadMusicFiles();
-        try {
-            String[] randomQueries = generate_top_artists(musicFiles);
-            for (String query : randomQueries) {
-                display_generated_music(access_token, query);
-            }
-        } catch (Exception e) {
-            TextView text = view.findViewById(R.id.made_for_user);
-            text.setText("No media files, please update library.");
-        }
+        recyclerView1.setAdapter(musicAdapter1);
+        //Setting up bottom playback navigator
         set_up_spotify_play();
         set_up_play_bar();
         if (SongQueue.getInstance().get_size() > 0) {
             set_up_skipping();
         }
+        //Getting user liked songs
+        get_liked_songs();
         return view;
     }
-    //This function loads User music audio files from personal directory
-    private void loadMusicFiles() {
-        Uri collection;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            collection = MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL);
-        } else {
-            collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-        }
-
-        String[] projection = new String[]{
-                MediaStore.Audio.Media._ID,
-                MediaStore.Audio.Media.DISPLAY_NAME,
-                MediaStore.Audio.Media.ARTIST,
-                MediaStore.Audio.Media.DATA,
-                MediaStore.Audio.Media.ALBUM_ID
-        };
-
-        String selection = MediaStore.Audio.Media.IS_MUSIC + " != 0";
-
-        try (Cursor cursor = getContext().getContentResolver().query(
-                collection,
-                projection,
-                selection,
-                null,
-                null
-        )) {
-            int idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID);
-            int nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME);
-            int artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST);
-            int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA);
-            int albumIdColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID);
-
-            while (cursor.moveToNext()) {
-                //Getting music information
-                long id = cursor.getLong(idColumn);
-                String name = cursor.getString(nameColumn);
-                String artist = cursor.getString(artistColumn);
-                String data = cursor.getString(dataColumn);
-                long albumId = cursor.getLong(albumIdColumn);
-                //Defining music file
-                MusicFile musicFile = new MusicFile(id, name, artist, data, albumId);
-                //Filtering out music from short sounds and voice recordings
-                if (artist.equals("Voice Recorder")) {
-                    ;
-                } else if (artist.equals("<unknown>")) {
-                    ;
+    //This function makes an API call using previous access token to search for random music
+    //It does this based on the track_name entered
+    private void search_track(String track_name, String token) {
+        String accesstoken = token;
+        String randomQuery = track_name;
+        SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
+        Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
+        call.enqueue(new Callback<SearchResponse>() {
+            @Override
+            public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    SearchResponse.Track track = response.body().getTracks().getItems().get(0);
+                    tracklist.add(track);
+                    musicAdapter1.notifyDataSetChanged();
                 } else {
-                    musicFiles.add(musicFile);
+                    Intent intent = new Intent(getContext(), GetStarted.class);
+                    startActivity(intent);
                 }
             }
+            @Override
+            public void onFailure(Call<SearchResponse> call, Throwable t) {
+                TextView text1 = view.findViewById(R.id.results);
+                text1.setText("No internet connection, please try again.");
+            }
+        });
+    }
+    //This function gets the users liked songs in the database
+    public void get_liked_songs() {
+        try {
+            UsersTable table = new UsersTable(getContext());
+            table.open();
+            Cursor cursor = table.fetchAllLiked(email);
+            while (cursor.moveToNext()) {
+                String title = cursor.getString(cursor.getColumnIndex("TITLE"));
+                search_track(title, token);
+            }
+            table.close();
+        } catch (Exception e) {
+            TextView text = view.findViewById(R.id.x_liked);
+            text.setText("No internet connection, please try again.");
         }
     }
     //This function sets up media notification bar skip events
@@ -256,76 +232,6 @@ public class UserMix extends Fragment {
             }
         });
     }
-    //This function searches for random music using API queries and updates the current tracklist
-    public void display_generated_music(String token, String artist) {
-        access_token = token;
-        String randomQuery = artist;
-        TextView text = view.findViewById(R.id.made_for_user);
-        text.setText("Suggestsed mix for "+username);
-        SpotifyApiService apiService = RetrofitClient.getClient(access_token).create(SpotifyApiService.class);
-        Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
-        call.enqueue(new Callback<SearchResponse>() {
-            @Override
-            public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    musicAdapter.updateTracks(response.body().getTracks().getItems());
-                } else {
-                    ;
-                }
-            }
-            @Override
-            public void onFailure(Call<SearchResponse> call, Throwable t) {
-                TextView text1 = view.findViewById(R.id.made_for_user);
-                text1.setText("No internet connection, please try again.");
-            }
-        });
-    }
-    //This function gets the User's top 10 artists and using and algorithm
-    //It then generates music based on that information
-    public String[] generate_top_artists(List<MusicFile> tracklist) {
-        String[] top_artists = new String[10];
-        //Mapping get artist function to each track in list
-        List<String> Artists = tracklist.stream().map(MusicFile::getArtist).collect(Collectors.toList());
-        //Fixing Artist formatting, so there is a full list of artists
-        List<String> New_artists = new ArrayList<>();
-        //Checking for multiple artists
-        for (String artist : Artists) {
-            if (artist.contains(", ") == true) {
-                String[] list = artist.split(", ");
-                for (String element : list) {
-                    New_artists.add(element);
-                }
-            } else {
-                New_artists.add(artist);
-            }
-        }
-        Set<String> Artist_set = new HashSet<>(New_artists);
-        List<String> Artist_list = new ArrayList<>(Artist_set);
-        //Frequency dict hashmap
-        Map<String, Integer> frequency_dict = new HashMap<>();
-        for (String artist : Artist_list) {
-            frequency_dict.put(artist, count(New_artists, artist));
-        }
-        //Creating string occurrence comparator
-        Comparator<String> occurrenceComparator = (s1, s2) -> Integer.compare(frequency_dict.get(s2), frequency_dict.get(s1));
-        Artist_list.sort(occurrenceComparator);
-        for (int i = 0; i < 10; i++) {
-            top_artists[i] = Artist_list.get(i);
-        }
-        return top_artists;
-    }
-    //This function counts the number of an element of a list
-    public int count(List<String> list, String element) {
-        int count = 0;
-        for (String string : list) {
-            if (string.equalsIgnoreCase(element)) {
-                count += 1;
-            } else {
-                ;
-            }
-        }
-        return count;
-    }
     //This function opens Spotify player overlay
     public void open_spotify_overlay() {
         Fragment spotify_overlay = new SpotifyOverlay();
@@ -333,25 +239,6 @@ public class UserMix extends Fragment {
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.fragment_container, spotify_overlay);
         fragmentTransaction.commit();
-    }
-    //This function handles Spotify overlay play/pause
-    public void set_up_spotify_play() {
-        if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
-            SpotifyPlayerLife.getInstance().mSpotifyAppRemote.getPlayerApi().subscribeToPlayerState().setEventCallback(new Subscription.EventCallback<PlayerState>() {
-                @Override
-                public void onEvent(PlayerState playerState) {
-                    if (playerState.isPaused) {
-                        ;
-                    } else {
-                        if (PlayerManager.getInstance().current_player != null) {
-                            PlayerManager.getInstance().current_player.pause();
-                        } else {
-                            ;
-                        }
-                    }
-                }
-            });
-        }
     }
     //This function assigns data from playback overlay to bottom navigation
     public void set_up_play_bar() {
@@ -432,6 +319,25 @@ public class UserMix extends Fragment {
             ;
         }
         return title;
+    }
+    //This function handles Spotify overlay play/pause
+    public void set_up_spotify_play() {
+        if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
+            SpotifyPlayerLife.getInstance().mSpotifyAppRemote.getPlayerApi().subscribeToPlayerState().setEventCallback(new Subscription.EventCallback<PlayerState>() {
+                @Override
+                public void onEvent(PlayerState playerState) {
+                    if (playerState.isPaused) {
+                        ;
+                    } else {
+                        if (PlayerManager.getInstance().current_player != null) {
+                            PlayerManager.getInstance().current_player.pause();
+                        } else {
+                            ;
+                        }
+                    }
+                }
+            });
+        }
     }
     //This function opens a new song overlay
     public void open_new_overlay(MusicFile file, int position) {

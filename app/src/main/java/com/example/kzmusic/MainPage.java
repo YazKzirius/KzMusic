@@ -70,6 +70,15 @@ public class MainPage extends AppCompatActivity {
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, fragment)
                 .commit();
+        //Sending it to Search fragment
+        Bundle bundle3 = new Bundle();
+        bundle3.putString("Token", token);
+        bundle3.putLong("expiration_time", expiration_time);
+        fragment = new LibraryFragment();
+        fragment.setArguments(bundle3);
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, fragment)
+                .commit();
     }
     //This function creates main page fragments
     public void create_fragments() {
