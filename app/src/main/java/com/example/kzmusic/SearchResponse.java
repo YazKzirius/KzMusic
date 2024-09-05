@@ -35,6 +35,7 @@ public class SearchResponse {
         @SerializedName("uri")
         private String uri;
 
+
         public String getName() {
             return name;
         }
@@ -47,6 +48,7 @@ public class SearchResponse {
             return album;
         }
         public String getUri() { return uri;}
+
     }
     //Stores information about Artist
     public class Artist {
@@ -63,6 +65,8 @@ public class SearchResponse {
         private List<Image> images;
         String name;
         String uri;
+        private String release_date; // Release date as a string
+        private String release_date_precision; // Precision of the release date (year, month, day)
 
         public List<Image> getImages() {
             return images;
@@ -71,6 +75,14 @@ public class SearchResponse {
 
         public String getUri() {
             return uri;
+        }
+
+        public String getRelease_date() {
+            return release_date;
+        }
+
+        public String getRelease_date_precision() {
+            return release_date_precision;
         }
     }
     //Stores information about album image

@@ -4,6 +4,13 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:padding="8dp">
+    <ImageButton
+        android:layout_width="64dp"
+        android:layout_height="wrap_content"
+        android:id="@+id/menu_btn"
+        android:tint="@color/white"
+        android:background="#090909"
+        android:src="@drawable/ic_menu"/>
 
     <ImageView
         android:id="@+id/album_image"
@@ -30,6 +37,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Artist Name"
+            android:textAppearance="?android:textAppearanceSmall" />
+        <TextView
+            android:id="@+id/release_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="release_date"
             android:textAppearance="?android:textAppearanceSmall" />
     </LinearLayout>
     <ImageButton

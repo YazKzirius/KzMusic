@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -49,12 +50,17 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
         holder.bind(track, Listener);
         holder.trackName.setText(position+1+". "+track.getName());
         holder.artistName.setText(track.getArtists().get(0).getName());
+        holder.release.setText((track.getAlbum().getRelease_date().split("-"))[0]);
         UsersTable table = new UsersTable(context);
         sessionManager = new SessionManager(context);
         username = sessionManager.getUsername();
         email = sessionManager.getEmail();
         //Checking if song is liked and displaying necessary icons
-        String title = track.getName()+" by "+track.getArtists().get(0).getName();
+        String title = track.getName()+" by "+track.getArtists().get(0).getName(
+        );
+        if (track.getName().contains("(feat.")) {
+            title = track.getName();
+        }
         table.open();
         if (table.song_liked(title, email) == true) {
             holder.liked.setImageResource(R.drawable.ic_liked);
@@ -74,6 +80,10 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
                 username = sessionManager.getUsername();
                 email = sessionManager.getEmail();
                 String title = track.getName()+" by "+track.getArtists().get(0).getName();
+                if (track.getName().contains("(feat.")) {
+                    title = track.getName();
+                }
+                String url = track.getAlbum().getImages().get(0).getUrl();
                 table.open();
                 //If song is already liked, remove it from liked database
                 if (table.song_liked(title, email) == true) {
@@ -84,7 +94,7 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
                     if (track.getName().contains("(feat.")) {
                         title = track.getName();
                     }
-                    table.add_liked_song(email, title);
+                    table.add_liked_song(email, title, url);
                     holder.liked.setImageResource(R.drawable.ic_liked);
                 }
                 table.close();
@@ -92,6 +102,7 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
             }
         });
     }
+
 
     @Override
     //This function gets the number of tracks in tracklist
@@ -110,6 +121,7 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
         public TextView trackName;
         public TextView artistName;
         public ImageView albumImage;
+        TextView release;
         ImageButton liked;
 
         public ViewHolder(View itemView) {
@@ -118,6 +130,7 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
             artistName = itemView.findViewById(R.id.artist_name);
             albumImage = itemView.findViewById(R.id.album_image);
             liked = itemView.findViewById(R.id.liked_btn);
+            release = itemView.findViewById(R.id.release_date);
         }
         //This function manages music item view clicking
         public void bind(final SearchResponse.Track track, final OnItemClickListener listener) {

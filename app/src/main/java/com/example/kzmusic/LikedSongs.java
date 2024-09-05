@@ -32,6 +32,7 @@ import com.spotify.protocol.types.PlayerState;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -122,7 +123,7 @@ public class LikedSongs extends Fragment {
         username = sessionManager.getUsername();
         email = sessionManager.getEmail();
         TextView text = view.findViewById(R.id.x_liked);
-        text.setText("liked by "+username);
+        text.setText(username+" Liked songs");
         //First recycler view
         recyclerView1 = view.findViewById(R.id.recycler_view1);
         recyclerView1.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -155,7 +156,7 @@ public class LikedSongs extends Fragment {
     }
     //This function makes an API call using previous access token to search for random music
     //It does this based on the track_name entered
-    private void search_track(String track_name, String token) {
+    private void search_track(String track_name, String url,  String token) {
         String accesstoken = token;
         String randomQuery = track_name;
         SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
@@ -164,9 +165,28 @@ public class LikedSongs extends Fragment {
             @Override
             public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    SearchResponse.Track track = response.body().getTracks().getItems().get(0);
-                    tracklist.add(track);
-                    musicAdapter1.notifyDataSetChanged();
+                    List<SearchResponse.Track> Tracks = response.body().getTracks().getItems();
+                    //Using mapping to find specified song album urls to display liked songs
+                    //Getting specified track names and corresponding urls
+                    List<String> tracks = get_track_names(Tracks);
+                    List<String> urls = get_track_urls(Tracks);
+                    //Getting indices of specified one
+                    int i = tracks.indexOf(track_name);
+                    int j = urls.indexOf(url);
+                    //Checking if song is even present
+                    if (j == -1) {
+                        ;
+                    } else {
+                        //If both equal add to tracklist
+                        if (i == j) {
+                            tracklist.add(Tracks.get(i));
+                        //Otherwise, always add the song with the right album cover
+                        } else {
+                            tracklist.add(Tracks.get(j));
+                        }
+                        musicAdapter1.notifyDataSetChanged();
+                    }
+                    //Checking for more than One of the same track
                 } else {
                     Intent intent = new Intent(getContext(), GetStarted.class);
                     startActivity(intent);
@@ -179,6 +199,42 @@ public class LikedSongs extends Fragment {
             }
         });
     }
+    //This function replaces a tracklist with a list of track names
+    public List<String> get_track_names(List<SearchResponse.Track> trackList) {
+        // Use streams to map each Track object conditionally based on the presence of "(feat. "
+        List<String> trackNames = trackList.stream()
+                .map(track -> {
+                    String name = track.getName();
+                    if (name.contains("(feat. ")) {
+                        // Perform some operation (e.g., returning the name or modify it)
+                        return name; // You can modify this to your needs, such as processing the string
+                    } else {
+                        // Return something else if "(feat. " is not present
+                        return name + " by "+track.getArtists().get(0).getName();
+                    }
+                })
+                .collect(Collectors.toList());
+
+        // Convert the List to an array
+        return trackNames;
+    }
+    //This function gets tracklist with a list of album url's
+    public List<String> get_track_urls(List<SearchResponse.Track> trackList) {
+        // Use streams to map each Track object conditionally based on the availability of images
+        List<String> track_urls = trackList.stream()
+                .map(track -> {
+                    // Check if album or image list is available
+                    if (track.getAlbum() != null && track.getAlbum().getImages() != null && !track.getAlbum().getImages().isEmpty()) {
+                        return track.getAlbum().getImages().get(0).getUrl(); // Return the first image URL
+                    } else {
+                        return ""; // Fallback in case album or images are missing
+                    }
+                })
+                .filter(url -> !url.isEmpty()) // Optional: filter out any empty URLs
+                .collect(Collectors.toList());
+        return track_urls;
+    }
+
     //This function gets the users liked songs in the database
     public void get_liked_songs() {
         try {
@@ -187,12 +243,14 @@ public class LikedSongs extends Fragment {
             Cursor cursor = table.fetchAllLiked(email);
             while (cursor.moveToNext()) {
                 String title = cursor.getString(cursor.getColumnIndex("TITLE"));
-                search_track(title, token);
+                String url = cursor.getString(cursor.getColumnIndex("ALBUM_URL"));
+                search_track(title,url,token);
             }
             table.close();
         } catch (Exception e) {
             TextView text = view.findViewById(R.id.x_liked);
             text.setText("No internet connection, please try again.");
+            Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
     //This function sets up media notification bar skip events

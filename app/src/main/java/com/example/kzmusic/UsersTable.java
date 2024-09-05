@@ -109,17 +109,18 @@ public class UsersTable {
         return id;
     }
     //This function adds new account to Users table
-    public long add_liked_song(String email, String title) {
+    public long add_liked_song(String email, String title, String url) {
         ContentValues values = new ContentValues();
         values.put("UserID", find_id_by_email(email));
         values.put("TITLE", title);
+        values.put("ALBUM_URL", url);
         values.put("TIMES_PLAYED", 0);
         return db.insert("LikedSongs", null, values);
     }
     //This function checks if song is in liked songs
     public Boolean song_liked(String title, String email) {
         String[] columns = {"likedSongID"};
-        String selection = "TITLE = ? AND UserID = "+find_id_by_email(email);
+        String selection = "TITLE = ?"+"AND UserID = "+find_id_by_email(email);
         String[] args = {title};
         Cursor cursor = db.query("LikedSongs", columns, selection, args, null, null, null);
         int count = cursor.getCount();
@@ -133,6 +134,7 @@ public class UsersTable {
                 "UserID",
                 "likedSongID",
                 "TITLE",
+                "ALBUM_URL",
                 "TIMES_PLAYED"
         };
         String selection = "UserID = "+find_id_by_email(email);
@@ -153,6 +155,20 @@ public class UsersTable {
         // Execute the delete operation
         db.delete("LikedSongs", whereClause, whereArgs);
     }
+    //This function gets album url by ID and name
+    public String get_album_url(String email, String name) {
+        String[] columns = {"ALBUM_URL"};
+        String selection = "UserID = "+find_id_by_email(email) + " AND TITLE = ?";
+        String[] args = {name};
+        Cursor cursor = db.query("LikedSongs", columns, selection, args, null, null, null);
+        String url = "";
+        if (cursor != null && cursor.moveToNext()) {
+            url = cursor.getString(cursor.getColumnIndex("ALBUM_URl"));
+        }
+        cursor.close();
+        return url;
+    }
+
     //This function deletes an account by ID
     public void deleteAccount(long id) {
         db.delete("Users", "UserID" + "=" + id, null);
