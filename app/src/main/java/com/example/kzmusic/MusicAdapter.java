@@ -58,9 +58,6 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
         //Checking if song is liked and displaying necessary icons
         String title = track.getName()+" by "+track.getArtists().get(0).getName(
         );
-        if (track.getName().contains("(feat.")) {
-            title = track.getName();
-        }
         table.open();
         if (table.song_liked(title, email) == true) {
             holder.liked.setImageResource(R.drawable.ic_liked);
@@ -80,9 +77,6 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
                 username = sessionManager.getUsername();
                 email = sessionManager.getEmail();
                 String title = track.getName()+" by "+track.getArtists().get(0).getName();
-                if (track.getName().contains("(feat.")) {
-                    title = track.getName();
-                }
                 String url = track.getAlbum().getImages().get(0).getUrl();
                 table.open();
                 //If song is already liked, remove it from liked database
@@ -91,9 +85,6 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
                     table.remove_liked(email, title);
                 //Otherwise, add it to liked database
                 } else {
-                    if (track.getName().contains("(feat.")) {
-                        title = track.getName();
-                    }
                     table.add_liked_song(email, title, url);
                     holder.liked.setImageResource(R.drawable.ic_liked);
                 }

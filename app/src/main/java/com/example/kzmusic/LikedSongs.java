@@ -156,9 +156,9 @@ public class LikedSongs extends Fragment {
     }
     //This function makes an API call using previous access token to search for random music
     //It does this based on the track_name entered
-    private void search_track(String track_name, String url,  String token) {
+    private void search_track(String track_name, String Artist, String url,  String token) {
         String accesstoken = token;
-        String randomQuery = track_name;
+        String randomQuery = "track:" + track_name + " artist:" + Artist;
         SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
         Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
         call.enqueue(new Callback<SearchResponse>() {
@@ -166,26 +166,25 @@ public class LikedSongs extends Fragment {
             public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     List<SearchResponse.Track> Tracks = response.body().getTracks().getItems();
-                    //Using mapping to find specified song album urls to display liked songs
-                    //Getting specified track names and corresponding urls
                     List<String> tracks = get_track_names(Tracks);
                     List<String> urls = get_track_urls(Tracks);
-                    //Getting indices of specified one
                     int i = tracks.indexOf(track_name);
                     int j = urls.indexOf(url);
-                    //Checking if song is even present
-                    if (j == -1) {
-                        ;
-                    } else {
-                        //If both equal add to tracklist
+                    if (i == -1) {
+                        i = tracks.indexOf(track_name+" by "+Artist);
                         if (i == j) {
                             tracklist.add(Tracks.get(i));
-                        //Otherwise, always add the song with the right album cover
                         } else {
                             tracklist.add(Tracks.get(j));
                         }
-                        musicAdapter1.notifyDataSetChanged();
+                    } else {
+                        if (i == j) {
+                            tracklist.add(Tracks.get(i));
+                        } else {
+                            tracklist.add(Tracks.get(j));
+                        }
                     }
+                    musicAdapter1.notifyDataSetChanged();
                     //Checking for more than One of the same track
                 } else {
                     Intent intent = new Intent(getContext(), GetStarted.class);
@@ -198,6 +197,20 @@ public class LikedSongs extends Fragment {
                 text1.setText("No internet connection, please try again.");
             }
         });
+    }
+    //This function replaces a tracklist with a list of track names
+    public List<String> filterTrackNames(List<String> tracks, String exactTrackName) {
+        // Use streams to filter and map tracks based on the exact track name
+        List<String> trackNames = tracks.stream()
+                .filter(track -> track.equalsIgnoreCase(exactTrackName))
+                .map(track -> {
+                    // If the track name matches the exact parameter, return the track name
+                    return track;
+                })
+                .collect(Collectors.toList());
+
+        // Return the list of track names
+        return trackNames;
     }
     //This function replaces a tracklist with a list of track names
     public List<String> get_track_names(List<SearchResponse.Track> trackList) {
@@ -243,8 +256,14 @@ public class LikedSongs extends Fragment {
             Cursor cursor = table.fetchAllLiked(email);
             while (cursor.moveToNext()) {
                 String title = cursor.getString(cursor.getColumnIndex("TITLE"));
+                String track_name = title;
+                String artist = "";
+                if (title.split(" by ").length == 2) {
+                    track_name = title.split(" by ")[0];
+                    artist = title.split(" by ")[1];
+                }
                 String url = cursor.getString(cursor.getColumnIndex("ALBUM_URL"));
-                search_track(title,url,token);
+                search_track(track_name, artist, url,token);
             }
             table.close();
         } catch (Exception e) {
