@@ -1,10 +1,12 @@
 package com.example.kzmusic;
 //Imports
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
 import android.content.Intent;
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -16,10 +18,26 @@ import com.spotify.android.appremote.api.ConnectionParams;
 import com.spotify.android.appremote.api.Connector;
 import com.spotify.android.appremote.api.SpotifyAppRemote;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.FormBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
 //This class implements Get started page
 public class GetStarted extends AppCompatActivity {
     String CLIENT_ID = "21dc131ad4524c6aae75a9d0256b1b70";
+    String CLIENT_SECRET = "7c15410b4f714a839cc3ad8f661a6513";
     String REDIRECT_URI = "kzmusic://callback";
+    private static final String AUTH_URL = "https://accounts.spotify.com/authorize";
+    private static final String TOKEN_URL = "https://accounts.spotify.com/api/token";
     int REQUEST_CODE = 1337;
     SpotifyAppRemote mSpotifyAppRemote;
     String username;
@@ -51,85 +69,82 @@ public class GetStarted extends AppCompatActivity {
             });
         }
     }
-    @Override
-    //These functions set up the Spotify remote playback control for music streaming
-    protected void onStart() {
-        super.onStart();
-        ConnectionParams connectionParams =
-                new ConnectionParams.Builder(CLIENT_ID)
-                        .setRedirectUri(REDIRECT_URI)
-                        .showAuthView(true)
-                        .build();
-
-        SpotifyAppRemote.connect(this, connectionParams,
-                new Connector.ConnectionListener() {
-
-                    public void onConnected(SpotifyAppRemote spotifyAppRemote) {
-                        mSpotifyAppRemote = spotifyAppRemote;
-                        // Now you can start interacting with App Remote
-                    }
-
-                    public void onFailure(Throwable throwable) {
-                        // Something went wrong when attempting to connect!
-                    }
-                });
-    }
-    @Override
-    protected void onStop() {
-        super.onStop();
-        SpotifyAppRemote.disconnect(mSpotifyAppRemote);
-    }
-
-    public SpotifyAppRemote getSpotifyAppRemote() {
-        return mSpotifyAppRemote;
-    }
-    //These functions sets up the Spotify Sign-in/authorisation using spotify API
+    //These functions sets up the Spotify Sign-in/authorisation using spotify web API
     public void set_up_spotify_auth() {
-        AuthorizationRequest.Builder builder =
-                new AuthorizationRequest.Builder(CLIENT_ID, AuthorizationResponse.Type.TOKEN, REDIRECT_URI);
+        // Spotify authorization URL
+        String authUrl = AUTH_URL + "?client_id=" + CLIENT_ID +
+                "&response_type=code" +
+                "&redirect_uri=" + Uri.encode(REDIRECT_URI) +
+                "&scope=user-read-private%20user-read-email%20streaming";
 
-        builder.setScopes(new String[]{"streaming"});
-        AuthorizationRequest request = builder.build();
-
-        AuthorizationClient.openLoginActivity(this, REQUEST_CODE, request);
+        // Open the URL in a browser
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(authUrl));
+        startActivity(intent);
     }
+    //This function performs this function once the activity is called and gets the auth code
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
-        super.onActivityResult(requestCode, resultCode, intent);
-
-        // Check if result comes from the correct activity
-        if (requestCode == REQUEST_CODE) {
-            AuthorizationResponse response = AuthorizationClient.getResponse(resultCode, intent);
-
-            switch (response.getType()) {
-                // Response was successful and contains auth token
-                case TOKEN:
-                    // Handle successful response
-                    //Display message
-                    token = response.getAccessToken();
-                    expiration_time = response.getExpiresIn();
-                    //Sending email data to next activity
-                    Bundle bundle = new Bundle();
-                    bundle.putString("Token", token);
-                    bundle.putLong("expiration_time", expiration_time);
-                    Intent new_intent = new Intent(GetStarted.this, MainPage.class);
-                    new_intent.putExtras(bundle);
-                    startActivity(new_intent);
-                    break;
-
-                // Auth flow returned an error
-                case ERROR:
-                    // Handle error response
-                    Toast.makeText(this, "Spotify Authorisation error: No internet connection", Toast.LENGTH_SHORT).show();
-                    Intent intent2 = new Intent(GetStarted.this, MainPage.class);
-                    startActivity(intent2);
-
-                    break;
-
-                // Most likely auth flow was cancelled
-                default:
-                    // Handle other cases
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        Uri uri = intent.getData();
+        if (uri != null) {
+            // Extract the authorization code from the redirect URI
+            String code = uri.getQueryParameter("code");
+            if (code != null) {
+                // Exchange the authorization code for an access token
+                exchangeAuthorizationCodeForToken(code);
+            } else if (uri.getQueryParameter("error") != null) {
+                // Handle error from authorization
+                Toast.makeText(this, "Authorization failed", Toast.LENGTH_SHORT).show();
             }
         }
     }
+    //This function exchanges the auth code for the access token and expiration time
+    public void exchangeAuthorizationCodeForToken(String authorizationCode) {
+        OkHttpClient client = new OkHttpClient();
+
+        RequestBody formBody = new FormBody.Builder()
+                .add("grant_type", "authorization_code")
+                .add("code", authorizationCode)
+                .add("redirect_uri", REDIRECT_URI)
+                .add("client_id", CLIENT_ID)
+                .add("client_secret", CLIENT_SECRET)
+                .build();
+
+        Request request = new Request.Builder()
+                .url(TOKEN_URL)
+                .post(formBody)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+                runOnUiThread(() -> Toast.makeText(GetStarted.this, "Failed to exchange token", Toast.LENGTH_SHORT).show());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    String responseBody = response.body().string();
+                    try {
+                        JSONObject json = new JSONObject(responseBody);
+                        String accessToken = json.getString("access_token");
+                        long expirationTime = json.getLong("expires_in");
+
+                        // Proceed to the next activity with the token
+                        Intent newIntent = new Intent(GetStarted.this, MainPage.class);
+                        newIntent.putExtra("Token", accessToken);
+                        newIntent.putExtra("expiration_time", expirationTime);
+                        startActivity(newIntent);
+                        finish();
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+    }
+
+
 }

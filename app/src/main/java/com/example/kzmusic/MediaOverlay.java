@@ -169,8 +169,6 @@ public class MediaOverlay extends Fragment {
         reverb_level = SongQueue.getInstance().reverb_level;
         //Playing music
         playMusic(musicFile);
-        //Displaying circular view
-        set_up_circular_view(musicFile);
         //Loading previous music files
         loadMusicFiles();
         //Setting up media buttons
@@ -180,7 +178,9 @@ public class MediaOverlay extends Fragment {
         //Setting up reverberation seekbar functionality
         set_up_reverb();
         //Setting up media bar skipping in notifications
-        set_up_skipping();
+        if (SongQueue.getInstance().songs_played.size() > 0) {
+            set_up_skipping();
+        }
         return view;
     }
 
@@ -501,6 +501,7 @@ public class MediaOverlay extends Fragment {
         //Adds player to Player session manager
         PlayerManager.getInstance().addPlayer(player);
         PlayerManager.getInstance().setCurrent_player(player);
+        startPlayerService();
         //Setting up seekbar
         set_up_bar();
     }
@@ -752,7 +753,6 @@ public class MediaOverlay extends Fragment {
     private void startPlayerService() {
         Intent intent = new Intent(requireContext(), PlayerService.class);
         requireContext().startService(intent);
-        getActivity().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
     }
 
     private void stopPlayerService() {

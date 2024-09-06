@@ -24,15 +24,11 @@
         <receiver android:name=".AlarmReceiver" />
         <activity
             android:name=".GetStarted"
-            android:exported="false"
-            android:screenOrientation="portrait"/> <!-- or "landscape" -->
-        <activity
-            android:name=".NewAccount"
             android:exported="true"
+            android:launchMode="singleTask"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
-
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
@@ -40,6 +36,11 @@
                     android:host="callback"
                     android:scheme="kzmusic" />
             </intent-filter>
+        </activity> <!-- or "landscape" -->
+        <activity
+            android:name=".NewAccount"
+            android:exported="true"
+            android:screenOrientation="portrait">
         </activity>
         <activity
             android:name=".MainPage"
