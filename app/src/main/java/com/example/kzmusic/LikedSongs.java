@@ -165,23 +165,39 @@ public class LikedSongs extends Fragment {
             @Override
             public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
+                    //Getting track data and formatting
                     List<SearchResponse.Track> Tracks = response.body().getTracks().getItems();
                     List<String> tracks = get_track_names(Tracks);
                     List<String> urls = get_track_urls(Tracks);
-                    int i = tracks.indexOf(track_name);
+                    //Getting indices of specified information
+                    int i = tracks.indexOf(track_name+" by "+Artist);
                     int j = urls.indexOf(url);
+                    //Checking if it doesn't exist and performs j-index dependent adding
                     if (i == -1) {
-                        i = tracks.indexOf(track_name+" by "+Artist);
+                        i = tracks.indexOf(track_name);
+                        ///Checking if both indices are equal
                         if (i == j) {
                             tracklist.add(Tracks.get(i));
                         } else {
-                            tracklist.add(Tracks.get(j));
+                            //Otherwise checking if the url index holds the same title as the current title
+                            String title = tracks.get(j);
+                            if (title.equals(track_name+" by "+Artist) || title.equals(track_name)) {
+                                tracklist.add(Tracks.get(j));
+                            } else {
+                                ;
+                            }
                         }
+                    //Otherwise, perform similar calculations but with i-index dependent adding
                     } else {
                         if (i == j) {
                             tracklist.add(Tracks.get(i));
                         } else {
-                            tracklist.add(Tracks.get(j));
+                            String title = tracks.get(j);
+                            if (title.equals(track_name+" by "+Artist) || title.equals(track_name)) {
+                                tracklist.add(Tracks.get(j));
+                            } else {
+                                tracklist.add(Tracks.get(i));
+                            }
                         }
                     }
                     musicAdapter1.notifyDataSetChanged();
