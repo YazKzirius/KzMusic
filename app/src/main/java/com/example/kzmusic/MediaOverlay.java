@@ -177,10 +177,6 @@ public class MediaOverlay extends Fragment {
         set_up_speed_and_pitch();
         //Setting up reverberation seekbar functionality
         set_up_reverb();
-        //Setting up media bar skipping in notifications
-        if (SongQueue.getInstance().songs_played.size() > 0) {
-            set_up_skipping();
-        }
         return view;
     }
 
@@ -502,6 +498,8 @@ public class MediaOverlay extends Fragment {
         PlayerManager.getInstance().addPlayer(player);
         PlayerManager.getInstance().setCurrent_player(player);
         startPlayerService();
+        //Set up skipping after service is created
+        set_up_skipping();
         //Setting up seekbar
         set_up_bar();
     }

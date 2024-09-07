@@ -82,6 +82,7 @@ public class Radio extends Fragment {
     PlayerService playerService;
     Boolean isBound;
     ServiceConnection serviceConnection;
+    SessionManager sessionManager;
 
     public Radio(String token) {
         // Required empty public constructor
@@ -142,6 +143,7 @@ public class Radio extends Fragment {
                 }
             }
         });
+        sessionManager = new SessionManager(getContext());
         recyclerView.setAdapter(musicAdapter);
         display_random_music(accesstoken);
         //Setting up bottom playback navigator
@@ -192,26 +194,33 @@ public class Radio extends Fragment {
 
     //This function searches for random music using API queries and updates the current tracklist
     public void display_random_music(String token) {
-        accesstoken = token;
-        String[] randomQueries = {"happy", "sad", "party", "chill", "love", "workout"};
-        String randomQuery = randomQueries[(int) (Math.random() * randomQueries.length)];
-        SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
-        Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
-        call.enqueue(new Callback<SearchResponse>() {
-            @Override
-            public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    musicAdapter.updateTracks(response.body().getTracks().getItems());
-                } else {
-                    ;
+        Toast.makeText(getContext(), ""+sessionManager.getSavedTracklist("TRACK_LIST_RADIO").size(), Toast.LENGTH_LONG).show();
+        if (sessionManager.getSavedTracklist("TRACK_LIST_RADIO").size() == 0) {
+           accesstoken = token;
+            String[] randomQueries = {"happy", "sad", "party", "chill", "love", "workout"};
+            String randomQuery = randomQueries[(int) (Math.random() * randomQueries.length)];
+            SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
+            Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
+            call.enqueue(new Callback<SearchResponse>() {
+                @Override
+                public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        musicAdapter.updateTracks(response.body().getTracks().getItems());
+                        sessionManager.save_Tracklist_radio(response.body().getTracks().getItems());
+                    } else {
+                        ;
+                    }
                 }
-            }
-            @Override
-            public void onFailure(Call<SearchResponse> call, Throwable t) {
-                TextView text1 = view.findViewById(R.id.made_for_user);
-                text1.setText("No internet connection, please try again.");
-            }
-        });
+                @Override
+                public void onFailure(Call<SearchResponse> call, Throwable t) {
+                    TextView text1 = view.findViewById(R.id.made_for_user);
+                    text1.setText("No internet connection, please try again.");
+                }
+            });
+        } else {
+            musicAdapter.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_RADIO"));
+            sessionManager.save_Tracklist_radio(sessionManager.getSavedTracklist("TRACK_LIST_RADIO"));
+        }
     }
     //This function assigns data from playback overlay to bottom navigation
     public void set_up_play_bar() {
@@ -335,5 +344,11 @@ public class Radio extends Fragment {
     private void stopPlayerService() {
         Intent intent = new Intent(requireContext(), PlayerService.class);
         requireContext().stopService(intent);
+    }
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        sessionManager.save_Tracklist_radio(new ArrayList<>());
+
     }
 }

@@ -5,6 +5,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 
+import com.google.gson.Gson;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 
 //This class manages user login is sessions so user can stay logged into app until log out
 public class SessionManager {
@@ -28,6 +34,26 @@ public class SessionManager {
         editor.putString(KEY_USERNAME, username);
         editor.putString(KEY_EMAIL, email);
         editor.commit();
+    }
+
+    //This function saves generated tracklist for radio page
+    public void save_Tracklist_radio(List<SearchResponse.Track> tracklist) {
+        // Convert list to JSON
+        Gson gson = new Gson();
+        String jsonTrackList = gson.toJson(tracklist);
+        // Save in SharedPreferences
+        editor.putString("TRACK_LIST_RADIO", jsonTrackList);
+        editor.apply();
+    }
+    //This function gets the tracklist for a specific name
+    public List<SearchResponse.Track> getSavedTracklist(String name) {
+        String jsonTrackList = sharedPreferences.getString(name, null);
+        if (jsonTrackList != null) {
+            Gson gson = new Gson();
+            SearchResponse.Track[] trackArray = gson.fromJson(jsonTrackList, SearchResponse.Track[].class);
+            return Arrays.asList(trackArray);  // Convert array back to list
+        }
+        return new ArrayList<>();  // Return an empty list if nothing is saved
     }
 
     public boolean isLoggedIn() {

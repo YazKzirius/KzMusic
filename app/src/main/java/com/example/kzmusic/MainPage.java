@@ -15,6 +15,8 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 
+import java.util.ArrayList;
+
 //This class implements the main page of the application
 //Manages music listening and audio entertainment by mood
 public class MainPage extends AppCompatActivity {

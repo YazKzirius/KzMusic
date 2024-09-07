@@ -103,10 +103,12 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
     //This function updates the tracks in the tracklist
     public void updateTracks(List<SearchResponse.Track> newTracks) {
         trackList.addAll(newTracks);
-        Collections.shuffle(trackList);
         notifyDataSetChanged();
     }
-
+    //This function updates the tracks in the tracklist
+    public List<SearchResponse.Track> get_tracks() {
+        return trackList;
+    }
     //This class creates the Music item view holder display
     public static class ViewHolder extends RecyclerView.ViewHolder {
         public TextView trackName;
