@@ -194,7 +194,6 @@ public class Radio extends Fragment {
 
     //This function searches for random music using API queries and updates the current tracklist
     public void display_random_music(String token) {
-        Toast.makeText(getContext(), ""+sessionManager.getSavedTracklist("TRACK_LIST_RADIO").size(), Toast.LENGTH_LONG).show();
         if (sessionManager.getSavedTracklist("TRACK_LIST_RADIO").size() == 0) {
            accesstoken = token;
             String[] randomQueries = {"happy", "sad", "party", "chill", "love", "workout"};
