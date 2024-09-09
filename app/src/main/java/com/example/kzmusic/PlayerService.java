@@ -71,9 +71,9 @@ public class PlayerService extends Service {
         SongQueue.getInstance().update_id();
         NOTIFICATION_ID = SongQueue.getInstance().NOTIFICATION_ID;
         CHANNEL_ID += NOTIFICATION_ID;
-        sharedViewModel = SharedViewModelProvider.getViewModel(this);
-        initializeMediaSession();
         createNotificationChannel();
+        initializeMediaSession();
+        sharedViewModel = SharedViewModelProvider.getViewModel(this);
     }
     //This function plays the specified music file
     private void playMusic(MusicFile musicFile) {
