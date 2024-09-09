@@ -120,5 +120,6 @@ public class MainPage extends AppCompatActivity {
             PlayerManager.getInstance().StopAllSessions();
         }
         SongQueue.getInstance().clear_songs();
+        sessionManager.clear_tracklist();
     }
 }

@@ -57,9 +57,14 @@
                 android:src="@drawable/ic_shuffle"/>
 
         </LinearLayout>
-
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Refresh feed"
+            android:id="@+id/refresh_btn"/>
         <androidx.recyclerview.widget.RecyclerView
-            android:layout_marginTop="40dp"
+            android:layout_marginTop="10dp"
             android:id="@+id/recycler_view"
             android:layout_width="match_parent"
             android:layout_height="500dp" />

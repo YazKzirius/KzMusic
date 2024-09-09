@@ -33,6 +33,7 @@ import android.support.v4.media.session.PlaybackStateCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -72,6 +73,7 @@ public class UserMix extends Fragment {
     private String mParam2;
     //Page attributes
     private  List<SearchResponse.Track> trackList = new ArrayList<>();
+    private List<SearchResponse.Track> tracklist = new ArrayList<>();
     private List<MusicFile> musicFiles = new ArrayList<>();
     RecyclerView recyclerView;
     String access_token;
@@ -151,17 +153,25 @@ public class UserMix extends Fragment {
         recyclerView.setAdapter(musicAdapter);
         //Load music files
         loadMusicFiles();
-        try {
-            String[] randomQueries = generate_top_artists(musicFiles);
-            for (String query : randomQueries) {
-                display_generated_music(access_token, query);
+        //Setting text
+        TextView text = view.findViewById(R.id.made_for_user);
+        text.setText("Suggestsed mix for "+username);
+        //If saved list is empty, display new tracks
+        if (sessionManager.getSavedTracklist("TRACK_LIST_MIX").size() == 0) {
+            try {
+                String[] randomQueries = generate_top_artists(musicFiles);
+                for (String query : randomQueries) {
+                    display_generated_music(access_token, query);
+                }
+            } catch (Exception e) {
+                text.setText("No media files, please update library.");
             }
-        } catch (Exception e) {
-            TextView text = view.findViewById(R.id.made_for_user);
-            text.setText("No media files, please update library.");
+        } else {
+            musicAdapter.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_MIX"));
         }
         set_up_spotify_play();
         set_up_play_bar();
+        set_up_refresh();
         if (SongQueue.getInstance().get_size() > 0) {
             set_up_skipping();
         }
@@ -219,6 +229,25 @@ public class UserMix extends Fragment {
             }
         }
     }
+    //This function sets up refresh button
+    public void set_up_refresh() {
+        Button refresh_btn = view.findViewById(R.id.refresh_btn);
+        refresh_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    musicAdapter.clear_tracks();
+                    String[] randomQueries = generate_top_artists(musicFiles);
+                    for (String query : randomQueries) {
+                        display_generated_music(access_token, query);
+                    }
+                } catch (Exception e) {
+                    TextView text = view.findViewById(R.id.made_for_user);
+                    text.setText("No media files, please update library.");
+                }
+            }
+        });
+    }
     //This function sets up media notification bar skip events
     public void set_up_skipping() {
         serviceConnection = new ServiceConnection() {
@@ -260,8 +289,6 @@ public class UserMix extends Fragment {
     public void display_generated_music(String token, String artist) {
         access_token = token;
         String randomQuery = artist;
-        TextView text = view.findViewById(R.id.made_for_user);
-        text.setText("Suggestsed mix for "+username);
         SpotifyApiService apiService = RetrofitClient.getClient(access_token).create(SpotifyApiService.class);
         Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
         call.enqueue(new Callback<SearchResponse>() {
@@ -269,6 +296,10 @@ public class UserMix extends Fragment {
             public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     musicAdapter.updateTracks(response.body().getTracks().getItems());
+                    tracklist.addAll(response.body().getTracks().getItems());
+                    if (tracklist.size() == 200) {
+                        sessionManager.save_Tracklist_mix(tracklist);
+                    }
                 } else {
                     ;
                 }

@@ -31,6 +31,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -145,10 +146,15 @@ public class Radio extends Fragment {
         });
         sessionManager = new SessionManager(getContext());
         recyclerView.setAdapter(musicAdapter);
-        display_random_music(accesstoken);
+        if (sessionManager.getSavedTracklist("TRACK_LIST_RADIO").size() == 0) {
+            display_random_music(accesstoken);
+        } else {
+            musicAdapter.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_RADIO"));
+        }
         //Setting up bottom playback navigator
         set_up_spotify_play();
         set_up_play_bar();
+        set_up_refresh();
         if (SongQueue.getInstance().get_size() > 0) {
             set_up_skipping();
         }
@@ -191,35 +197,41 @@ public class Radio extends Fragment {
             }
         });
     }
+    //This function sets up refresh button
+    public void set_up_refresh() {
+        Button refresh_btn = view.findViewById(R.id.refresh_btn);
+        refresh_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                musicAdapter.clear_tracks();
+                display_random_music(accesstoken);
+            }
+        });
+    }
 
     //This function searches for random music using API queries and updates the current tracklist
     public void display_random_music(String token) {
-        if (sessionManager.getSavedTracklist("TRACK_LIST_RADIO").size() == 0) {
-           accesstoken = token;
-            String[] randomQueries = {"happy", "sad", "party", "chill", "love", "workout"};
-            String randomQuery = randomQueries[(int) (Math.random() * randomQueries.length)];
-            SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
-            Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
-            call.enqueue(new Callback<SearchResponse>() {
-                @Override
-                public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
-                    if (response.isSuccessful() && response.body() != null) {
-                        musicAdapter.updateTracks(response.body().getTracks().getItems());
-                        sessionManager.save_Tracklist_radio(response.body().getTracks().getItems());
-                    } else {
-                        ;
-                    }
+        accesstoken = token;
+        String[] randomQueries = {"happy", "sad", "party", "chill", "love", "workout"};
+        String randomQuery = randomQueries[(int) (Math.random() * randomQueries.length)];
+        SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
+        Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
+        call.enqueue(new Callback<SearchResponse>() {
+            @Override
+            public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    musicAdapter.updateTracks(response.body().getTracks().getItems());
+                    sessionManager.save_Tracklist_radio(response.body().getTracks().getItems());
+                } else {
+                    ;
                 }
-                @Override
-                public void onFailure(Call<SearchResponse> call, Throwable t) {
-                    TextView text1 = view.findViewById(R.id.made_for_user);
-                    text1.setText("No internet connection, please try again.");
-                }
-            });
-        } else {
-            musicAdapter.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_RADIO"));
-            sessionManager.save_Tracklist_radio(sessionManager.getSavedTracklist("TRACK_LIST_RADIO"));
-        }
+            }
+            @Override
+            public void onFailure(Call<SearchResponse> call, Throwable t) {
+                TextView text1 = view.findViewById(R.id.made_for_user);
+                text1.setText("No internet connection, please try again.");
+            }
+        });
     }
     //This function assigns data from playback overlay to bottom navigation
     public void set_up_play_bar() {
@@ -347,7 +359,6 @@ public class Radio extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        sessionManager.save_Tracklist_radio(new ArrayList<>());
 
     }
 }

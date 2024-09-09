@@ -151,7 +151,12 @@ public class LikedSongs extends Fragment {
             set_up_skipping();
         }
         //Getting user liked songs
-        get_liked_songs();
+        if (sessionManager.getSavedTracklist("TRACK_LIST_LIKED").size() == 0 || getN_liked() !=sessionManager.getSavedTracklist("TRACK_LIST_LIKED").size()) {
+            get_liked_songs();
+        } else {
+            musicAdapter1.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_LIKED"));
+            sessionManager.save_Tracklist_liked(sessionManager.getSavedTracklist("TRACK_LIST_LIKED"));
+        }
         return view;
     }
     //This function makes an API call using previous access token to search for random music
@@ -199,6 +204,9 @@ public class LikedSongs extends Fragment {
                                 tracklist.add(Tracks.get(i));
                             }
                         }
+                    }
+                    if (tracklist.size() == getN_liked()) {
+                        sessionManager.save_Tracklist_liked(tracklist);
                     }
                     musicAdapter1.notifyDataSetChanged();
                     //Checking for more than One of the same track
@@ -263,7 +271,18 @@ public class LikedSongs extends Fragment {
                 .collect(Collectors.toList());
         return track_urls;
     }
-
+    //This function gets the total number of liked songs
+    public int getN_liked() {
+        int n_liked = 0;
+        UsersTable table = new UsersTable(getContext());
+        table.open();
+        Cursor cursor = table.fetchAllLiked(email);
+        while (cursor.moveToNext()) {
+            n_liked += 1;
+        }
+        table.close();
+        return n_liked;
+    }
     //This function gets the users liked songs in the database
     public void get_liked_songs() {
         try {

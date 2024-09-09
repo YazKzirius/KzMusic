@@ -105,6 +105,10 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
         trackList.addAll(newTracks);
         notifyDataSetChanged();
     }
+    public void clear_tracks() {
+        trackList.clear();
+        notifyDataSetChanged();
+    }
     //This function updates the tracks in the tracklist
     public List<SearchResponse.Track> get_tracks() {
         return trackList;
