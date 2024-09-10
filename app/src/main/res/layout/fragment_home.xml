@@ -87,7 +87,6 @@
         android:layout_gravity="bottom"
         android:padding="15dp"
         android:background="@color/black">
-
         <ImageView
             android:id="@+id/current_song_art"
             android:layout_width="50dp"

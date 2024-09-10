@@ -135,7 +135,7 @@ public class UserMusic extends Fragment {
         username = sessionManager.getUsername();
         email = sessionManager.getEmail();
         TextView text = view.findViewById(R.id.x_music);
-        text.setText(username+" media");
+        text.setText(username+" library");
         //First recycler view
         recyclerView1 = view.findViewById(R.id.recycler_view2);
         recyclerView1.setLayoutManager(new LinearLayoutManager(getContext()));
