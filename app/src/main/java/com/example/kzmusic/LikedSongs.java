@@ -32,6 +32,7 @@ import com.spotify.protocol.types.PlayerState;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import retrofit2.Call;
@@ -74,6 +75,8 @@ public class LikedSongs extends Fragment {
     PlayerService playerService;
     Boolean isBound;
     ServiceConnection serviceConnection;
+    Boolean liked_on = false;
+    Boolean shuffle_on = false;
 
     public LikedSongs(String token) {
         // Required empty public constructor
@@ -157,7 +160,61 @@ public class LikedSongs extends Fragment {
             musicAdapter1.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_LIKED"));
             sessionManager.save_Tracklist_liked(sessionManager.getSavedTracklist("TRACK_LIST_LIKED"));
         }
+        set_up_playback_buttons();
         return view;
+    }
+    //This function sets up playback buttons at top
+    public void set_up_playback_buttons() {
+        //Session class
+        sessionManager = new SessionManager(getContext());
+        //Setting up liked all button
+        ImageButton btn1 = view.findViewById(R.id.clear_all);
+        btn1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Clearing liked songs
+                UsersTable table = new UsersTable(getContext());
+                table.open();
+                Cursor cursor = table.fetchAllLiked(email);
+                while (cursor.moveToNext()) {
+                    String title = cursor.getString(cursor.getColumnIndex("TITLE"));
+                    table.remove_liked(email, title);
+                    musicAdapter1.clear_tracks();
+                }
+                table.close();
+            }
+        });
+        //Play button functionality
+        ImageButton btn2 = view.findViewById(R.id.play_all);
+        btn2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (shuffle_on == false) {
+                    SearchResponse.Track track = sessionManager.getSavedTracklist("TRACK_LIST_LIKED").get(0);
+                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                    open_spotify_overlay();
+                } else {
+                    Random rand = new Random();
+                    int index = rand.nextInt(sessionManager.getSavedTracklist("TRACK_LIST_LIKED").size());
+                    SearchResponse.Track track = sessionManager.getSavedTracklist("TRACK_LIST_LIKED").get(index);
+                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                    open_spotify_overlay();
+                }
+            }
+        });
+        //Shuffle button functionlity
+        ImageButton btn3 = view.findViewById(R.id.shuffle);
+        btn3.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                shuffle_on = !shuffle_on;
+                if (shuffle_on == true) {
+                    btn3.setImageResource(R.drawable.ic_shuffle_on);
+                } else {
+                    btn3.setImageResource(R.drawable.ic_shuffle);
+                }
+            }
+        });
     }
     //This function makes an API call using previous access token to search for random music
     //It does this based on the track_name entered
@@ -177,42 +234,47 @@ public class LikedSongs extends Fragment {
                     //Getting indices of specified information
                     int i = tracks.indexOf(track_name+" by "+Artist);
                     int j = urls.indexOf(url);
-                    //Checking if it doesn't exist and performs j-index dependent adding
-                    if (i == -1) {
-                        i = tracks.indexOf(track_name);
-                        ///Checking if both indices are equal
-                        if (i == j) {
-                            tracklist.add(Tracks.get(i));
-                        } else {
-                            //Otherwise checking if the url index holds the same title as the current title
-                            String title = tracks.get(j);
-                            if (title.equals(track_name+" by "+Artist) || title.equals(track_name)) {
-                                tracklist.add(Tracks.get(j));
-                            } else {
-                                ;
-                            }
-                        }
-                    //Otherwise, perform similar calculations but with i-index dependent adding
-                    } else {
-                        if (i == j) {
-                            tracklist.add(Tracks.get(i));
-                        } else {
-                            String title = tracks.get(j);
-                            if (title.equals(track_name+" by "+Artist) || title.equals(track_name)) {
-                                tracklist.add(Tracks.get(j));
-                            } else {
+                    //This counts the number of errors
+                    int n = 0;
+                    if (Tracks.size() > 0) {
+                        //Checking if it doesn't exist and performs j-index dependent adding
+                        if (i == -1) {
+                            i = tracks.indexOf(track_name);
+                            ///Checking if both indices are equal
+                            if (i == j) {
                                 tracklist.add(Tracks.get(i));
+                            } else {
+                                //Otherwise checking if the url index holds the same title as the current title
+                                String title = tracks.get(j);
+                                if (title.equals(track_name+" by "+Artist) || title.equals(track_name)) {
+                                    tracklist.add(Tracks.get(j));
+                                } else {
+                                    ;
+                                }
+                            }
+                            //Otherwise, perform similar calculations but with i-index dependent adding
+                        } else {
+                            if (i == j) {
+                                tracklist.add(Tracks.get(i));
+                            } else {
+                                String title = tracks.get(j);
+                                if (title.equals(track_name+" by "+Artist) || title.equals(track_name)) {
+                                    tracklist.add(Tracks.get(j));
+                                } else {
+                                    tracklist.add(Tracks.get(i));
+                                }
                             }
                         }
+                    } else {
+                        n += 1;
                     }
-                    if (tracklist.size() == getN_liked()) {
+                    if (tracklist.size() == getN_liked() - n) {
                         sessionManager.save_Tracklist_liked(tracklist);
                     }
                     musicAdapter1.notifyDataSetChanged();
                     //Checking for more than One of the same track
                 } else {
-                    Intent intent = new Intent(getContext(), GetStarted.class);
-                    startActivity(intent);
+                    ;
                 }
             }
             @Override

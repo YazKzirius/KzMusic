@@ -33,11 +33,11 @@
                 android:layout_width="60dp"
                 android:layout_marginLeft="30dp"
                 android:layout_height="60dp"
-                android:id="@+id/like_all"
+                android:id="@+id/clear_all"
                 android:layout_gravity="right"
                 android:tint="@color/white"
                 android:background="#090909"
-                android:src="@drawable/ic_liked_off"/>
+                android:src="@drawable/ic_clear"/>
             <ImageButton
                 android:layout_width="60dp"
                 android:layout_height="60dp"
@@ -60,7 +60,7 @@
             android:layout_marginTop="10dp"
             android:id="@+id/recycler_view1"
             android:layout_width="match_parent"
-            android:layout_height="500dp" />
+            android:layout_height="450dp" />
     </LinearLayout>
     <RelativeLayout
         android:id="@+id/playback_bar"

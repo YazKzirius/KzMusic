@@ -91,6 +91,8 @@ public class UserMix extends Fragment {
     PlayerService playerService;
     Boolean isBound;
     ServiceConnection serviceConnection;
+    Boolean liked_on = false;
+    Boolean shuffle_on = false;
     public UserMix(String token) {
         // Required empty public constructor
         this.access_token = token;
@@ -144,8 +146,10 @@ public class UserMix extends Fragment {
                 //Pausing current player, so no playback overlap
                 if (PlayerManager.getInstance().get_size() > 0) {
                     PlayerManager.getInstance().current_player.pause();
+                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                 } else {
+                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                 }
             }
@@ -175,6 +179,7 @@ public class UserMix extends Fragment {
         if (SongQueue.getInstance().get_size() > 0) {
             set_up_skipping();
         }
+        set_up_playback_buttons();
         return view;
     }
     //This function loads User music audio files from personal directory
@@ -248,6 +253,100 @@ public class UserMix extends Fragment {
             }
         });
     }
+    //This function checks if all songs in view are liked
+    public Boolean all_liked() {
+        for (SearchResponse.Track track : sessionManager.getSavedTracklist("TRACK_LIST_MIX")) {
+            UsersTable table = new UsersTable(getContext());
+            table.open();
+            String email = sessionManager.getEmail();
+            String title = track.getName()+" by "+track.getArtists().get(0).getName();
+            if (table.song_liked(title, email) == false) {
+                return false;
+            }
+        }
+        return true;
+    }
+    //This function sets up playback buttons at top
+    public void set_up_playback_buttons() {
+        //Session class
+        sessionManager = new SessionManager(getContext());
+        //Setting up liked all button
+        ImageButton btn1 = view.findViewById(R.id.like_all);
+        if (all_liked() == true) {
+            btn1.setImageResource(R.drawable.ic_liked);
+        } else {
+            ;
+        }
+        btn1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                liked_on = !liked_on;
+                //If liked all button on, like all songs in recycler view and display liked icon
+                if (liked_on == true) {
+                    btn1.setImageResource(R.drawable.ic_liked);
+                    for (SearchResponse.Track track : sessionManager.getSavedTracklist("TRACK_LIST_MIX")) {
+                        UsersTable table = new UsersTable(getContext());
+                        table.open();
+                        String email = sessionManager.getEmail();
+                        String title = track.getName()+" by "+track.getArtists().get(0).getName();
+                        String url = track.getAlbum().getImages().get(0).getUrl();
+                        if (table.song_liked(title, email) == true) {
+                            ;
+                        } else {
+                            table.add_liked_song(email, title, url);
+                        }
+                        musicAdapter.clear_tracks();
+                        musicAdapter.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_MIX"));
+
+                    }
+                    //Otherwise, unlike all songs and display unliked icon
+                } else {
+                    btn1.setImageResource(R.drawable.ic_liked_off);
+                    for (SearchResponse.Track track : sessionManager.getSavedTracklist("TRACK_LIST_MIX")) {
+                        UsersTable table = new UsersTable(getContext());
+                        table.open();
+                        String email = sessionManager.getEmail();
+                        String title = track.getName()+" by "+track.getArtists().get(0).getName();
+                        table.remove_liked(email, title);
+                        musicAdapter.clear_tracks();
+                        musicAdapter.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_MIX"));
+
+                    }
+                }
+            }
+        });
+        //Play button functionality
+        ImageButton btn2 = view.findViewById(R.id.play_all);
+        btn2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (shuffle_on == false) {
+                    SearchResponse.Track track = sessionManager.getSavedTracklist("TRACK_LIST_MIX").get(0);
+                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                    open_spotify_overlay();
+                } else {
+                    Random rand = new Random();
+                    int index = rand.nextInt(sessionManager.getSavedTracklist("TRACK_LIST_MIX").size());
+                    SearchResponse.Track track = sessionManager.getSavedTracklist("TRACK_LIST_MIX").get(index);
+                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                    open_spotify_overlay();
+                }
+            }
+        });
+        //Shuffle button functionlity
+        ImageButton btn3 = view.findViewById(R.id.shuffle);
+        btn3.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                shuffle_on = !shuffle_on;
+                if (shuffle_on == true) {
+                    btn3.setImageResource(R.drawable.ic_shuffle_on);
+                } else {
+                    btn3.setImageResource(R.drawable.ic_shuffle);
+                }
+            }
+        });
+    }
     //This function sets up media notification bar skip events
     public void set_up_skipping() {
         serviceConnection = new ServiceConnection() {
@@ -288,16 +387,16 @@ public class UserMix extends Fragment {
     //This function searches for random music using API queries and updates the current tracklist
     public void display_generated_music(String token, String artist) {
         access_token = token;
-        String randomQuery = artist;
+        String randomQuery = "artist: " + artist;
         SpotifyApiService apiService = RetrofitClient.getClient(access_token).create(SpotifyApiService.class);
         Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
         call.enqueue(new Callback<SearchResponse>() {
             @Override
             public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    musicAdapter.updateTracks(response.body().getTracks().getItems());
-                    tracklist.addAll(response.body().getTracks().getItems());
-                    if (tracklist.size() == 200) {
+                    musicAdapter.updateTracks(response.body().getTracks().getItems().subList(0, 4));
+                    tracklist.addAll(response.body().getTracks().getItems().subList(0, 4));
+                    if (tracklist.size() == 40) {
                         sessionManager.save_Tracklist_mix(tracklist);
                     }
                 } else {
