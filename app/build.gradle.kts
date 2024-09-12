@@ -64,5 +64,12 @@ dependencies {
     // Glide for image loading
     implementation("com.github.bumptech.glide:glide:4.12.0")
     annotationProcessor("com.github.bumptech.glide:compiler:4.12.0")
+    // CameraX dependencies
+    implementation("androidx.camera:camera-core:1.1.0")
+    implementation("androidx.camera:camera-camera2:1.1.0")
+    implementation("androidx.camera:camera-lifecycle:1.1.0")
+    implementation("androidx.camera:camera-view:1.1.0")
+    // Use this dependency to use the dynamically downloaded model in Google Play Services
+    implementation("com.google.android.gms:play-services-mlkit-face-detection:17.1.0")
 
 }
