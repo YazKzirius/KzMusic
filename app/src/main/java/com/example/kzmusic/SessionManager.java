@@ -4,6 +4,7 @@ package com.example.kzmusic;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 
 import com.google.gson.Gson;
 
@@ -102,9 +103,5 @@ public class SessionManager {
     public void logoutUser() {
         editor.clear();
         editor.commit();
-        UsersTable table = new UsersTable(context);
-        table.open();
-        table.deleteAll();
-        table.close();
     }
 }

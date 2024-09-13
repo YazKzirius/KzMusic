@@ -9,7 +9,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class KzmusicDatabase extends SQLiteOpenHelper {
 
-    private static final int DATABASE_VERSION = 3;
+    private static final int DATABASE_VERSION = 4;
     public static final String DATABASE_NAME = "Kzmusic.db";
 
     public KzmusicDatabase(Context context) {
@@ -26,22 +26,35 @@ public class KzmusicDatabase extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if (oldVersion < 3) {
-            // Check if the LikedSongs table exists before attempting to rename it
-            boolean likedSongsTableExists = false;
-            Cursor cursor = db.rawQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='LikedSongs';", null);
+        if (oldVersion < 4) {
+            // Step 1: Create the new Songs table if it doesn't exist
+            boolean songsTableExists = false;
+            Cursor cursor = db.rawQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='Songs';", null);
             if (cursor != null && cursor.getCount() > 0) {
-                likedSongsTableExists = true;
+                songsTableExists = true;
             }
             if (cursor != null) {
                 cursor.close();
             }
 
-            // Step 1: If the table exists, rename it
+            if (!songsTableExists) {
+                create_songs(db);
+            }
+
+            // Step 2: Check if the LikedSongs table exists and update it as necessary
+            boolean likedSongsTableExists = false;
+            Cursor cursorLiked = db.rawQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='LikedSongs';", null);
+            if (cursorLiked != null && cursorLiked.getCount() > 0) {
+                likedSongsTableExists = true;
+            }
+            if (cursorLiked != null) {
+                cursorLiked.close();
+            }
+
             if (likedSongsTableExists) {
                 db.execSQL("ALTER TABLE LikedSongs RENAME TO temp_LikedSongs");
 
-                // Step 2: Create the new LikedSongs table with the updated schema
+                // Create new LikedSongs table with updated schema
                 db.execSQL("CREATE TABLE IF NOT EXISTS LikedSongs (" +
                         "UserID INTEGER, " +
                         "likedSongID INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -50,14 +63,13 @@ public class KzmusicDatabase extends SQLiteOpenHelper {
                         "TIMES_PLAYED INTEGER, " +
                         "FOREIGN KEY (UserID) REFERENCES Users(UserID))");
 
-                // Step 3: Copy the data from the old table to the new table
+                // Copy data from old table to new table
                 db.execSQL("INSERT INTO LikedSongs (UserID, likedSongID, TITLE, TIMES_PLAYED) " +
                         "SELECT UserID, likedSongID, TITLE, TIMES_PLAYED FROM temp_LikedSongs");
 
-                // Step 4: Drop the old (temporary) table
+                // Drop the temporary table
                 db.execSQL("DROP TABLE temp_LikedSongs");
             } else {
-                // If the table didn't exist, just create the new LikedSongs table
                 create_liked(db);
             }
         }

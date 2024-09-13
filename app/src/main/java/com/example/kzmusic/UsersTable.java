@@ -126,7 +126,6 @@ public class UsersTable {
         int count = cursor.getCount();
         cursor.close();
         return count > 0;
-
     }
     //This function fetches all the data in Users table
     public Cursor fetchAllLiked(String email) {
@@ -167,6 +166,58 @@ public class UsersTable {
         }
         cursor.close();
         return url;
+    }
+    //This function adds new song to Song table
+    public long add_new_song(String email, String title) {
+        ContentValues values = new ContentValues();
+        values.put("UserID", find_id_by_email(email));
+        values.put("TITLE", title);
+        values.put("TOTAL_DURATION", 0);
+        values.put("TIMES_PLAYED", 0);
+        return db.insert("Songs", null, values);
+    }
+    //This function checks if a song is already added to database
+    public Boolean song_added(String email, String title) {
+        String[] columns = {"SongID"};
+        String selection = "TITLE = ?"+"AND UserID = "+find_id_by_email(email);
+        String[] args = {title};
+        Cursor cursor = db.query("Songs", columns, selection, args, null, null, null);
+        int count = cursor.getCount();
+        cursor.close();
+        return count > 0;
+    }
+    //This function gets song duration by title and email
+    public int get_duration(String email, String title) {
+        String[] columns = {"TOTAL_DURATION"};
+        String selection = "EMAIL = ? "+" AND TITLE = "+title;
+        String[] args = {email};
+        int duration = 0;
+        Cursor cursor = db.query("Songs", columns, selection, args, null, null, null);
+        if (cursor != null && cursor.moveToNext()) {
+            duration = cursor.getInt(cursor.getColumnIndex("TOTAL_DURATION"));
+        }
+        cursor.close();
+        return duration;
+    }
+
+    //This function gets song times played by title and email
+    public int get_times_played(String email, String title) {
+        String[] columns = {"TIMES_PLAYED"};
+        String selection = "EMAIL = ? "+" AND TITLE = "+title;
+        String[] args = {email};
+        int n = 0;
+        Cursor cursor = db.query("Songs", columns, selection, args, null, null, null);
+        if (cursor != null && cursor.moveToNext()) {
+            n = cursor.getInt(cursor.getColumnIndex("TIMES_PLAYED"));
+        }
+        cursor.close();
+        return n;
+    }
+    public long update_song(String email, String title, int new_duration) {
+        ContentValues values = new ContentValues();
+        values.put("TOTAL_DURATION", get_duration(email,title)+new_duration);
+        values.put("TIMES_PLAYED", get_times_played(email, title)+1);
+        return db.update("Songs", values, "UserID = " + find_id_by_email(email)+" AND TITLE = "+title, null);
     }
 
     //This function deletes an account by ID

@@ -102,6 +102,7 @@ public class MediaOverlay extends Fragment {
     private boolean isBound = false;
     ServiceConnection serviceConnection;
     private static final String API_KEY = "2ae10e3784a6e96d12c87d11692e8089";
+    SessionManager sessionManager;
 
     public MediaOverlay() {
         // Required empty public constructor
@@ -267,6 +268,17 @@ public class MediaOverlay extends Fragment {
                     PlayerManager.getInstance().setCurrent_player(player);
                     //Setting up seekbar
                     set_up_bar();
+                    //Adding song to database
+                    sessionManager = new SessionManager(getContext());
+                    String email = sessionManager.getEmail();
+                    UsersTable table = new UsersTable(getContext());
+                    table.open();
+                    if (table.song_added(email, display_title)) {
+                        ;
+                    } else {
+                        table.add_new_song(email, display_title);
+                    }
+                    table.close();
                 }
             }
         });
@@ -502,24 +514,21 @@ public class MediaOverlay extends Fragment {
         set_up_skipping();
         //Setting up seekbar
         set_up_bar();
-    }
-    //This function implements skip functionality for event
-    public void play_for_skipped(MusicFile musicFile) {
-        player = PlayerManager.getInstance().current_player;
-        //Initializing song properties
-        session_id = player.getAudioSessionId();
-        //Initializing reverb from Song manager class
-        String display_title = format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", ");
-        //Applying audio effects
-        apply_audio_effect();
-        player.prepare();
-        player.play();
-        overlaySongTitle.setText(display_title);
-        //Adds player to Player session manager
-        PlayerManager.getInstance().addPlayer(player);
-        PlayerManager.getInstance().setCurrent_player(player);
-        //Setting up seekbar
-        set_up_bar();
+        //Adding song to database
+        sessionManager = new SessionManager(getContext());
+        String email = sessionManager.getEmail();
+        UsersTable table = new UsersTable(getContext());
+        table.open();
+        try {
+            if (table.song_added(email, display_title)) {
+                ;
+            } else {
+                table.add_new_song(email, display_title);
+            }
+            table.close();
+        } catch (Exception e) {
+            Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
     //This function checks if a string is only digits

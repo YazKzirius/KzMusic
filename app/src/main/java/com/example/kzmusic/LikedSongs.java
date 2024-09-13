@@ -236,37 +236,47 @@ public class LikedSongs extends Fragment {
                     int j = urls.indexOf(url);
                     //This counts the number of errors
                     int n = 0;
-                    if (Tracks.size() > 0) {
-                        //Checking if it doesn't exist and performs j-index dependent adding
-                        if (i == -1) {
-                            i = tracks.indexOf(track_name);
-                            ///Checking if both indices are equal
-                            if (i == j) {
-                                tracklist.add(Tracks.get(i));
-                            } else {
-                                //Otherwise checking if the url index holds the same title as the current title
-                                String title = tracks.get(j);
-                                if (title.equals(track_name+" by "+Artist) || title.equals(track_name)) {
-                                    tracklist.add(Tracks.get(j));
-                                } else {
-                                    ;
-                                }
-                            }
-                            //Otherwise, perform similar calculations but with i-index dependent adding
-                        } else {
-                            if (i == j) {
-                                tracklist.add(Tracks.get(i));
-                            } else {
-                                String title = tracks.get(j);
-                                if (title.equals(track_name+" by "+Artist) || title.equals(track_name)) {
-                                    tracklist.add(Tracks.get(j));
-                                } else {
+                    try {
+                        if (Tracks.size() > 0) {
+                            //Checking if it doesn't exist and performs j-index dependent adding
+                            if (i == -1) {
+                                i = tracks.indexOf(track_name);
+                                ///Checking if both indices are equal
+                                if (i == j) {
                                     tracklist.add(Tracks.get(i));
+                                } else {
+                                    //Otherwise checking if the url index holds the same title as the current title
+                                    String title = tracks.get(j);
+                                    if (title.equals(track_name+" by "+Artist) || title.equals(track_name)) {
+                                        tracklist.add(Tracks.get(j));
+                                    } else {
+                                        ;
+                                    }
+                                }
+                                //Otherwise, perform similar calculations but with i-index dependent adding
+                            } else {
+                                if (i == j) {
+                                    tracklist.add(Tracks.get(i));
+                                } else {
+                                    String title = tracks.get(j);
+                                    if (title.equals(track_name+" by "+Artist) || title.equals(track_name)) {
+                                        tracklist.add(Tracks.get(j));
+                                    } else {
+                                        tracklist.add(Tracks.get(i));
+                                    }
                                 }
                             }
+                        } else {
+                            n += 1;
                         }
-                    } else {
-                        n += 1;
+                    } catch (Exception e) {
+                        if (i == j && i == -1) {
+                            tracklist.add(Tracks.get(i));
+                        } else if (i != -1 && j == -1) {
+                            tracklist.add(Tracks.get(i));
+                        } else {
+                            tracklist.add(Tracks.get(j));
+                        }
                     }
                     if (tracklist.size() == getN_liked() - n) {
                         sessionManager.save_Tracklist_liked(tracklist);
@@ -276,6 +286,7 @@ public class LikedSongs extends Fragment {
                 } else {
                     ;
                 }
+
             }
             @Override
             public void onFailure(Call<SearchResponse> call, Throwable t) {
@@ -347,27 +358,33 @@ public class LikedSongs extends Fragment {
     }
     //This function gets the users liked songs in the database
     public void get_liked_songs() {
-        try {
-            UsersTable table = new UsersTable(getContext());
-            table.open();
-            Cursor cursor = table.fetchAllLiked(email);
-            while (cursor.moveToNext()) {
-                String title = cursor.getString(cursor.getColumnIndex("TITLE"));
-                String track_name = title;
-                String artist = "";
-                if (title.split(" by ").length == 2) {
-                    track_name = title.split(" by ")[0];
-                    artist = title.split(" by ")[1];
+        if (getN_liked() > 0) {
+            try {
+                UsersTable table = new UsersTable(getContext());
+                table.open();
+                Cursor cursor = table.fetchAllLiked(email);
+                while (cursor.moveToNext()) {
+                    String title = cursor.getString(cursor.getColumnIndex("TITLE"));
+                    String track_name = title;
+                    String artist = "";
+                    if (title.split(" by ").length == 2) {
+                        track_name = title.split(" by ")[0];
+                        artist = title.split(" by ")[1];
+                    }
+                    String url = cursor.getString(cursor.getColumnIndex("ALBUM_URL"));
+                    search_track(track_name, artist, url,token);
                 }
-                String url = cursor.getString(cursor.getColumnIndex("ALBUM_URL"));
-                search_track(track_name, artist, url,token);
+                table.close();
+            } catch (Exception e) {
+                TextView text = view.findViewById(R.id.x_liked);
+                text.setText("No internet connection, please try again.");
+                Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_LONG).show();
             }
-            table.close();
-        } catch (Exception e) {
+        } else {
             TextView text = view.findViewById(R.id.x_liked);
-            text.setText("No internet connection, please try again.");
-            Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_LONG).show();
+            text.setText("No liked songs");
         }
+
     }
     //This function sets up media notification bar skip events
     public void set_up_skipping() {
@@ -484,7 +501,11 @@ public class LikedSongs extends Fragment {
         //Removing unnecessary data
         title = title.replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", "").replaceAll("_", " ").replaceAll("  ", " ").replace(".flac", "").replace(".wav", "");
         //Checking if prefix is a number
-        String prefix = title.charAt(0)+""+title.charAt(1)+""+title.charAt(2);
+        String prefix = title.charAt(0) + "" + title.charAt(1) + "" + title.charAt(2);
+        //Checking if title ends with empty space
+        if (title.endsWith(" ")) {
+            title = title.substring(0, title.lastIndexOf(" "));
+        }
         //Checking if prefix is at the start and if it occurs again
         if (isOnlyDigits(prefix) && title.indexOf(prefix) == 0 && title.indexOf(prefix, 2) == -1) {
             //Removing prefix

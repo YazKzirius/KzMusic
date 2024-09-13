@@ -287,7 +287,11 @@ public class HomeFragment extends Fragment {
         //Removing unnecessary data
         title = title.replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", "").replaceAll("_", " ").replaceAll("  ", " ").replace(".flac", "").replace(".wav", "");
         //Checking if prefix is a number
-        String prefix = title.charAt(0)+""+title.charAt(1)+""+title.charAt(2);
+        String prefix = title.charAt(0) + "" + title.charAt(1) + "" + title.charAt(2);
+        //Checking if title ends with empty space
+        if (title.endsWith(" ")) {
+            title = title.substring(0, title.lastIndexOf(" "));
+        }
         //Checking if prefix is at the start and if it occurs again
         if (isOnlyDigits(prefix) && title.indexOf(prefix) == 0 && title.indexOf(prefix, 2) == -1) {
             //Removing prefix
