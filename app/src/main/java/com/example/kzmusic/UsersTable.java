@@ -188,36 +188,70 @@ public class UsersTable {
     }
     //This function gets song duration by title and email
     public int get_duration(String email, String title) {
-        String[] columns = {"TOTAL_DURATION"};
-        String selection = "EMAIL = ? "+" AND TITLE = "+title;
-        String[] args = {email};
         int duration = 0;
-        Cursor cursor = db.query("Songs", columns, selection, args, null, null, null);
-        if (cursor != null && cursor.moveToNext()) {
-            duration = cursor.getInt(cursor.getColumnIndex("TOTAL_DURATION"));
+
+        // Query to select TIMES_PLAYED
+        String query = "SELECT TOTAL_DURATION FROM Songs WHERE UserID = ? AND TITLE = ?";
+        String[] selectionArgs = { String.valueOf(find_id_by_email(email)), title };
+
+        Cursor cursor = db.rawQuery(query, selectionArgs);
+
+        // If the cursor returns a result, get the value of TIMES_PLAYED
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                duration = cursor.getInt(cursor.getColumnIndex("TOTAL_DURATION"));
+            }
+            cursor.close();
         }
-        cursor.close();
         return duration;
     }
 
     //This function gets song times played by title and email
     public int get_times_played(String email, String title) {
-        String[] columns = {"TIMES_PLAYED"};
-        String selection = "EMAIL = ? "+" AND TITLE = "+title;
-        String[] args = {email};
         int n = 0;
-        Cursor cursor = db.query("Songs", columns, selection, args, null, null, null);
-        if (cursor != null && cursor.moveToNext()) {
-            n = cursor.getInt(cursor.getColumnIndex("TIMES_PLAYED"));
+
+        // Query to select TIMES_PLAYED
+        String query = "SELECT TIMES_PLAYED FROM Songs WHERE UserID = ? AND TITLE = ?";
+        String[] selectionArgs = { String.valueOf(find_id_by_email(email)), title };
+
+        Cursor cursor = db.rawQuery(query, selectionArgs);
+
+        // If the cursor returns a result, get the value of TIMES_PLAYED
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                n = cursor.getInt(cursor.getColumnIndex("TIMES_PLAYED"));
+            }
+            cursor.close();
         }
-        cursor.close();
         return n;
     }
-    public long update_song(String email, String title, int new_duration) {
+    public long update_song_duration(String email, String title, int new_duration) {
         ContentValues values = new ContentValues();
-        values.put("TOTAL_DURATION", get_duration(email,title)+new_duration);
-        values.put("TIMES_PLAYED", get_times_played(email, title)+1);
-        return db.update("Songs", values, "UserID = " + find_id_by_email(email)+" AND TITLE = "+title, null);
+
+        // Increment the duration
+        new_duration = get_duration(email, title) + new_duration;
+        values.put("TOTAL_DURATION", new_duration);
+
+        // Prepare the selection criteria
+        String selection = "UserID = ? AND TITLE = ?";
+        String[] selectionArgs = { String.valueOf(find_id_by_email(email)), title };
+
+        // Perform the update and return the number of affected rows
+        return db.update("Songs", values, selection, selectionArgs);
+    }
+    public long update_song_times_played(String email, String title) {
+        ContentValues values = new ContentValues();
+
+        // Increment the times played value by 1
+        int timesPlayed = get_times_played(email, title) + 1;
+        values.put("TIMES_PLAYED", timesPlayed);
+
+        // Prepare the selection criteria
+        String selection = "UserID = ? AND TITLE = ?";
+        String[] selectionArgs = { String.valueOf(find_id_by_email(email)), title };
+
+        // Perform the update and return the number of affected rows
+        return db.update("Songs", values, selection, selectionArgs);
     }
 
     //This function deletes an account by ID

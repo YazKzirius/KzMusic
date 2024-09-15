@@ -387,6 +387,5 @@ public class PlayerService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mediaSession.release();
     }
 }

@@ -87,12 +87,43 @@ public class SongQueue {
         }
         this.reverb = new EnvironmentalReverb(0, sessionId);
     }
-
-    public void stop_reverb() {
-    }
     public void update_id() {
         NOTIFICATION_ID += 1;
         CHANNEL_ID += ""+NOTIFICATION_ID;
+    }
+    //This function checks if a string is only digits
+    public boolean isOnlyDigits(String str) {
+        str = str.replaceAll(" ", "");
+        if (str == null || str.isEmpty()) {
+            return false;
+        }
+
+        for (int i = 0; i < str.length(); i++) {
+            if (!Character.isDigit(str.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    //This function formats song title, removing unnecessary data
+    public String format_title(String title) {
+        //Removing unnecessary data
+        title = title.replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", "").replaceAll("_", " ").replaceAll("  ", " ").replace(".flac", "").replace(".wav", "");
+        //Checking if prefix is a number
+        String prefix = title.charAt(0) + "" + title.charAt(1) + "" + title.charAt(2);
+        //Checking if title ends with empty space
+        if (title.endsWith(" ")) {
+            title = title.substring(0, title.lastIndexOf(" "));
+        }
+        //Checking if prefix is at the start and if it occurs again
+        if (isOnlyDigits(prefix) && title.indexOf(prefix) == 0 && title.indexOf(prefix, 2) == -1) {
+            //Removing prefix
+            title = title.replaceFirst(prefix, "");
+        } else {
+            ;
+        }
+        return title;
     }
 
 }

@@ -268,17 +268,6 @@ public class MediaOverlay extends Fragment {
                     PlayerManager.getInstance().setCurrent_player(player);
                     //Setting up seekbar
                     set_up_bar();
-                    //Adding song to database
-                    sessionManager = new SessionManager(getContext());
-                    String email = sessionManager.getEmail();
-                    UsersTable table = new UsersTable(getContext());
-                    table.open();
-                    if (table.song_added(email, display_title)) {
-                        ;
-                    } else {
-                        table.add_new_song(email, display_title);
-                    }
-                    table.close();
                 }
             }
         });
@@ -509,26 +498,23 @@ public class MediaOverlay extends Fragment {
         //Adds player to Player session manager
         PlayerManager.getInstance().addPlayer(player);
         PlayerManager.getInstance().setCurrent_player(player);
-        startPlayerService();
-        //Set up skipping after service is created
-        set_up_skipping();
         //Setting up seekbar
         set_up_bar();
+        //Setting up notification
+        startPlayerService();
+        set_up_skipping();
         //Adding song to database
-        sessionManager = new SessionManager(getContext());
+        SessionManager sessionManager = new SessionManager(getContext());
         String email = sessionManager.getEmail();
         UsersTable table = new UsersTable(getContext());
         table.open();
-        try {
-            if (table.song_added(email, display_title)) {
-                ;
-            } else {
-                table.add_new_song(email, display_title);
-            }
-            table.close();
-        } catch (Exception e) {
-            Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_LONG).show();
+        if (table.song_added(email, display_title) == true) {
+            table.update_song_times_played(email, display_title);
+            Toast.makeText(getContext(), ""+table.get_duration(email, display_title), Toast.LENGTH_LONG).show();
+        } else {
+            table.add_new_song(email, display_title);
         }
+        table.close();
     }
 
     //This function checks if a string is only digits
@@ -596,6 +582,7 @@ public class MediaOverlay extends Fragment {
                     seekBar.setProgress((int) player.getCurrentPosition());
                     textCurrentTime.setText(formatTime(player.getCurrentPosition()));
                     SongQueue.getInstance().setCurrent_time(player.getCurrentPosition());
+                    //Updating duration in database
                     handler.postDelayed(this, 1000);
                 }
             }
