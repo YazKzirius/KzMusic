@@ -275,7 +275,7 @@ public class UserMix extends Fragment {
         if (all_liked() == true) {
             btn1.setImageResource(R.drawable.ic_liked);
         } else {
-            ;
+            btn1.setImageResource(R.drawable.ic_liked_off);
         }
         btn1.setOnClickListener(new View.OnClickListener() {
             @Override

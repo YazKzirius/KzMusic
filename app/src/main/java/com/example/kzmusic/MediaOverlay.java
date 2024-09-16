@@ -510,7 +510,6 @@ public class MediaOverlay extends Fragment {
         table.open();
         if (table.song_added(email, display_title) == true) {
             table.update_song_times_played(email, display_title);
-            Toast.makeText(getContext(), ""+table.get_duration(email, display_title), Toast.LENGTH_LONG).show();
         } else {
             table.add_new_song(email, display_title);
         }

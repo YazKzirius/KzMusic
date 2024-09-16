@@ -2,6 +2,7 @@ package com.example.kzmusic;
 //Importing important modules
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Toast;
 
@@ -15,7 +16,19 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.util.ArrayList;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.FormBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 //This class implements the main page of the application
 //Manages music listening and audio entertainment by mood
@@ -40,7 +53,7 @@ public class MainPage extends AppCompatActivity {
         if (bundle != null) {
             token = bundle.getString("Token");
             expiration_time = bundle.getLong("expiration_time");
-            schedule_token_refresh(expiration_time-120);
+            schedule_token_refresh(expiration_time-300);
             send_data();
         } else {
             ;

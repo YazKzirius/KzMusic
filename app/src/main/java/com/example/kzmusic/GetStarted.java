@@ -61,12 +61,7 @@ public class GetStarted extends AppCompatActivity {
             startActivity(intent);
             finish();
         } else {
-            findViewById(R.id.Get_started_button).setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    set_up_spotify_auth();
-                }
-            });
+            set_up_spotify_auth();
         }
     }
     //These functions sets up the Spotify Sign-in/authorisation using spotify web API
