@@ -54,6 +54,8 @@ public class PlayerService extends Service {
     private static final String ACTION_SKIP_NEXT = "com.example.ACTION_SKIP_NEXT";
     private static final String ACTION_SKIP_PREVIOUS = "com.example.ACTION_SKIP_PREVIOUS";
     private final IBinder binder = new LocalBinder();
+    private long last_position;
+
     public class LocalBinder extends Binder {
         public PlayerService getService() {
             return PlayerService.this;
@@ -217,7 +219,10 @@ public class PlayerService extends Service {
             @Override
             public void onPause() {
                 super.onPause();
+                //Update duration database
                 PlayerManager.getInstance().current_player.pause();
+                //Update database duration
+                update_total_duration();
                 updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
                 showNotification(stateBuilder.build());
             }
@@ -229,6 +234,7 @@ public class PlayerService extends Service {
                         SongQueue.getInstance().shuffle_on != true) {
                     ;
                 } else {
+                    update_total_duration();
                     if (SongQueue.getInstance().shuffle_on != true) {
                         pos = SongQueue.getInstance().current_position + 1;
                     } else {
@@ -250,6 +256,7 @@ public class PlayerService extends Service {
                         SongQueue.getInstance().shuffle_on != true) {
                     ;
                 } else {
+                    update_total_duration();
                     if (SongQueue.getInstance().shuffle_on != true) {
                         pos = SongQueue.getInstance().current_position - 1;
                     } else {
@@ -377,6 +384,20 @@ public class PlayerService extends Service {
                 startForeground(NOTIFICATION_ID, builder.build());
             }
         });
+    }
+    public void update_total_duration() {
+        long duration = player.getCurrentPosition() - last_position;
+        String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
+        //Applying audio effects
+        //Updating song duration database
+        SessionManager sessionManager = new SessionManager(getApplicationContext());
+        String email = sessionManager.getEmail();
+        UsersTable table = new UsersTable(getApplicationContext());
+        table.open();
+        table.update_song_duration(email, display_title, (int) duration/1000);
+        last_position = player.getCurrentPosition();
+        Toast.makeText(getApplicationContext(), ""+table.get_duration(email, display_title), Toast.LENGTH_LONG).show();
+        table.close();
     }
 
     @Override
