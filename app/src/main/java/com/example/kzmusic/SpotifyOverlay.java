@@ -119,7 +119,7 @@ public class SpotifyOverlay extends Fragment {
         UsersTable table = new UsersTable(getContext());
         SessionManager sessionManager = new SessionManager(getContext());
         String email = sessionManager.getEmail();
-        String title = track.getName() + " by " + track.getArtists().get(0).getName();
+        String title = track.getName() + " by " + track.getArtists().get(0).getName()+" (Official Music Video)";
         table.open();
         if (table.song_added(email, title) == true) {
             table.update_song_times_played(email, title);
@@ -238,8 +238,6 @@ public class SpotifyOverlay extends Fragment {
         UsersTable table = new UsersTable(getContext());
         table.open();
         table.update_song_duration(email, display_title, (int) duration/1000);
-        last_position = PlayerManager.getInstance().current_player.getCurrentPosition();
-        SongQueue.getInstance().setLast_postion(last_position);
         table.close();
     }
     @Override

@@ -287,10 +287,9 @@ public class UserMix extends Fragment {
         sessionManager = new SessionManager(getContext());
         //Setting up liked all button
         ImageButton btn1 = view.findViewById(R.id.like_all);
+        btn1.setImageResource(R.drawable.ic_liked_off);
         if (all_liked() == true) {
             btn1.setImageResource(R.drawable.ic_liked);
-        } else {
-            btn1.setImageResource(R.drawable.ic_liked_off);
         }
         btn1.setOnClickListener(new View.OnClickListener() {
             @Override
