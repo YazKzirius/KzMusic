@@ -320,7 +320,6 @@ public class MediaOverlay extends Fragment {
         table.update_song_duration(email, display_title, (int) duration/1000);
         last_position = PlayerManager.getInstance().current_player.getCurrentPosition();
         SongQueue.getInstance().setLast_postion(last_position);
-        Toast.makeText(getContext(), ""+table.get_duration(email, display_title), Toast.LENGTH_LONG).show();
         table.close();
     }
     //This function sets up and implements button functionality

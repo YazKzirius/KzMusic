@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import java.math.*;
 
 //This class implements the methods needed for the Users table of database
 //Storing ID, username, email and password
@@ -229,7 +230,7 @@ public class UsersTable {
         ContentValues values = new ContentValues();
 
         // Increment the duration
-        new_duration = get_duration(email, title) + new_duration;
+        new_duration = Math.abs(get_duration(email, title)) + new_duration;
         values.put("TOTAL_DURATION", new_duration);
 
         // Prepare the selection criteria
