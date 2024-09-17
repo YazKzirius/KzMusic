@@ -269,13 +269,47 @@ public class MediaOverlay extends Fragment {
                     PlayerManager.getInstance().setCurrent_player(player);
                     //Setting up seekbar
                     set_up_bar();
+                } else {
+                    ;
                 }
             }
         });
+        //Setting up for Pause events
+        sharedViewModel.getPauseEvent().observe(getViewLifecycleOwner(), event ->  {
+            if (event != null)  {
+                Boolean shouldPlayPause = event.getContentIfNotHandled();
+                if (shouldPlayPause != null && shouldPlayPause) {
+                    player = PlayerManager.getInstance().current_player;
+                    //Update duration in database
+                    update_total_duration();
+                    // Stop the GIF by clearing the ImageView
+                    Glide.with(getContext()).clear(song_gif);
+                    song_gif.setImageDrawable(null);
+                    btnPlayPause.setImageResource(R.drawable.ic_play);
+                } else {
+                    ;
+                }
+            }
+        });
+        //Setting up for Play events
+        sharedViewModel.getPlayEvent().observe(getViewLifecycleOwner(), event ->  {
+            if (event != null)  {
+                Boolean shouldPlayPause = event.getContentIfNotHandled();
+                if (shouldPlayPause != null && shouldPlayPause) {
+                    player = PlayerManager.getInstance().current_player;
+                    //Update duration in database
+                    btnPlayPause.setImageResource(R.drawable.ic_pause);
+                    set_up_circular_view(SongQueue.getInstance().current_song);
+                } else {
+                    ;
+                }
+            }
+        });
+
     }
     //This function updates the total duration field in SQL database
     public void update_total_duration() {
-        long duration = player.getCurrentPosition() - last_position;
+        long duration = PlayerManager.getInstance().current_player.getCurrentPosition() - last_position;
         String display_title = format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", ");
         //Applying audio effects
         //Updating song database
@@ -284,7 +318,8 @@ public class MediaOverlay extends Fragment {
         UsersTable table = new UsersTable(getContext());
         table.open();
         table.update_song_duration(email, display_title, (int) duration/1000);
-        last_position = player.getCurrentPosition();
+        last_position = PlayerManager.getInstance().current_player.getCurrentPosition();
+        SongQueue.getInstance().setLast_postion(last_position);
         Toast.makeText(getContext(), ""+table.get_duration(email, display_title), Toast.LENGTH_LONG).show();
         table.close();
     }
@@ -458,6 +493,7 @@ public class MediaOverlay extends Fragment {
                 if (fromUser) {
                     player.seekTo(progress);
                     SongQueue.getInstance().setCurrent_time(player.getCurrentPosition());
+                    last_position = player.getCurrentPosition();
                 }
             }
 
@@ -486,6 +522,7 @@ public class MediaOverlay extends Fragment {
                 //Use previous player
                 player = PlayerManager.getInstance().current_player;
                 last_position = player.getCurrentPosition();
+                SongQueue.getInstance().setLast_postion(last_position);
                 //Resuming at left point
                 if (player.isPlaying()) {
                     startSeekBarUpdate();

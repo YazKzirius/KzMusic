@@ -77,6 +77,7 @@ public class LikedSongs extends Fragment {
     ServiceConnection serviceConnection;
     Boolean liked_on = false;
     Boolean shuffle_on = false;
+    private long last_position;
 
     public LikedSongs(String token) {
         // Required empty public constructor
@@ -152,6 +153,8 @@ public class LikedSongs extends Fragment {
         set_up_play_bar();
         if (SongQueue.getInstance().get_size() > 0) {
             set_up_skipping();
+            last_position = PlayerManager.getInstance().current_player.getCurrentPosition();
+            SongQueue.getInstance().setLast_postion(last_position);
         }
         //Getting user liked songs
         if (sessionManager.getSavedTracklist("TRACK_LIST_LIKED").size() == 0 || getN_liked() !=sessionManager.getSavedTracklist("TRACK_LIST_LIKED").size()) {
@@ -215,6 +218,17 @@ public class LikedSongs extends Fragment {
                 }
             }
         });
+    }
+    public void update_total_duration() {
+        long duration = PlayerManager.getInstance().current_player.getCurrentPosition() - last_position;
+        String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
+        //Updating song duration database
+        SessionManager sessionManager = new SessionManager(getContext());
+        String email = sessionManager.getEmail();
+        UsersTable table = new UsersTable(getContext());
+        table.open();
+        table.update_song_duration(email, display_title, (int) duration/1000);
+        table.close();
     }
     //This function makes an API call using previous access token to search for random music
     //It does this based on the track_name entered
@@ -538,6 +552,7 @@ public class LikedSongs extends Fragment {
     public void open_new_overlay(MusicFile file, int position) {
         //Adding song to queue
         stopPlayerService();
+        update_total_duration();
         SongQueue.getInstance().addSong(file);
         SongQueue.getInstance().setPosition(position);
         Fragment media_page = new MediaOverlay();

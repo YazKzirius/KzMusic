@@ -142,6 +142,19 @@ public class PlayerService extends Service {
             sharedViewModel.triggerSkipEvent();
         }
     }
+    private void handlePause() {
+        // Trigger the skip event in the ViewModel
+        if (sharedViewModel != null) {
+            sharedViewModel.triggerPauseEvent();
+        }
+    }
+    private void handlePlay() {
+        // Trigger the skip event in the ViewModel
+        if (sharedViewModel != null) {
+            sharedViewModel.triggerPlayEvent();
+        }
+    }
+
     public void setViewModel(SharedViewModel viewModel) {
         this.sharedViewModel = viewModel;
     }
@@ -182,17 +195,6 @@ public class PlayerService extends Service {
         }
         return title;
     }
-    //This function opens a new song overlay
-    public void open_new_overlay(MusicFile file, int position) {
-        //Adding song to queue
-        SongQueue.getInstance().addSong(file);
-        SongQueue.getInstance().setPosition(position);
-        Fragment media_page = new MediaOverlay();
-        FragmentManager fragmentManager = ((AppCompatActivity) getApplicationContext()).getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.replace(R.id.fragment_container, media_page);
-        fragmentTransaction.commit();
-    }
     //This function initializes media session for notification
     public void initializeMediaSession() {
         mediaSession = new MediaSessionCompat(this, "ExoPlayerMediaSession");
@@ -214,6 +216,7 @@ public class PlayerService extends Service {
                 PlayerManager.getInstance().current_player.play();
                 updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
                 showNotification(stateBuilder.build());
+                handlePlay();
             }
 
             @Override
@@ -222,9 +225,9 @@ public class PlayerService extends Service {
                 //Update duration database
                 PlayerManager.getInstance().current_player.pause();
                 //Update database duration
-                update_total_duration();
                 updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
                 showNotification(stateBuilder.build());
+                handlePause();
             }
             @Override
             public void onSkipToNext() {
@@ -386,17 +389,15 @@ public class PlayerService extends Service {
         });
     }
     public void update_total_duration() {
-        long duration = player.getCurrentPosition() - last_position;
+        last_position = SongQueue.getInstance().getLast_postion();
+        long duration = PlayerManager.getInstance().current_player.getCurrentPosition() - last_position;
         String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
-        //Applying audio effects
         //Updating song duration database
         SessionManager sessionManager = new SessionManager(getApplicationContext());
         String email = sessionManager.getEmail();
         UsersTable table = new UsersTable(getApplicationContext());
         table.open();
         table.update_song_duration(email, display_title, (int) duration/1000);
-        last_position = player.getCurrentPosition();
-        Toast.makeText(getApplicationContext(), ""+table.get_duration(email, display_title), Toast.LENGTH_LONG).show();
         table.close();
     }
 

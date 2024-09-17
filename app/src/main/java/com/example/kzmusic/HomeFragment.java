@@ -153,6 +153,7 @@ public class HomeFragment extends Fragment {
         if (SongQueue.getInstance().get_size() > 0) {
             set_up_skipping();
             last_position = PlayerManager.getInstance().current_player.getCurrentPosition();
+            SongQueue.getInstance().setLast_postion(last_position);
         }
         return view;
     }
@@ -318,9 +319,8 @@ public class HomeFragment extends Fragment {
         fragmentTransaction.commit();
     }
     public void update_total_duration() {
-        long duration = player.getCurrentPosition() - last_position;
+        long duration = PlayerManager.getInstance().current_player.getCurrentPosition() - last_position;
         String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
-        //Applying audio effects
         //Updating song duration database
         SessionManager sessionManager = new SessionManager(getContext());
         String email = sessionManager.getEmail();

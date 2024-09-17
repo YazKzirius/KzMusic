@@ -23,6 +23,7 @@ public class SongQueue {
     Boolean shuffle_on = false;
     EnvironmentalReverb reverb;
     long current_time = 0;
+    long last_postion = 0;
     int pointer = 0;
     private SongQueue() {
         this.songs_played = new ArrayList<>();
@@ -70,6 +71,13 @@ public class SongQueue {
         this.shuffle_on = shuffle_on;
     }
 
+    public void setLast_postion(long last_postion) {
+        this.last_postion = last_postion;
+    }
+
+    public long getLast_postion() {
+        return last_postion;
+    }
 
     public void setCurrent_time(long current_time) {
         this.current_time = current_time;

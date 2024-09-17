@@ -111,6 +111,7 @@ public class SearchFragment extends Fragment {
     PlayerService playerService;
     Boolean isBound;
     ServiceConnection serviceConnection;
+    private long last_position;
 
     public SearchFragment() {
         // Required empty public constructor
@@ -219,6 +220,8 @@ public class SearchFragment extends Fragment {
         set_up_play_bar();
         if (SongQueue.getInstance().get_size() > 0) {
             set_up_skipping();
+            last_position = PlayerManager.getInstance().current_player.getCurrentPosition();
+            SongQueue.getInstance().setLast_postion(last_position);
         }
         return view;
     }
@@ -326,6 +329,17 @@ public class SearchFragment extends Fragment {
             }
         });
     }
+    public void update_total_duration() {
+        long duration = PlayerManager.getInstance().current_player.getCurrentPosition() - last_position;
+        String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
+        //Updating song duration database
+        SessionManager sessionManager = new SessionManager(getContext());
+        String email = sessionManager.getEmail();
+        UsersTable table = new UsersTable(getContext());
+        table.open();
+        table.update_song_duration(email, display_title, (int) duration/1000);
+        table.close();
+    }
     //This function assigns data from playback overlay to bottom navigation
     public void set_up_play_bar() {
         if (SongQueue.getInstance().songs_played.size() == 0) {
@@ -414,6 +428,7 @@ public class SearchFragment extends Fragment {
     public void open_new_overlay(MusicFile file, int position) {
         //Adding song to queue
         stopPlayerService();
+        update_total_duration();
         SongQueue.getInstance().addSong(file);
         SongQueue.getInstance().setPosition(position);
         Fragment media_page = new MediaOverlay();
