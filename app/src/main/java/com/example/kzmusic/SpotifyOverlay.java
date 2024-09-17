@@ -67,6 +67,8 @@ public class SpotifyOverlay extends Fragment {
     private WebView youtubeWebView;
     private ImageView album_cover;
     SearchResponse.Track track;
+    long current_position;
+    long last_position;
 
     public SpotifyOverlay() {
         // Required empty public constructor
@@ -113,7 +115,19 @@ public class SpotifyOverlay extends Fragment {
         youtubeWebView.setWebViewClient(new WebViewClient());
         connect();
         overlaySongTitle.setText("Now playing: "+ track.getName() + " by " + track.getArtists().get(0).getName());
+        //Adding song to database
+        UsersTable table = new UsersTable(getContext());
+        SessionManager sessionManager = new SessionManager(getContext());
+        String email = sessionManager.getEmail();
+        String title = track.getName() + " by " + track.getArtists().get(0).getName();
+        table.open();
+        if (table.song_added(email, title) == true) {
+            table.update_song_times_played(email, title);
+        } else {
+            table.add_new_song(email, title);
+        }
         set_up_track_playing(track);
+        current_position = System.currentTimeMillis();
         getVideoIdByName(track.getName()+" by "+track.getArtists().get(0).getName());
         return view;
     }
@@ -213,4 +227,25 @@ public class SpotifyOverlay extends Fragment {
             }
         });
     }
+    //This function updates the total duration field in SQL database
+    public void update_total_duration() {
+        long duration = System.currentTimeMillis() - current_position;
+        String display_title =  track.getName() + " by " + track.getArtists().get(0).getName();
+        //Applying audio effects
+        //Updating song database
+        SessionManager sessionManager = new SessionManager(getContext());
+        String email = sessionManager.getEmail();
+        UsersTable table = new UsersTable(getContext());
+        table.open();
+        table.update_song_duration(email, display_title, (int) duration/1000);
+        last_position = PlayerManager.getInstance().current_player.getCurrentPosition();
+        SongQueue.getInstance().setLast_postion(last_position);
+        table.close();
+    }
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        update_total_duration();
+    }
+
 }
