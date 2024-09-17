@@ -27,21 +27,22 @@ public class KzmusicDatabase extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         if (oldVersion < 4) {
-            // Step 1: Create the new Songs table if it doesn't exist
+            // Step 1: Check if the Songs table exists
             boolean songsTableExists = false;
-            Cursor cursor = db.rawQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='Songs';", null);
-            if (cursor != null && cursor.getCount() > 0) {
+            Cursor cursorSongs = db.rawQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='Songs';", null);
+            if (cursorSongs != null && cursorSongs.getCount() > 0) {
                 songsTableExists = true;
             }
-            if (cursor != null) {
-                cursor.close();
+            if (cursorSongs != null) {
+                cursorSongs.close();
             }
 
+            // Create Songs table if it doesn't exist
             if (!songsTableExists) {
-                create_songs(db);
+                create_songs(db);  // Create the new Songs table
             }
 
-            // Step 2: Check if the LikedSongs table exists and update it as necessary
+            // Step 2: Check if the LikedSongs table exists
             boolean likedSongsTableExists = false;
             Cursor cursorLiked = db.rawQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='LikedSongs';", null);
             if (cursorLiked != null && cursorLiked.getCount() > 0) {
@@ -51,25 +52,28 @@ public class KzmusicDatabase extends SQLiteOpenHelper {
                 cursorLiked.close();
             }
 
+            // If the LikedSongs table exists, rename and update the schema
             if (likedSongsTableExists) {
+                // Rename old LikedSongs table to a temporary one
                 db.execSQL("ALTER TABLE LikedSongs RENAME TO temp_LikedSongs");
 
-                // Create new LikedSongs table with updated schema
+                // Create the new LikedSongs table with the updated schema
                 db.execSQL("CREATE TABLE IF NOT EXISTS LikedSongs (" +
                         "UserID INTEGER, " +
                         "likedSongID INTEGER PRIMARY KEY AUTOINCREMENT, " +
                         "TITLE TEXT, " +
-                        "ALBUM_URL TEXT, " + // New column
+                        "ALBUM_URL TEXT, " + // New column added
                         "TIMES_PLAYED INTEGER, " +
                         "FOREIGN KEY (UserID) REFERENCES Users(UserID))");
 
-                // Copy data from old table to new table
+                // Copy the data from the old (temporary) table to the new table
                 db.execSQL("INSERT INTO LikedSongs (UserID, likedSongID, TITLE, TIMES_PLAYED) " +
                         "SELECT UserID, likedSongID, TITLE, TIMES_PLAYED FROM temp_LikedSongs");
 
                 // Drop the temporary table
                 db.execSQL("DROP TABLE temp_LikedSongs");
             } else {
+                // If the LikedSongs table doesn't exist, create it from scratch
                 create_liked(db);
             }
         }
