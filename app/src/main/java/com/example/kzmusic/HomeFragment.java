@@ -197,11 +197,23 @@ public class HomeFragment extends Fragment {
     //This function sets up the two image buttons on the homepage
     public void set_up_buttons() {
         ImageView button1 = view.findViewById(R.id.ic_radio);
+        ImageView button2 = view.findViewById(R.id.ic_podium);
         ImageView button3 = view.findViewById(R.id.ic_for_you);
         button1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Fragment newFragment = new Radio(accesstoken);
+                FragmentManager fragmentManager = getParentFragmentManager();
+                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                fragmentTransaction.replace(R.id.fragment_container, newFragment);
+                fragmentTransaction.addToBackStack(null);  // Optional: adds the transaction to the back stack
+                fragmentTransaction.commit();
+            }
+        });;
+        button2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Fragment newFragment = new Top10Songs(accesstoken);
                 FragmentManager fragmentManager = getParentFragmentManager();
                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                 fragmentTransaction.replace(R.id.fragment_container, newFragment);
@@ -326,7 +338,7 @@ public class HomeFragment extends Fragment {
         String email = sessionManager.getEmail();
         UsersTable table = new UsersTable(getContext());
         table.open();
-        table.update_song_duration(email, display_title, (int) duration/1000);
+        table.update_song_duration(email, display_title, (int) (duration/(1000 * SongQueue.getInstance().speed)));
         table.close();
     }
     //This function handles Spotify overlay play/pause

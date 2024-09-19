@@ -18,6 +18,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.provider.MediaStore;
 
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -269,6 +270,18 @@ public class MediaOverlay extends Fragment {
                     PlayerManager.getInstance().setCurrent_player(player);
                     //Setting up seekbar
                     set_up_bar();
+                    //Adding song to database
+                    SessionManager sessionManager = new SessionManager(getContext());
+                    String email = sessionManager.getEmail();
+                    UsersTable table = new UsersTable(getContext());
+                    table.open();
+                    if (table.song_added(email, display_title) == true) {
+                        table.update_song_times_played(email, display_title);
+                    } else {
+                        table.add_new_song(email, display_title);
+                    }
+                    table.close();
+
                 } else {
                     ;
                 }
@@ -317,7 +330,7 @@ public class MediaOverlay extends Fragment {
         String email = sessionManager.getEmail();
         UsersTable table = new UsersTable(getContext());
         table.open();
-        table.update_song_duration(email, display_title, (int) duration/1000);
+        table.update_song_duration(email, display_title, (int) (duration/(1000 * song_speed)));
         last_position = PlayerManager.getInstance().current_player.getCurrentPosition();
         SongQueue.getInstance().setLast_postion(last_position);
         table.close();
@@ -333,9 +346,15 @@ public class MediaOverlay extends Fragment {
                 // Stop the GIF by clearing the ImageView
                 Glide.with(getContext()).clear(song_gif);
                 song_gif.setImageDrawable(null);
+                //Updating service state
+                playerService.updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
+                playerService.showNotification(playerService.stateBuilder.build());
                 btnPlayPause.setImageResource(R.drawable.ic_play);
             } else {
                 player.play();
+                //Updating service state
+                playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
+                playerService.showNotification(playerService.stateBuilder.build());
                 btnPlayPause.setImageResource(R.drawable.ic_pause);
                 set_up_circular_view(musicFile);
             }

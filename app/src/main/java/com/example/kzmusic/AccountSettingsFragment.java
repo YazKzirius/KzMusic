@@ -300,7 +300,7 @@ public class AccountSettingsFragment extends Fragment {
         String email = sessionManager.getEmail();
         UsersTable table = new UsersTable(getContext());
         table.open();
-        table.update_song_duration(email, display_title, (int) duration/1000);
+        table.update_song_duration(email, display_title, (int) (duration/(1000 * SongQueue.getInstance().speed)));
         table.close();
     }
     //This function handles Spotify overlay play/pause

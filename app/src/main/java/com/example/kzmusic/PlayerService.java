@@ -104,6 +104,7 @@ public class PlayerService extends Service {
         }
         //Initializing song properties
         session_id = player.getAudioSessionId();
+        String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
         //Applying audio effects
         apply_audio_effect();
         player.prepare();
@@ -111,6 +112,17 @@ public class PlayerService extends Service {
         //Adds player to Player session manager
         PlayerManager.getInstance().addPlayer(player);
         PlayerManager.getInstance().setCurrent_player(player);
+        //Adding song to database
+        SessionManager sessionManager = new SessionManager(getApplicationContext());
+        String email = sessionManager.getEmail();
+        UsersTable table = new UsersTable(getApplicationContext());
+        table.open();
+        if (table.song_added(email, display_title) == true) {
+            table.update_song_times_played(email, display_title);
+        } else {
+            table.add_new_song(email, display_title);
+        }
+        table.close();
     }
     //This function assigns audio effects to the exoplayer like speed/reverb
     public void apply_audio_effect() {
@@ -397,7 +409,7 @@ public class PlayerService extends Service {
         String email = sessionManager.getEmail();
         UsersTable table = new UsersTable(getApplicationContext());
         table.open();
-        table.update_song_duration(email, display_title, (int) duration/1000);
+        table.update_song_duration(email, display_title, (int) (duration/(1000 * SongQueue.getInstance().speed)));
         table.close();
     }
 

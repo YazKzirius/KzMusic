@@ -254,6 +254,37 @@ public class UsersTable {
         // Perform the update and return the number of affected rows
         return db.update("Songs", values, selection, selectionArgs);
     }
+    //This function gets all songs in Songs table by descending order of the times played value
+    //Gets the most played songs in order
+    public Cursor display_most_played(String email) {
+        String[] columns = {
+                "SongID",
+                "UserID",
+                "TITLE",
+                "TOTAL_DURATION",
+                "TIMES_PLAYED"
+        };
+        // Fetch the UserID using the find_id_by_email method
+        int userId = find_id_by_email(email);
+
+        // Use parameterized query for selection to prevent SQL syntax issues
+        String selection = "UserID = "+userId;
+
+        // Order by TIMES_PLAYED in descending order
+        String orderBy = "TIMES_PLAYED DESC";
+
+        // Query the database
+        Cursor cursor = db.query(
+                "Songs",        // Table name
+                columns,        // Columns to return
+                selection,      // WHERE clause
+                null,  // Selection arguments
+                null,           // GROUP BY clause
+                null,           // HAVING clause
+                orderBy         // ORDER BY clause to sort by TIMES_PLAYED descending
+        );
+        return cursor;
+    }
 
     //This function deletes an account by ID
     public void deleteAccount(long id) {
