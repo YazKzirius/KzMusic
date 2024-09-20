@@ -1,20 +1,27 @@
 package com.example.kzmusic;
 
+import android.Manifest;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.IBinder;
+import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,6 +32,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -37,10 +52,14 @@ public class Top10Songs extends Fragment {
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
+    private static final int REQUEST_CODE = 1;
 
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
+    List<MusicFile> musicFiles = new ArrayList<>();
+    List<MusicFile> top_5_songs = new ArrayList<>();
+    List<SearchResponse.Track> top_5_vids = new ArrayList<>();
     String token;
     String email;
     String username;
@@ -50,13 +69,17 @@ public class Top10Songs extends Fragment {
     ImageButton ic_down;
     RelativeLayout playback_bar;
     private SessionManager sessionManager;
-    private View recyclerView1;
+    private RecyclerView recyclerView1;
+    private MusicFileAdapter musicAdapter1;
+    private RecyclerView recyclerView2;
+    private MusicAdapter musicAdapter2;
     private long last_position;
     private ServiceConnection serviceConnection;
     private PlayerService playerService;
     private boolean isBound;
     private SharedViewModel sharedViewModel;
-    private View view;
+    View view;
+    private List<SearchResponse.Track> tracklist = new ArrayList<>();
 
     public Top10Songs(String token) {
         // Required empty public constructor
@@ -103,22 +126,221 @@ public class Top10Songs extends Fragment {
        sessionManager = new SessionManager(getContext());
        username = sessionManager.getUsername();
        email = sessionManager.getEmail();
-       recyclerView1=view.findViewById(R.id.recycler_view1);
-       set_up_play_bar();
-       if (SongQueue.getInstance().get_size() > 0) {
-           set_up_skipping();
-           last_position = PlayerManager.getInstance().current_player.getCurrentPosition();
-           SongQueue.getInstance().setLast_postion(last_position);
-       }
+       recyclerView1 = view.findViewById(R.id.recycler_view1);
+       recyclerView1.setLayoutManager(new LinearLayoutManager(getContext()));
+       musicAdapter1 = new MusicFileAdapter(getContext(), top_5_songs);
+       recyclerView1.setAdapter(musicAdapter1);
+       loadMusicFiles();
+       SongQueue.getInstance().setCurrent_resource(R.layout.item_song2);
        UsersTable table = new UsersTable(getContext());
        table.open();
        Cursor cursor = table.display_most_played(email);
-       while (cursor.moveToNext()) {
-           Toast.makeText(getContext(), ""+cursor.getString(cursor.getColumnIndex("TITLE")), Toast.LENGTH_LONG).show();
+       int count = 0;
+       while (cursor.moveToNext() && count < 5) {
+           String title = cursor.getString(cursor.getColumnIndex("TITLE"));
+           if (title.contains("(Official Music Video)")) {
+               ;
+           } else {
+               top_5_songs.add(get_music_file(title));
+               musicAdapter1.notifyDataSetChanged();
+               count += 1;
+           }
        }
-       table.close();
+        recyclerView2 = view.findViewById(R.id.recycler_view2);
+        recyclerView2.setLayoutManager(new LinearLayoutManager(getContext()));
+        musicAdapter2 = new MusicAdapter(tracklist, getContext(), new MusicAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(SearchResponse.Track track) {
+                //Pausing current player, so no playback overlap
+                if (PlayerManager.getInstance().get_size() > 0) {
+                    PlayerManager.getInstance().current_player.pause();
+                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                    open_spotify_overlay();
+                    ;
+                } else {
+                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                    open_spotify_overlay();
+                    ;
+                }
+            }
+        });
+        recyclerView2.setAdapter(musicAdapter2);
+        get_song_vids();
        return view;
     }
+    //This function gets music files by specific name
+    public MusicFile get_music_file(String name) {
+        List<String> track_names = musicFiles.stream().map(track -> {
+            String track_name = format_title(track.getName()) + " by "+track.getArtist().replaceAll("/", ", ");
+            return track_name;
+        }).collect(Collectors.toList());
+        int index = track_names.indexOf(name);
+        return musicFiles.get(index);
+    }
+    //This function loads User music audio files from personal directory
+    private void loadMusicFiles() {
+        Uri collection;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            collection = MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL);
+        } else {
+            collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+        }
+
+        String[] projection = new String[]{
+                MediaStore.Audio.Media._ID,
+                MediaStore.Audio.Media.DISPLAY_NAME,
+                MediaStore.Audio.Media.ARTIST,
+                MediaStore.Audio.Media.DATA,
+                MediaStore.Audio.Media.ALBUM_ID
+        };
+
+        String selection = MediaStore.Audio.Media.IS_MUSIC + " != 0";
+
+        try (Cursor cursor = getContext().getContentResolver().query(
+                collection,
+                projection,
+                selection,
+                null,
+                null
+        )) {
+            int idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID);
+            int nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME);
+            int artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST);
+            int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA);
+            int albumIdColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID);
+
+            while (cursor.moveToNext()) {
+                //Getting music information
+                long id = cursor.getLong(idColumn);
+                String name = cursor.getString(nameColumn);
+                String artist = cursor.getString(artistColumn);
+                String data = cursor.getString(dataColumn);
+                long albumId = cursor.getLong(albumIdColumn);
+                //Defining music file
+                MusicFile musicFile = new MusicFile(id, name, artist, data, albumId);
+                //Filtering out music from short sounds and voice recordings
+                if (artist.equals("Voice Recorder")) {
+                    ;
+                } else if (artist.equals("<unknown>")) {
+                    ;
+                } else {
+                    musicFiles.add(musicFile);
+                }
+            }
+            SongQueue.getInstance().setSong_list(musicFiles);
+        }
+    }
+    //This function makes an API call using previous access token to search for random music
+    //It does this based on the track_name entered
+    private void search_track(String track_name, String Artist,  String token) {
+        String accesstoken = token;
+        String randomQuery = "track:" + track_name + " artist:" + Artist;
+        SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
+        Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
+        call.enqueue(new Callback<SearchResponse>() {
+            @Override
+            public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    //Getting track data and formatting
+                    List<SearchResponse.Track> Tracks = response.body().getTracks().getItems();
+                    List<String> tracks = get_track_names(Tracks);
+                    //Getting indices of specified information
+                    int i = tracks.indexOf(track_name+" by "+Artist);
+                    //This counts the number of errors
+                    int n = 0;
+                    //Checking if it doesn't exist and performs j-index dependent adding
+                    if (i == -1) {
+                        i = tracks.indexOf(track_name);
+                        ///Checking if both indices are equal
+                        if (i != -1) {
+                            tracklist.add(Tracks.get(i));
+                        } else {
+                            //Otherwise get first element of tracklist
+                            tracklist.add(Tracks.get(0));
+                        }
+                    } else {
+                        //Otherwise get first element of tracklist
+                        tracklist.add(Tracks.get(0));
+                    }
+                    musicAdapter2.notifyDataSetChanged();
+                    //Checking for more than One of the same track
+                } else {
+                    ;
+                }
+
+            }
+            @Override
+            public void onFailure(Call<SearchResponse> call, Throwable t) {
+                ;
+            }
+        });
+    }
+    //This function replaces a tracklist with a list of track names
+    public List<String> get_track_names(List<SearchResponse.Track> trackList) {
+        // Use streams to map each Track object conditionally based on the presence of "(feat. "
+        List<String> trackNames = trackList.stream()
+                .map(track -> {
+                    String name = track.getName();
+                    if (name.contains("(feat. ")) {
+                        // Perform some operation (e.g., returning the name or modify it)
+                        return name; // You can modify this to your needs, such as processing the string
+                    } else {
+                        // Return something else if "(feat. " is not present
+                        return name + " by "+track.getArtists().get(0).getName();
+                    }
+                })
+                .collect(Collectors.toList());
+
+        // Convert the List to an array
+        return trackNames;
+    }
+    //This function gets the total number of music vids
+    public int getN_vids() {
+        int n_vids= 0;
+        UsersTable table = new UsersTable(getContext());
+        table.open();
+        Cursor cursor = table.display_most_played(email);
+        while (cursor.moveToNext()) {
+            String title = cursor.getString(cursor.getColumnIndex("TITLE"));
+            if (title.contains("(Official Music Video")) {
+                n_vids += 1;
+            }
+        }
+        table.close();
+        return n_vids;
+    }
+    //This function gets your top 5 most played videos
+    public void get_song_vids() {
+        if (getN_vids() > 0) {
+            try {
+                UsersTable table = new UsersTable(getContext());
+                table.open();
+                Cursor cursor = table.display_most_played(email);
+                while (cursor.moveToNext()) {
+                    String title = cursor.getString(cursor.getColumnIndex("TITLE"));
+                    if (title.contains("(Official Music Video")) {
+                        title = title.replace("(Official Music Video)", "");
+                        String track_name = "";
+                        String artist = "";
+                        if (title.split(" by ").length == 2) {
+                            track_name = title.split(" by ")[0];
+                            artist = title.split(" by ")[1];
+                            search_track(track_name, artist, token);
+                        }
+                    } else {
+                        ;
+                    }
+                }
+                table.close();
+            } catch (Exception e) {
+                ;
+            }
+        } else {
+            ;
+        }
+
+    }
+    //This function updates the total song duration attribute in databse
     public void update_total_duration() {
         long duration = PlayerManager.getInstance().current_player.getCurrentPosition() - last_position;
         String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
@@ -262,6 +484,14 @@ public class Top10Songs extends Fragment {
         FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.fragment_container, media_page);
+        fragmentTransaction.commit();
+    }
+    //This function opens Spotify player overlay
+    public void open_spotify_overlay() {
+        Fragment spotify_overlay = new SpotifyOverlay();
+        FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.replace(R.id.fragment_container, spotify_overlay);
         fragmentTransaction.commit();
     }
     private void stopPlayerService() {

@@ -137,6 +137,7 @@ public class UserMusic extends Fragment {
         email = sessionManager.getEmail();
         TextView text = view.findViewById(R.id.x_music);
         text.setText(username+" library");
+        SongQueue.getInstance().setCurrent_resource(R.layout.item_song);
         //First recycler view
         recyclerView1 = view.findViewById(R.id.recycler_view2);
         recyclerView1.setLayoutManager(new LinearLayoutManager(getContext()));

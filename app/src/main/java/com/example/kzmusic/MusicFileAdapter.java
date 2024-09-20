@@ -40,6 +40,7 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
     private Context context;
     private SimpleExoPlayer player;
     private MusicViewHolder currentlyPlayingHolder;
+    private int new_position;
 
 
     public MusicFileAdapter(Context context, List<MusicFile> musicFiles) {
@@ -50,7 +51,7 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
     @NonNull
     @Override
     public MusicViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_song, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(SongQueue.getInstance().current_resource, parent, false);
         return new MusicViewHolder(view);
     }
 
@@ -58,7 +59,11 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
     public void onBindViewHolder(@NonNull MusicViewHolder holder, int position) {
         MusicFile musicFile = musicFiles.get(position);
         //Updating song position
-        int new_position = SongQueue.getInstance().song_list.indexOf(musicFile);
+        if (SongQueue.getInstance().current_resource == R.layout.item_song) {
+            new_position = SongQueue.getInstance().song_list.indexOf(musicFile);;
+        } else {
+            new_position = holder.getLayoutPosition();
+        }
         holder.nameTextView.setText(new_position+1+". "+format_title(musicFile.getName()));
         holder.artistTextView.setText(musicFile.getArtist().replaceAll("/",", "));
         Uri albumArtUri = getAlbumArtUri(musicFile.getAlbumId());

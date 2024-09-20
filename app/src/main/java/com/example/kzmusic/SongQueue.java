@@ -25,6 +25,7 @@ public class SongQueue {
     long current_time = 0;
     long last_postion = 0;
     int pointer = 0;
+    int current_resource;
     private SongQueue() {
         this.songs_played = new ArrayList<>();
 
@@ -69,6 +70,10 @@ public class SongQueue {
 
     public void setShuffle_on(Boolean shuffle_on) {
         this.shuffle_on = shuffle_on;
+    }
+
+    public void setCurrent_resource(int current_resource) {
+        this.current_resource = current_resource;
     }
 
     public void setLast_postion(long last_postion) {
