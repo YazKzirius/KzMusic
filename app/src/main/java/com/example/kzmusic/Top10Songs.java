@@ -32,6 +32,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.spotify.protocol.client.Subscription;
+import com.spotify.protocol.types.PlayerState;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -126,26 +128,9 @@ public class Top10Songs extends Fragment {
        sessionManager = new SessionManager(getContext());
        username = sessionManager.getUsername();
        email = sessionManager.getEmail();
-       recyclerView1 = view.findViewById(R.id.recycler_view1);
-       recyclerView1.setLayoutManager(new LinearLayoutManager(getContext()));
-       musicAdapter1 = new MusicFileAdapter(getContext(), top_5_songs);
-       recyclerView1.setAdapter(musicAdapter1);
-       loadMusicFiles();
-       SongQueue.getInstance().setCurrent_resource(R.layout.item_song2);
-       UsersTable table = new UsersTable(getContext());
-       table.open();
-       Cursor cursor = table.display_most_played(email);
-       int count = 0;
-       while (cursor.moveToNext() && count < 5) {
-           String title = cursor.getString(cursor.getColumnIndex("TITLE"));
-           if (title.contains("(Official Music Video)")) {
-               ;
-           } else {
-               top_5_songs.add(get_music_file(title));
-               musicAdapter1.notifyDataSetChanged();
-               count += 1;
-           }
-       }
+       //Getting data in view
+       get_top_5_songs();
+       //Getting top 5 videos
         recyclerView2 = view.findViewById(R.id.recycler_view2);
         recyclerView2.setLayoutManager(new LinearLayoutManager(getContext()));
         musicAdapter2 = new MusicAdapter(tracklist, getContext(), new MusicAdapter.OnItemClickListener() {
@@ -166,8 +151,40 @@ public class Top10Songs extends Fragment {
         });
         recyclerView2.setAdapter(musicAdapter2);
         get_song_vids();
+        //Setting up bottom playback navigator
+        set_up_spotify_play();
+        set_up_play_bar();
+        if (SongQueue.getInstance().get_size() > 0) {
+            set_up_skipping();
+            last_position = PlayerManager.getInstance().current_player.getCurrentPosition();
+            SongQueue.getInstance().setLast_postion(last_position);
+        }
        return view;
     }
+    //This function gets the user's top 5 songs
+    public void get_top_5_songs() {
+        recyclerView1 = view.findViewById(R.id.recycler_view1);
+        recyclerView1.setLayoutManager(new LinearLayoutManager(getContext()));
+        musicAdapter1 = new MusicFileAdapter(getContext(), top_5_songs);
+        recyclerView1.setAdapter(musicAdapter1);
+        loadMusicFiles();
+        SongQueue.getInstance().setCurrent_resource(R.layout.item_song2);
+        UsersTable table = new UsersTable(getContext());
+        table.open();
+        Cursor cursor = table.display_most_played(email);
+        int count = 0;
+        while (cursor.moveToNext() && count < 5) {
+            String title = cursor.getString(cursor.getColumnIndex("TITLE"));
+            if (title.contains("(Official Music Video)")) {
+                ;
+            } else {
+                top_5_songs.add(get_music_file(title));
+                musicAdapter1.notifyDataSetChanged();
+                count += 1;
+            }
+        }
+    }
+
     //This function gets music files by specific name
     public MusicFile get_music_file(String name) {
         List<String> track_names = musicFiles.stream().map(track -> {
@@ -472,6 +489,25 @@ public class Top10Songs extends Fragment {
             ;
         }
         return title;
+    }
+    //This function handles Spotify overlay play/pause
+    public void set_up_spotify_play() {
+        if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
+            SpotifyPlayerLife.getInstance().mSpotifyAppRemote.getPlayerApi().subscribeToPlayerState().setEventCallback(new Subscription.EventCallback<PlayerState>() {
+                @Override
+                public void onEvent(PlayerState playerState) {
+                    if (playerState.isPaused) {
+                        ;
+                    } else {
+                        if (PlayerManager.getInstance().current_player != null) {
+                            PlayerManager.getInstance().current_player.pause();
+                        } else {
+                            ;
+                        }
+                    }
+                }
+            });
+        }
     }
     //This function opens a new song overlay
     public void open_new_overlay(MusicFile file, int position) {
