@@ -3,6 +3,7 @@ package com.example.kzmusic;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 import android.content.Intent;
 import androidx.activity.EdgeToEdge;
@@ -63,6 +64,14 @@ public class GetStarted extends AppCompatActivity {
         } else {
             set_up_spotify_auth();
         }
+        //Get started button functionality
+        Button btn = findViewById(R.id.get_started_btn);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                set_up_spotify_auth();
+            }
+        });
     }
     //These functions sets up the Spotify Sign-in/authorisation using spotify web API
     public void set_up_spotify_auth() {

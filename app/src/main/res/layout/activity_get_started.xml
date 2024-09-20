@@ -20,6 +20,14 @@
             app:srcCompat="@drawable/logo"
             tools:layout_editor_absoluteX="105dp"
             tools:layout_editor_absoluteY="1dp" />
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="100dp"
+            android:text="Get Started"
+            android:textSize="20sp"
+            android:layout_gravity="center"
+            android:id="@+id/get_started_btn"/>
 
     </LinearLayout>
 
