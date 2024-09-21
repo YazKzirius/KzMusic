@@ -26,6 +26,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.spotify.protocol.client.Subscription;
@@ -79,7 +80,7 @@ public class Top10Songs extends Fragment {
     private SharedViewModel sharedViewModel;
     View view;
     private List<SearchResponse.Track> tracklist = new ArrayList<>();
-
+    private List<SearchResponse.Track> sorted_tracklist = new ArrayList<>();
     public Top10Songs(String token) {
         // Required empty public constructor
         this.token = token;
@@ -130,7 +131,7 @@ public class Top10Songs extends Fragment {
        //Getting top 5 videos
         recyclerView2 = view.findViewById(R.id.recycler_view2);
         recyclerView2.setLayoutManager(new LinearLayoutManager(getContext()));
-        musicAdapter2 = new MusicAdapter(tracklist, getContext(), new MusicAdapter.OnItemClickListener() {
+        musicAdapter2 = new MusicAdapter(sorted_tracklist, getContext(), new MusicAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(SearchResponse.Track track) {
                 //Pausing current player, so no playback overlap
@@ -277,7 +278,6 @@ public class Top10Songs extends Fragment {
                     if (tracklist.size() == 5) {
                         sort_track_list();
                     }
-                    musicAdapter2.notifyDataSetChanged();
                     //Checking for more than One of the same track
                 } else {
                     ;
@@ -327,9 +327,10 @@ public class Top10Songs extends Fragment {
     //This function sorts tracklist by descending order of most played
     public void sort_track_list() {
         OnlinePlayerManager.getInstance().setCurrent_context(getContext());
-        tracklist = tracklist.stream()
+        sorted_tracklist = tracklist.stream()
                 .sorted(Comparator.comparingInt(SearchResponse.Track::get_n_times).reversed())
                 .collect(Collectors.toList());
+        musicAdapter2.updateTracks(sorted_tracklist);
     }
     //This function gets your top 5 most played videos
     public void get_song_vids() {
