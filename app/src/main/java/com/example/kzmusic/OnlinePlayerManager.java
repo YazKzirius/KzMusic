@@ -1,25 +1,28 @@
 package com.example.kzmusic;
 
+import android.content.Context;
 import android.util.Log;
-import android.widget.Toast;
 
-import com.spotify.android.appremote.api.ConnectionParams;
-import com.spotify.android.appremote.api.Connector;
 import com.spotify.android.appremote.api.SpotifyAppRemote;
 
-public class SpotifyPlayerLife {
+public class OnlinePlayerManager {
     SpotifyAppRemote mSpotifyAppRemote;
     SearchResponse.Track current_track;
-    private static SpotifyPlayerLife instance;
-    public static synchronized SpotifyPlayerLife getInstance() {
+    Context current_context;
+    private static OnlinePlayerManager instance;
+    public static synchronized OnlinePlayerManager getInstance() {
         if (instance == null) {
-            instance = new SpotifyPlayerLife();
+            instance = new OnlinePlayerManager();
         }
         return instance;
     }
 
     public void setCurrent_track(SearchResponse.Track current_track) {
         this.current_track = current_track;
+    }
+
+    public void setCurrent_context(Context current_context) {
+        this.current_context = current_context;
     }
     public void setmSpotifyAppRemote(SpotifyAppRemote mSpotifyAppRemote) {
         this.mSpotifyAppRemote = mSpotifyAppRemote;

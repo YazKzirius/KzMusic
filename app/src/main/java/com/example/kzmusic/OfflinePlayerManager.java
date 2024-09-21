@@ -9,9 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 //This class manages player sessions for seamless playing
-public class PlayerManager {
+public class OfflinePlayerManager {
 
-    private static PlayerManager instance;
+    private static OfflinePlayerManager instance;
     private final List<ExoPlayer> playerList;
     List<MediaSessionCompat> sessions;
     ExoPlayer current_player;
@@ -19,14 +19,14 @@ public class PlayerManager {
     Boolean spotify_playing = false;
 
 
-    private PlayerManager() {
+    private OfflinePlayerManager() {
         this.playerList = new ArrayList<>();
         this.sessions = new ArrayList<>();
     }
 
-    public static synchronized PlayerManager getInstance() {
+    public static synchronized OfflinePlayerManager getInstance() {
         if (instance == null) {
-            instance = new PlayerManager();
+            instance = new OfflinePlayerManager();
         }
         return instance;
     }

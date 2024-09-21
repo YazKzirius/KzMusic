@@ -1,6 +1,8 @@
 package com.example.kzmusic;
 
 //Imports
+import android.content.Context;
+
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
@@ -48,6 +50,15 @@ public class SearchResponse {
             return album;
         }
         public String getUri() { return uri;}
+        //This function gets the number of times the track was played
+        public int get_n_times() {
+            Context context = OnlinePlayerManager.getInstance().current_context;
+            SessionManager sessionManager = new SessionManager(context);
+            String email = sessionManager.getEmail();
+            UsersTable table = new UsersTable(context);
+            table.open();
+            return table.get_times_played(email, getName()+" by "+getArtists().get(0).getName()+" (Official Music Video)");
+        }
 
     }
     //Stores information about Artist

@@ -1,18 +1,15 @@
 package com.example.kzmusic;
 
-import android.Manifest;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
@@ -29,13 +26,13 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -137,13 +134,13 @@ public class Top10Songs extends Fragment {
             @Override
             public void onItemClick(SearchResponse.Track track) {
                 //Pausing current player, so no playback overlap
-                if (PlayerManager.getInstance().get_size() > 0) {
-                    PlayerManager.getInstance().current_player.pause();
-                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                if (OfflinePlayerManager.getInstance().get_size() > 0) {
+                    OfflinePlayerManager.getInstance().current_player.pause();
+                    OnlinePlayerManager.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                     ;
                 } else {
-                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                    OnlinePlayerManager.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                     ;
                 }
@@ -156,7 +153,7 @@ public class Top10Songs extends Fragment {
         set_up_play_bar();
         if (SongQueue.getInstance().get_size() > 0) {
             set_up_skipping();
-            last_position = PlayerManager.getInstance().current_player.getCurrentPosition();
+            last_position = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
             SongQueue.getInstance().setLast_postion(last_position);
         }
        return view;
@@ -263,8 +260,6 @@ public class Top10Songs extends Fragment {
                     List<String> tracks = get_track_names(Tracks);
                     //Getting indices of specified information
                     int i = tracks.indexOf(track_name+" by "+Artist);
-                    //This counts the number of errors
-                    int n = 0;
                     //Checking if it doesn't exist and performs j-index dependent adding
                     if (i == -1) {
                         i = tracks.indexOf(track_name);
@@ -277,7 +272,10 @@ public class Top10Songs extends Fragment {
                         }
                     } else {
                         //Otherwise get first element of tracklist
-                        tracklist.add(Tracks.get(0));
+                        tracklist.add(Tracks.get(i));
+                    }
+                    if (tracklist.size() == 5) {
+                        sort_track_list();
                     }
                     musicAdapter2.notifyDataSetChanged();
                     //Checking for more than One of the same track
@@ -319,12 +317,19 @@ public class Top10Songs extends Fragment {
         Cursor cursor = table.display_most_played(email);
         while (cursor.moveToNext()) {
             String title = cursor.getString(cursor.getColumnIndex("TITLE"));
-            if (title.contains("(Official Music Video")) {
+            if (title.contains(" (Official Music Video")) {
                 n_vids += 1;
             }
         }
         table.close();
         return n_vids;
+    }
+    //This function sorts tracklist by descending order of most played
+    public void sort_track_list() {
+        OnlinePlayerManager.getInstance().setCurrent_context(getContext());
+        tracklist = tracklist.stream()
+                .sorted(Comparator.comparingInt(SearchResponse.Track::get_n_times).reversed())
+                .collect(Collectors.toList());
     }
     //This function gets your top 5 most played videos
     public void get_song_vids() {
@@ -336,7 +341,7 @@ public class Top10Songs extends Fragment {
                 while (cursor.moveToNext()) {
                     String title = cursor.getString(cursor.getColumnIndex("TITLE"));
                     if (title.contains("(Official Music Video")) {
-                        title = title.replace("(Official Music Video)", "");
+                        title = title.replace(" (Official Music Video)", "");
                         String track_name = "";
                         String artist = "";
                         if (title.split(" by ").length == 2) {
@@ -359,7 +364,7 @@ public class Top10Songs extends Fragment {
     }
     //This function updates the total song duration attribute in databse
     public void update_total_duration() {
-        long duration = PlayerManager.getInstance().current_player.getCurrentPosition() - last_position;
+        long duration = OfflinePlayerManager.getInstance().current_player.getCurrentPosition() - last_position;
         String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
         //Updating song duration database
         SessionManager sessionManager = new SessionManager(getContext());
@@ -492,15 +497,15 @@ public class Top10Songs extends Fragment {
     }
     //This function handles Spotify overlay play/pause
     public void set_up_spotify_play() {
-        if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
-            SpotifyPlayerLife.getInstance().mSpotifyAppRemote.getPlayerApi().subscribeToPlayerState().setEventCallback(new Subscription.EventCallback<PlayerState>() {
+        if (OnlinePlayerManager.getInstance().mSpotifyAppRemote != null) {
+            OnlinePlayerManager.getInstance().mSpotifyAppRemote.getPlayerApi().subscribeToPlayerState().setEventCallback(new Subscription.EventCallback<PlayerState>() {
                 @Override
                 public void onEvent(PlayerState playerState) {
                     if (playerState.isPaused) {
                         ;
                     } else {
-                        if (PlayerManager.getInstance().current_player != null) {
-                            PlayerManager.getInstance().current_player.pause();
+                        if (OfflinePlayerManager.getInstance().current_player != null) {
+                            OfflinePlayerManager.getInstance().current_player.pause();
                         } else {
                             ;
                         }

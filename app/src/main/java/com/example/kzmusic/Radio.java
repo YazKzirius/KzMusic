@@ -1,33 +1,22 @@
 package com.example.kzmusic;
 
 //imports
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.media.session.MediaButtonReceiver;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import android.os.IBinder;
-import android.support.v4.media.session.MediaSessionCompat;
-import android.support.v4.media.session.PlaybackStateCompat;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,7 +25,6 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 
@@ -137,12 +125,12 @@ public class Radio extends Fragment {
             @Override
             public void onItemClick(SearchResponse.Track track){
                 //Pausing current player, so no playback overlap
-                if (PlayerManager.getInstance().get_size() > 0) {
-                    PlayerManager.getInstance().current_player.pause();
-                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                if (OfflinePlayerManager.getInstance().get_size() > 0) {
+                    OfflinePlayerManager.getInstance().current_player.pause();
+                    OnlinePlayerManager.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                 } else {
-                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                    OnlinePlayerManager.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                 }
             }
@@ -160,14 +148,14 @@ public class Radio extends Fragment {
         set_up_refresh();
         if (SongQueue.getInstance().get_size() > 0) {
             set_up_skipping();
-            last_position = PlayerManager.getInstance().current_player.getCurrentPosition();
+            last_position = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
             SongQueue.getInstance().setLast_postion(last_position);
         }
         set_up_playback_buttons();
         return view;
     }
     public void update_total_duration() {
-        long duration = PlayerManager.getInstance().current_player.getCurrentPosition() - last_position;
+        long duration = OfflinePlayerManager.getInstance().current_player.getCurrentPosition() - last_position;
         String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
         //Updating song duration database
         SessionManager sessionManager = new SessionManager(getContext());
@@ -232,13 +220,13 @@ public class Radio extends Fragment {
             public void onClick(View v) {
                 if (shuffle_on == false) {
                     SearchResponse.Track track = sessionManager.getSavedTracklist("TRACK_LIST_RADIO").get(0);
-                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                    OnlinePlayerManager.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                 } else {
                     Random rand = new Random();
                     int index = rand.nextInt(sessionManager.getSavedTracklist("TRACK_LIST_RADIO").size());
                     SearchResponse.Track track = sessionManager.getSavedTracklist("TRACK_LIST_RADIO").get(index);
-                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                    OnlinePlayerManager.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                 }
             }
@@ -450,15 +438,15 @@ public class Radio extends Fragment {
     }
     //This function handles Spotify overlay play/pause
     public void set_up_spotify_play() {
-        if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
-            SpotifyPlayerLife.getInstance().mSpotifyAppRemote.getPlayerApi().subscribeToPlayerState().setEventCallback(new Subscription.EventCallback<PlayerState>() {
+        if (OnlinePlayerManager.getInstance().mSpotifyAppRemote != null) {
+            OnlinePlayerManager.getInstance().mSpotifyAppRemote.getPlayerApi().subscribeToPlayerState().setEventCallback(new Subscription.EventCallback<PlayerState>() {
                 @Override
                 public void onEvent(PlayerState playerState) {
                     if (playerState.isPaused) {
                         ;
                     } else {
-                        if (PlayerManager.getInstance().current_player != null) {
-                            PlayerManager.getInstance().current_player.pause();
+                        if (OfflinePlayerManager.getInstance().current_player != null) {
+                            OfflinePlayerManager.getInstance().current_player.pause();
                         } else {
                             ;
                         }

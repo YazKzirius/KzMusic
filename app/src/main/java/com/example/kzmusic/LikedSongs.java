@@ -135,13 +135,13 @@ public class LikedSongs extends Fragment {
             @Override
             public void onItemClick(SearchResponse.Track track) {
                 //Pausing current player, so no playback overlap
-                if (PlayerManager.getInstance().get_size() > 0) {
-                    PlayerManager.getInstance().current_player.pause();
-                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                if (OfflinePlayerManager.getInstance().get_size() > 0) {
+                    OfflinePlayerManager.getInstance().current_player.pause();
+                    OnlinePlayerManager.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                     ;
                 } else {
-                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                    OnlinePlayerManager.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                     ;
                 }
@@ -153,7 +153,7 @@ public class LikedSongs extends Fragment {
         set_up_play_bar();
         if (SongQueue.getInstance().get_size() > 0) {
             set_up_skipping();
-            last_position = PlayerManager.getInstance().current_player.getCurrentPosition();
+            last_position = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
             SongQueue.getInstance().setLast_postion(last_position);
         }
         //Getting user liked songs
@@ -194,13 +194,13 @@ public class LikedSongs extends Fragment {
             public void onClick(View v) {
                 if (shuffle_on == false) {
                     SearchResponse.Track track = sessionManager.getSavedTracklist("TRACK_LIST_LIKED").get(0);
-                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                    OnlinePlayerManager.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                 } else {
                     Random rand = new Random();
                     int index = rand.nextInt(sessionManager.getSavedTracklist("TRACK_LIST_LIKED").size());
                     SearchResponse.Track track = sessionManager.getSavedTracklist("TRACK_LIST_LIKED").get(index);
-                    SpotifyPlayerLife.getInstance().setCurrent_track(track);
+                    OnlinePlayerManager.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                 }
             }
@@ -220,7 +220,7 @@ public class LikedSongs extends Fragment {
         });
     }
     public void update_total_duration() {
-        long duration = PlayerManager.getInstance().current_player.getCurrentPosition() - last_position;
+        long duration = OfflinePlayerManager.getInstance().current_player.getCurrentPosition() - last_position;
         String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
         //Updating song duration database
         SessionManager sessionManager = new SessionManager(getContext());
@@ -531,15 +531,15 @@ public class LikedSongs extends Fragment {
     }
     //This function handles Spotify overlay play/pause
     public void set_up_spotify_play() {
-        if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
-            SpotifyPlayerLife.getInstance().mSpotifyAppRemote.getPlayerApi().subscribeToPlayerState().setEventCallback(new Subscription.EventCallback<PlayerState>() {
+        if (OnlinePlayerManager.getInstance().mSpotifyAppRemote != null) {
+            OnlinePlayerManager.getInstance().mSpotifyAppRemote.getPlayerApi().subscribeToPlayerState().setEventCallback(new Subscription.EventCallback<PlayerState>() {
                 @Override
                 public void onEvent(PlayerState playerState) {
                     if (playerState.isPaused) {
                         ;
                     } else {
-                        if (PlayerManager.getInstance().current_player != null) {
-                            PlayerManager.getInstance().current_player.pause();
+                        if (OfflinePlayerManager.getInstance().current_player != null) {
+                            OfflinePlayerManager.getInstance().current_player.pause();
                         } else {
                             ;
                         }

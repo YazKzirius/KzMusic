@@ -1,16 +1,13 @@
 package com.example.kzmusic;
 
 //Imports
-import android.net.Uri;
 import android.os.Bundle;
 import androidx.fragment.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.webkit.WebSettings;
@@ -24,19 +21,16 @@ import retrofit2.Response;
 
 
 import com.bumptech.glide.Glide;
-import com.google.android.exoplayer2.ExoPlayer;
 import com.spotify.android.appremote.api.ConnectionParams;
 import com.spotify.android.appremote.api.Connector;
 import com.spotify.android.appremote.api.PlayerApi;
 import com.spotify.android.appremote.api.SpotifyAppRemote;
-import com.spotify.protocol.client.CallResult;
 import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
 import com.spotify.protocol.types.Track;
-import com.spotify.protocol.types.Repeat;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -108,7 +102,7 @@ public class SpotifyOverlay extends Fragment {
         view = inflater.inflate(R.layout.fragment_spotify_overlay, container, false);
         overlaySongTitle = view.findViewById(R.id.songTitle);
         album_cover = view.findViewById(R.id.musicImage);
-        track = SpotifyPlayerLife.getInstance().current_track;
+        track = OnlinePlayerManager.getInstance().current_track;
         youtubeWebView = view.findViewById(R.id.youtube_webview);
         WebSettings webSettings = youtubeWebView.getSettings();
         webSettings.setJavaScriptEnabled(true);
@@ -151,7 +145,7 @@ public class SpotifyOverlay extends Fragment {
                     @Override
                     public void onConnected(SpotifyAppRemote spotifyAppRemote) {
                         mSpotifyAppRemote = spotifyAppRemote;
-                        SpotifyPlayerLife.getInstance().setmSpotifyAppRemote(mSpotifyAppRemote);
+                        OnlinePlayerManager.getInstance().setmSpotifyAppRemote(mSpotifyAppRemote);
                         Log.d("SpotifyAppRemote", "Connected");
                     }
 
@@ -176,7 +170,7 @@ public class SpotifyOverlay extends Fragment {
                     });
             //Adding track to manager
             //Adding data to display
-            SpotifyPlayerLife.getInstance().setCurrent_track(track);
+            OnlinePlayerManager.getInstance().setCurrent_track(track);
             overlaySongTitle.setText("Now playing similar songs to: " + track.getName() + " by " + track.getArtists().get(0).getName());
         }
     }

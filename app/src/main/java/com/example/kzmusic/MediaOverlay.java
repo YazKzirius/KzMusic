@@ -43,13 +43,6 @@ import android.widget.ImageButton;
 import com.bumptech.glide.Glide;
 import android.widget.Toast;
 import androidx.lifecycle.ViewModelProvider;
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 
 
 /**
@@ -142,8 +135,8 @@ public class MediaOverlay extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         //Pausing spotify player if song is currently playing, to elimnate overlap
-        if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
-            SpotifyPlayerLife.getInstance().pause_playback();
+        if (OnlinePlayerManager.getInstance().mSpotifyAppRemote != null) {
+            OnlinePlayerManager.getInstance().pause_playback();
         }
         //Implementing player functionality
         view = inflater.inflate(R.layout.fragment_media_overlay, container, false);
@@ -253,7 +246,7 @@ public class MediaOverlay extends Fragment {
                     // Handle the skip event in the fragment
                     musicFile = SongQueue.getInstance().current_song;
                     position = SongQueue.getInstance().current_position;
-                    player = PlayerManager.getInstance().current_player;
+                    player = OfflinePlayerManager.getInstance().current_player;
                     //Initializing song properties
                     session_id = player.getAudioSessionId();
                     //Initializing reverb from Song manager class
@@ -266,8 +259,8 @@ public class MediaOverlay extends Fragment {
                     //Displaying circular view
                     set_up_circular_view(musicFile);
                     //Adds player to Player session manager
-                    PlayerManager.getInstance().addPlayer(player);
-                    PlayerManager.getInstance().setCurrent_player(player);
+                    OfflinePlayerManager.getInstance().addPlayer(player);
+                    OfflinePlayerManager.getInstance().setCurrent_player(player);
                     //Setting up seekbar
                     set_up_bar();
                     //Adding song to database
@@ -292,7 +285,7 @@ public class MediaOverlay extends Fragment {
             if (event != null)  {
                 Boolean shouldPlayPause = event.getContentIfNotHandled();
                 if (shouldPlayPause != null && shouldPlayPause) {
-                    player = PlayerManager.getInstance().current_player;
+                    player = OfflinePlayerManager.getInstance().current_player;
                     //Update duration in database
                     update_total_duration();
                     // Stop the GIF by clearing the ImageView
@@ -309,7 +302,7 @@ public class MediaOverlay extends Fragment {
             if (event != null)  {
                 Boolean shouldPlayPause = event.getContentIfNotHandled();
                 if (shouldPlayPause != null && shouldPlayPause) {
-                    player = PlayerManager.getInstance().current_player;
+                    player = OfflinePlayerManager.getInstance().current_player;
                     //Update duration in database
                     btnPlayPause.setImageResource(R.drawable.ic_pause);
                     set_up_circular_view(SongQueue.getInstance().current_song);
@@ -322,7 +315,7 @@ public class MediaOverlay extends Fragment {
     }
     //This function updates the total duration field in SQL database
     public void update_total_duration() {
-        long duration = PlayerManager.getInstance().current_player.getCurrentPosition() - last_position;
+        long duration = OfflinePlayerManager.getInstance().current_player.getCurrentPosition() - last_position;
         String display_title = format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", ");
         //Applying audio effects
         //Updating song database
@@ -331,7 +324,7 @@ public class MediaOverlay extends Fragment {
         UsersTable table = new UsersTable(getContext());
         table.open();
         table.update_song_duration(email, display_title, (int) (duration/(1000 * song_speed)));
-        last_position = PlayerManager.getInstance().current_player.getCurrentPosition();
+        last_position = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
         SongQueue.getInstance().setLast_postion(last_position);
         table.close();
     }
@@ -538,7 +531,7 @@ public class MediaOverlay extends Fragment {
             if (s1.equals(s2)) {
                 //Resuming at left point
                 //Use previous player
-                player = PlayerManager.getInstance().current_player;
+                player = OfflinePlayerManager.getInstance().current_player;
                 last_position = player.getCurrentPosition();
                 SongQueue.getInstance().setLast_postion(last_position);
                 //Resuming at left point
@@ -546,7 +539,7 @@ public class MediaOverlay extends Fragment {
                     startSeekBarUpdate();
                 }
             } else {
-                PlayerManager.getInstance().stopAllPlayers();
+                OfflinePlayerManager.getInstance().stopAllPlayers();
                 player = new ExoPlayer.Builder(getContext()).build();
                 Uri uri = Uri.fromFile(new File(musicFile.getPath()));
                 MediaItem mediaItem = MediaItem.fromUri(uri);
@@ -570,8 +563,8 @@ public class MediaOverlay extends Fragment {
         //Displaying circular view
         set_up_circular_view(musicFile);
         //Adds player to Player session manager
-        PlayerManager.getInstance().addPlayer(player);
-        PlayerManager.getInstance().setCurrent_player(player);
+        OfflinePlayerManager.getInstance().addPlayer(player);
+        OfflinePlayerManager.getInstance().setCurrent_player(player);
         //Setting up seekbar
         set_up_bar();
         //Setting up notification

@@ -1,8 +1,6 @@
 package com.example.kzmusic;
 //Importing important modules
 import android.content.Intent;
-import android.database.Cursor;
-import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Toast;
 
@@ -10,25 +8,9 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.spotify.android.appremote.api.SpotifyAppRemote;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.IOException;
-import java.util.ArrayList;
-
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.FormBody;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
 
 //This class implements the main page of the application
 //Manages music listening and audio entertainment by mood
@@ -126,11 +108,11 @@ public class MainPage extends AppCompatActivity {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        SpotifyPlayerLife.getInstance().stopPlaybackAndDisconnect();
-        PlayerManager.getInstance().stopAllPlayers();
+        OnlinePlayerManager.getInstance().stopPlaybackAndDisconnect();
+        OfflinePlayerManager.getInstance().stopAllPlayers();
         //Stopping all notification sessions for single session management
-        if (PlayerManager.getInstance().get_size() > 0) {
-            PlayerManager.getInstance().StopAllSessions();
+        if (OfflinePlayerManager.getInstance().get_size() > 0) {
+            OfflinePlayerManager.getInstance().StopAllSessions();
         }
         SongQueue.getInstance().clear_songs();
         sessionManager.clear_tracklist();

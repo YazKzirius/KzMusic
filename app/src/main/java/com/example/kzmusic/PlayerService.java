@@ -1,13 +1,10 @@
 package com.example.kzmusic;
 
-import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
@@ -21,14 +18,7 @@ import java.io.File;
 import java.util.Random;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
-import androidx.lifecycle.ViewModelProvider;
 import androidx.media.session.MediaButtonReceiver;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
@@ -66,8 +56,8 @@ public class PlayerService extends Service {
     public void onCreate() {
         super.onCreate();
         //Stopping all notification sessions for single session management
-        if (PlayerManager.getInstance().get_size() > 0) {
-            PlayerManager.getInstance().StopAllSessions();
+        if (OfflinePlayerManager.getInstance().get_size() > 0) {
+            OfflinePlayerManager.getInstance().StopAllSessions();
         }
         //Updating channel ID settings
         SongQueue.getInstance().update_id();
@@ -88,9 +78,9 @@ public class PlayerService extends Service {
             if (s1.equals(s2)) {
                 //Resuming at left point
                 //Use previous player
-                player = PlayerManager.getInstance().current_player;
+                player = OfflinePlayerManager.getInstance().current_player;
             } else {
-                PlayerManager.getInstance().stopAllPlayers();
+                OfflinePlayerManager.getInstance().stopAllPlayers();
                 player = new ExoPlayer.Builder(getApplicationContext()).build();
                 Uri uri = Uri.fromFile(new File(musicFile.getPath()));
                 MediaItem mediaItem = MediaItem.fromUri(uri);
@@ -110,8 +100,8 @@ public class PlayerService extends Service {
         player.prepare();
         player.play();
         //Adds player to Player session manager
-        PlayerManager.getInstance().addPlayer(player);
-        PlayerManager.getInstance().setCurrent_player(player);
+        OfflinePlayerManager.getInstance().addPlayer(player);
+        OfflinePlayerManager.getInstance().setCurrent_player(player);
         //Adding song to database
         SessionManager sessionManager = new SessionManager(getApplicationContext());
         String email = sessionManager.getEmail();
@@ -219,13 +209,13 @@ public class PlayerService extends Service {
                 .setState(PlaybackStateCompat.STATE_PLAYING, 0, (float) 1.0);
         Random rand = new Random();
         mediaSession.setPlaybackState(stateBuilder.build());
-        PlayerManager.getInstance().addSession(mediaSession);
+        OfflinePlayerManager.getInstance().addSession(mediaSession);
         showNotification(stateBuilder.build());
         mediaSession.setCallback(new MediaSessionCompat.Callback() {
             @Override
             public void onPlay() {
                 super.onPlay();
-                PlayerManager.getInstance().current_player.play();
+                OfflinePlayerManager.getInstance().current_player.play();
                 updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
                 showNotification(stateBuilder.build());
                 handlePlay();
@@ -235,7 +225,7 @@ public class PlayerService extends Service {
             public void onPause() {
                 super.onPause();
                 //Update duration database
-                PlayerManager.getInstance().current_player.pause();
+                OfflinePlayerManager.getInstance().current_player.pause();
                 //Update database duration
                 updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
                 showNotification(stateBuilder.build());
@@ -402,7 +392,7 @@ public class PlayerService extends Service {
     }
     public void update_total_duration() {
         last_position = SongQueue.getInstance().getLast_postion();
-        long duration = PlayerManager.getInstance().current_player.getCurrentPosition() - last_position;
+        long duration = OfflinePlayerManager.getInstance().current_player.getCurrentPosition() - last_position;
         String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
         //Updating song duration database
         SessionManager sessionManager = new SessionManager(getApplicationContext());

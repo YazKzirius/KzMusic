@@ -1,31 +1,20 @@
 package com.example.kzmusic;
 
 //Imports
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
 import android.media.audiofx.EnvironmentalReverb;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.media.session.MediaButtonReceiver;
 
 import android.os.IBinder;
 import android.support.v4.media.session.MediaSessionCompat;
@@ -38,19 +27,11 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.target.CustomTarget;
-import com.bumptech.glide.request.transition.Transition;
 import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.MediaItem;
-import com.google.android.exoplayer2.PlaybackParameters;
 import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
-
-import java.io.File;
-import java.util.Random;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -148,7 +129,7 @@ public class AccountSettingsFragment extends Fragment {
         });
         if (SongQueue.getInstance().get_size() > 0) {
             set_up_skipping();
-            last_position = PlayerManager.getInstance().current_player.getCurrentPosition();
+            last_position = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
             SongQueue.getInstance().setLast_postion(last_position);
         }
         return view;
@@ -293,7 +274,7 @@ public class AccountSettingsFragment extends Fragment {
         fragmentTransaction.commit();
     }
     public void update_total_duration() {
-        long duration = PlayerManager.getInstance().current_player.getCurrentPosition() - last_position;
+        long duration = OfflinePlayerManager.getInstance().current_player.getCurrentPosition() - last_position;
         String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
         //Updating song duration database
         SessionManager sessionManager = new SessionManager(getContext());
@@ -305,15 +286,15 @@ public class AccountSettingsFragment extends Fragment {
     }
     //This function handles Spotify overlay play/pause
     public void set_up_spotify_play() {
-        if (SpotifyPlayerLife.getInstance().mSpotifyAppRemote != null) {
-            SpotifyPlayerLife.getInstance().mSpotifyAppRemote.getPlayerApi().subscribeToPlayerState().setEventCallback(new Subscription.EventCallback<PlayerState>() {
+        if (OnlinePlayerManager.getInstance().mSpotifyAppRemote != null) {
+            OnlinePlayerManager.getInstance().mSpotifyAppRemote.getPlayerApi().subscribeToPlayerState().setEventCallback(new Subscription.EventCallback<PlayerState>() {
                 @Override
                 public void onEvent(PlayerState playerState) {
                     if (playerState.isPaused) {
                         ;
                     } else {
-                        if (PlayerManager.getInstance().current_player != null) {
-                            PlayerManager.getInstance().current_player.pause();
+                        if (OfflinePlayerManager.getInstance().current_player != null) {
+                            OfflinePlayerManager.getInstance().current_player.pause();
                         } else {
                             ;
                         }
