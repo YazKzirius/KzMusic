@@ -251,6 +251,7 @@ public class UserMusic extends Fragment {
                     count += 1;
                 }
             }
+            SongQueue.getInstance().setSong_list(musicFiles_original);
         }
     }
     public void update_total_duration() {

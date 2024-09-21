@@ -90,6 +90,12 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //Checking if in different activity and responding accordingly
+                if (SongQueue.getInstance().current_resource == R.layout.item_song2) {
+                    new_position = holder.getLayoutPosition();
+                } else {
+                    new_position = SongQueue.getInstance().song_list.indexOf(musicFile);
+                }
                 //Opening media playback overlay
                 open_overlay(musicFile, new_position);
                 currentlyPlayingHolder = holder;

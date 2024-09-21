@@ -723,6 +723,12 @@ public class MediaOverlay extends Fragment {
                 }
             }
         }
+        if (SongQueue.getInstance().current_resource == R.layout.item_song2) {
+            musicFiles = SongQueue.getInstance().song_list;
+        } else {
+            ;
+        }
+
     }
 
     //This function opens a new overlay

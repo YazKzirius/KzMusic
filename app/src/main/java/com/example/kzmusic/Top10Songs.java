@@ -181,6 +181,7 @@ public class Top10Songs extends Fragment {
                 count += 1;
             }
         }
+        SongQueue.getInstance().setSong_list(top_5_songs);
     }
 
     //This function gets music files by specific name
