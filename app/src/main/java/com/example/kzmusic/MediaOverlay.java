@@ -644,15 +644,19 @@ public class MediaOverlay extends Fragment {
         runnable = new Runnable() {
             @Override
             public void run() {
-                if (player != null && player.isPlaying()) {
-                    seekBar.setProgress((int) player.getCurrentPosition());
-                    textCurrentTime.setText(formatTime(player.getCurrentPosition()));
-                    SongQueue.getInstance().setCurrent_time(player.getCurrentPosition());
-                    //Handling song finished functionality
-                    if (seekBar.getMax() == seekBar.getProgress()) {
-                        move_to_next();
+                try {
+                    if (player != null && player.isPlaying()) {
+                        seekBar.setProgress((int) player.getCurrentPosition());
+                        textCurrentTime.setText(formatTime(player.getCurrentPosition()));
+                        SongQueue.getInstance().setCurrent_time(player.getCurrentPosition());
+                        //Handling song finished functionality
+                        if (seekBar.getProgress() == seekBar.getMax()) {
+                            move_to_next();
+                        }
+                        handler.postDelayed(this, 1000);
                     }
-                    handler.postDelayed(this, 1000);
+                } catch (Exception e) {
+                    ;
                 }
             }
         };
@@ -676,12 +680,6 @@ public class MediaOverlay extends Fragment {
         musicFile = musicFiles.get(position);
         playerService.updateNotification(musicFile);
         open_new_overlay();
-    }
-    //This function triggers a skip event
-    public void trigger_skip() {
-        if (sharedViewModel != null) {
-            sharedViewModel.triggerSkipEvent();
-        }
     }
     //This function stops updating seekbar
     private void stopSeekBarUpdate() {
