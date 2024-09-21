@@ -648,14 +648,41 @@ public class MediaOverlay extends Fragment {
                     seekBar.setProgress((int) player.getCurrentPosition());
                     textCurrentTime.setText(formatTime(player.getCurrentPosition()));
                     SongQueue.getInstance().setCurrent_time(player.getCurrentPosition());
-                    //Updating duration in database
+                    //Handling song finished functionality
+                    if (seekBar.getMax() == seekBar.getProgress()) {
+                        move_to_next();
+                    }
                     handler.postDelayed(this, 1000);
                 }
             }
         };
         handler.post(runnable);
     }
-
+    //This function moves to next song once it's finished
+    public void move_to_next() {
+        Random rand = new Random();
+        player.pause();
+        //Moving to next song in recycler view if shuffle is off
+        if (shuffle_on == false) {
+            //Handling the event that it's the last song in the recycler view
+            if (position == musicFiles.size() - 1) {
+                ;
+            } else {
+                position += 1;
+            }
+        } else {
+            position = rand.nextInt(musicFiles.size());
+        }
+        musicFile = musicFiles.get(position);
+        playerService.updateNotification(musicFile);
+        open_new_overlay();
+    }
+    //This function triggers a skip event
+    public void trigger_skip() {
+        if (sharedViewModel != null) {
+            sharedViewModel.triggerSkipEvent();
+        }
+    }
     //This function stops updating seekbar
     private void stopSeekBarUpdate() {
         if (handler != null) {
@@ -816,6 +843,9 @@ public class MediaOverlay extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         stopPlayerService();
+        if (runnable != null && handler != null) {
+            handler.removeCallbacks(runnable);
+        }
 
     }
     private void startPlayerService() {

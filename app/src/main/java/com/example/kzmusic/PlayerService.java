@@ -68,7 +68,7 @@ public class PlayerService extends Service {
         sharedViewModel = SharedViewModelProvider.getViewModel(this);
     }
     //This function plays the specified music file
-    private void playMusic(MusicFile musicFile) {
+    public void playMusic(MusicFile musicFile) {
         //Playing resuming song at previous duration if the same song as last
         if (SongQueue.getInstance().get_size() > 1) {
             int index = SongQueue.getInstance().pointer - 1;
@@ -138,19 +138,19 @@ public class PlayerService extends Service {
             Toast.makeText(getApplicationContext(), "Something went wrong with audio effects", Toast.LENGTH_SHORT).show();
         }
     }
-    private void handleSkip() {
+    public void handleSkip() {
         // Trigger the skip event in the ViewModel
         if (sharedViewModel != null) {
             sharedViewModel.triggerSkipEvent();
         }
     }
-    private void handlePause() {
+    public void handlePause() {
         // Trigger the skip event in the ViewModel
         if (sharedViewModel != null) {
             sharedViewModel.triggerPauseEvent();
         }
     }
-    private void handlePlay() {
+    public void handlePlay() {
         // Trigger the skip event in the ViewModel
         if (sharedViewModel != null) {
             sharedViewModel.triggerPlayEvent();
