@@ -247,16 +247,21 @@ public class Radio extends Fragment {
     }
     //This function checks if all songs in view are liked
     public Boolean all_liked() {
-        for (SearchResponse.Track track : sessionManager.getSavedTracklist("TRACK_LIST_RADIO")) {
-            UsersTable table = new UsersTable(getContext());
-            table.open();
-            String email = sessionManager.getEmail();
-            String title = track.getName()+" by "+track.getArtists().get(0).getName();
-            if (table.song_liked(title, email) == false) {
-                return false;
+        if (sessionManager.getSavedTracklist("TRACK_LIST_RADIO").size() > 0) {
+            for (SearchResponse.Track track : sessionManager.getSavedTracklist("TRACK_LIST_RADIO")) {
+                UsersTable table = new UsersTable(getContext());
+                table.open();
+                String email = sessionManager.getEmail();
+                String title = track.getName()+" by "+track.getArtists().get(0).getName();
+                if (table.song_liked(title, email) == false) {
+                    return false;
+                }
             }
+            return true;
+        } else {
+            //Setting up liked all button
+            return false;
         }
-        return true;
     }
     //This function sets up media notification bar skip events
     public void set_up_skipping() {

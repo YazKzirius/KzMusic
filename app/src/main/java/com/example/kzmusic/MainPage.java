@@ -105,6 +105,51 @@ public class MainPage extends AppCompatActivity {
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
         alarmManager.set(AlarmManager.RTC_WAKEUP, refreshTime, pendingIntent);
     }
+    //This function checks if a string is only digits
+    public boolean isOnlyDigits(String str) {
+        str = str.replaceAll(" ", "");
+        if (str == null || str.isEmpty()) {
+            return false;
+        }
+
+        for (int i = 0; i < str.length(); i++) {
+            if (!Character.isDigit(str.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+    //This function formats song title, removing unnecessary data
+    public String format_title(String title) {
+        //Removing unnecessary data
+        title = title.replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", "").replaceAll("_", " ").replaceAll("  ", " ").replace(".flac", "").replace(".wav", "");
+        //Checking if prefix is a number
+        String prefix = title.charAt(0) + "" + title.charAt(1) + "" + title.charAt(2);
+        //Checking if title ends with empty space
+        if (title.endsWith(" ")) {
+            title = title.substring(0, title.lastIndexOf(" "));
+        }
+        //Checking if prefix is at the start and if it occurs again
+        if (isOnlyDigits(prefix) && title.indexOf(prefix) == 0 && title.indexOf(prefix, 2) == -1) {
+            //Removing prefix
+            title = title.replaceFirst(prefix, "");
+        } else {
+            ;
+        }
+        return title;
+    }
+    //This function updates the total song duration attribute in databse
+    public void update_total_duration() {
+        long duration = OfflinePlayerManager.getInstance().current_player.getCurrentPosition() - SongQueue.getInstance().last_postion;
+        String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
+        //Updating song duration database
+        SessionManager sessionManager = new SessionManager(getApplicationContext());
+        String email = sessionManager.getEmail();
+        UsersTable table = new UsersTable(getApplicationContext());
+        table.open();
+        table.update_song_duration(email, display_title, (int) (duration/(1000 * SongQueue.getInstance().speed)));
+        table.close();
+    }
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -114,7 +159,7 @@ public class MainPage extends AppCompatActivity {
         if (OfflinePlayerManager.getInstance().get_size() > 0) {
             OfflinePlayerManager.getInstance().StopAllSessions();
         }
+        update_total_duration();
         SongQueue.getInstance().clear_songs();
-        sessionManager.clear_tracklist();
     }
 }

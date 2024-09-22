@@ -161,6 +161,9 @@ public class UserMix extends Fragment {
             } catch (Exception e) {
                 text.setText("No media files, please update library.");
             }
+            //Setting up liked all button
+            ImageButton btn1 = view.findViewById(R.id.like_all);
+            btn1.setImageResource(R.drawable.ic_liked_off);
         } else {
             musicAdapter.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_MIX"));
         }
@@ -248,16 +251,21 @@ public class UserMix extends Fragment {
     }
     //This function checks if all songs in view are liked
     public Boolean all_liked() {
-        for (SearchResponse.Track track : sessionManager.getSavedTracklist("TRACK_LIST_MIX")) {
-            UsersTable table = new UsersTable(getContext());
-            table.open();
-            String email = sessionManager.getEmail();
-            String title = track.getName()+" by "+track.getArtists().get(0).getName();
-            if (table.song_liked(title, email) == false) {
-                return false;
+        if (sessionManager.getSavedTracklist("TRACK_LIST_MIX").size() > 0) {
+            for (SearchResponse.Track track : sessionManager.getSavedTracklist("TRACK_LIST_MIX")) {
+                UsersTable table = new UsersTable(getContext());
+                table.open();
+                String email = sessionManager.getEmail();
+                String title = track.getName()+" by "+track.getArtists().get(0).getName();
+                if (table.song_liked(title, email) == false) {
+                    return false;
+                }
             }
+            return true;
+        } else {
+            //Setting up liked all button
+            return false;
         }
-        return true;
     }
     public void update_total_duration() {
         long duration = OfflinePlayerManager.getInstance().current_player.getCurrentPosition() - last_position;

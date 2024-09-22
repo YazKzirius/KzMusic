@@ -166,22 +166,26 @@ public class Top10Songs extends Fragment {
         musicAdapter1 = new MusicFileAdapter(getContext(), top_5_songs);
         recyclerView1.setAdapter(musicAdapter1);
         loadMusicFiles();
-        SongQueue.getInstance().setCurrent_resource(R.layout.item_song2);
-        UsersTable table = new UsersTable(getContext());
-        table.open();
-        Cursor cursor = table.display_most_played(email);
-        int count = 0;
-        while (cursor.moveToNext() && count < 5) {
-            String title = cursor.getString(cursor.getColumnIndex("TITLE"));
-            if (title.contains("(Official Music Video)")) {
-                ;
-            } else {
-                top_5_songs.add(get_music_file(title));
-                musicAdapter1.notifyDataSetChanged();
-                count += 1;
+        if (musicFiles.size() > 0) {
+            SongQueue.getInstance().setCurrent_resource(R.layout.item_song2);
+            UsersTable table = new UsersTable(getContext());
+            table.open();
+            Cursor cursor = table.display_most_played(email);
+            int count = 0;
+            while (cursor.moveToNext() && count < 5) {
+                String title = cursor.getString(cursor.getColumnIndex("TITLE"));
+                if (title.contains("(Official Music Video)")) {
+                    ;
+                } else {
+                    top_5_songs.add(get_music_file(title));
+                    musicAdapter1.notifyDataSetChanged();
+                    count += 1;
+                }
             }
+            SongQueue.getInstance().setSong_list(top_5_songs);
+        } else {
+            ;
         }
-        SongQueue.getInstance().setSong_list(top_5_songs);
     }
 
     //This function gets music files by specific name
