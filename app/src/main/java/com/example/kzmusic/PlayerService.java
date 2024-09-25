@@ -67,36 +67,6 @@ public class PlayerService extends Service {
         createNotificationChannel();
         initializeMediaSession();
         sharedViewModel = SharedViewModelProvider.getViewModel(this);
-        //Adding player listener
-        OfflinePlayerManager.getInstance().current_player.addListener(new Player.Listener() {
-            @Override
-            public void onIsPlayingChanged(boolean isPlaying) {
-                Player.Listener.super.onIsPlayingChanged(isPlaying);
-                //Skipping to new song if song finished
-                if (OfflinePlayerManager.getInstance().current_player.getDuration()-OfflinePlayerManager.getInstance().current_player.getCurrentPosition() <= 1000*SongQueue.getInstance().speed) {
-                    int pos;
-                    Random rand = new Random();
-                    if (SongQueue.getInstance().current_position == SongQueue.getInstance().song_list.size() - 1 &&
-                            SongQueue.getInstance().shuffle_on != true) {
-                        ;
-                    } else {
-                        //Updating total song duration in database and playing new song
-                        update_total_duration();
-                        if (SongQueue.getInstance().shuffle_on != true) {
-                            pos = SongQueue.getInstance().current_position + 1;
-                        } else {
-                            pos = rand.nextInt(SongQueue.getInstance().song_list.size());
-                        }
-                        MusicFile song = SongQueue.getInstance().song_list.get(pos);
-                        SongQueue.getInstance().addSong(song);
-                        SongQueue.getInstance().setPosition(pos);
-                        updateNotification(song);
-                        handleSkip();
-                        playMusic(song);
-                    }
-                }
-            }
-        });
     }
     //This function plays the specified music file
     public void playMusic(MusicFile musicFile) {
@@ -420,6 +390,8 @@ public class PlayerService extends Service {
                 startForeground(NOTIFICATION_ID, builder.build());
             }
         });
+        //Enable endless stream
+        enable_endless_stream();
     }
     public void update_total_duration() {
         last_position = SongQueue.getInstance().getLast_postion();
@@ -432,6 +404,38 @@ public class PlayerService extends Service {
         table.open();
         table.update_song_duration(email, display_title, (int) (duration/(1000 * SongQueue.getInstance().speed)));
         table.close();
+    }
+    //This function enables end of song skipping for endless streaming
+    public void enable_endless_stream() {
+        //Adding player listener
+        OfflinePlayerManager.getInstance().current_player.addListener(new Player.Listener() {
+            @Override
+            public void onIsPlayingChanged(boolean isPlaying) {
+                Player.Listener.super.onIsPlayingChanged(isPlaying);
+                //Skipping to new song if song finished
+                if (OfflinePlayerManager.getInstance().current_player.getDuration()-OfflinePlayerManager.getInstance().current_player.getCurrentPosition() <= 1000*SongQueue.getInstance().speed) {
+                    int pos;
+                    if (SongQueue.getInstance().current_position == SongQueue.getInstance().song_list.size() - 1 &&
+                            SongQueue.getInstance().shuffle_on != true) {
+                        ;
+                    } else {
+                        update_total_duration();
+                        if (SongQueue.getInstance().shuffle_on != true) {
+                            pos = SongQueue.getInstance().current_position + 1;
+                        } else {
+                            Random rand = new Random();
+                            pos = rand.nextInt(SongQueue.getInstance().song_list.size());
+                        }
+                        MusicFile song = SongQueue.getInstance().song_list.get(pos);
+                        SongQueue.getInstance().addSong(song);
+                        SongQueue.getInstance().setPosition(pos);
+                        updateNotification(song);
+                        playMusic(song);
+                        handleSkip();
+                    }
+                }
+            }
+        });
     }
 
     @Override
