@@ -30,6 +30,7 @@ import com.bumptech.glide.request.transition.Transition;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.PlaybackParameters;
+import com.google.android.exoplayer2.Player;
 
 public class PlayerService extends Service {
 
@@ -66,6 +67,36 @@ public class PlayerService extends Service {
         createNotificationChannel();
         initializeMediaSession();
         sharedViewModel = SharedViewModelProvider.getViewModel(this);
+        //Adding player listener
+        OfflinePlayerManager.getInstance().current_player.addListener(new Player.Listener() {
+            @Override
+            public void onIsPlayingChanged(boolean isPlaying) {
+                Player.Listener.super.onIsPlayingChanged(isPlaying);
+                //Skipping to new song if song finished
+                if (OfflinePlayerManager.getInstance().current_player.getDuration()-OfflinePlayerManager.getInstance().current_player.getCurrentPosition() <= 1000*SongQueue.getInstance().speed) {
+                    int pos;
+                    Random rand = new Random();
+                    if (SongQueue.getInstance().current_position == SongQueue.getInstance().song_list.size() - 1 &&
+                            SongQueue.getInstance().shuffle_on != true) {
+                        ;
+                    } else {
+                        //Updating total song duration in database and playing new song
+                        update_total_duration();
+                        if (SongQueue.getInstance().shuffle_on != true) {
+                            pos = SongQueue.getInstance().current_position + 1;
+                        } else {
+                            pos = rand.nextInt(SongQueue.getInstance().song_list.size());
+                        }
+                        MusicFile song = SongQueue.getInstance().song_list.get(pos);
+                        SongQueue.getInstance().addSong(song);
+                        SongQueue.getInstance().setPosition(pos);
+                        updateNotification(song);
+                        handleSkip();
+                        playMusic(song);
+                    }
+                }
+            }
+        });
     }
     //This function plays the specified music file
     public void playMusic(MusicFile musicFile) {

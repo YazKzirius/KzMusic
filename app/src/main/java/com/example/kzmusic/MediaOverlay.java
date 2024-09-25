@@ -650,10 +650,11 @@ public class MediaOverlay extends Fragment {
                         textCurrentTime.setText(formatTime(player.getCurrentPosition()));
                         SongQueue.getInstance().setCurrent_time(player.getCurrentPosition());
                         //Handling song finished functionality
-                        if (seekBar.getProgress() == seekBar.getMax()) {
+                        if (player.getDuration()-player.getCurrentPosition() <= 1000*song_speed) {
                             move_to_next();
+                        } else {
+                            handler.postDelayed(this, 1000);
                         }
-                        handler.postDelayed(this, 1000);
                     }
                 } catch (Exception e) {
                     ;
