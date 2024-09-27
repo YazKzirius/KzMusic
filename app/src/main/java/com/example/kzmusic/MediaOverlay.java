@@ -249,6 +249,7 @@ public class MediaOverlay extends Fragment {
                     player = OfflinePlayerManager.getInstance().current_player;
                     //Initializing song properties
                     session_id = player.getAudioSessionId();
+                    apply_audio_effect();
                     //Initializing reverb from Song manager class
                     String display_title = format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", ");
                     overlaySongTitle.setText(display_title);
