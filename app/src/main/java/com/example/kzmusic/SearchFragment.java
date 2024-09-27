@@ -22,6 +22,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.os.IBinder;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.inputmethod.EditorInfo;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -154,6 +156,29 @@ public class SearchFragment extends Fragment {
         recyclerView.setAdapter(musicAdapter);
         TextView View = view.findViewById(R.id.results);
         EditText search = view.findViewById(R.id.search_input);
+        //Edit text live functionality
+        search.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                // No action needed before text changes
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                // Call your search_track function here
+                String trackName = s.toString();
+                if (s.length() == 0) {
+                    ;
+                } else {
+                    search_track(trackName, accesstoken);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                // No action needed after text changes
+            }
+        });
         View.setText("Search results:");
         display_random(accesstoken);
         Button search_button = view.findViewById(R.id.search_button);

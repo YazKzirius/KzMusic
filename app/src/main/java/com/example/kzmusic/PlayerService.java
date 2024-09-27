@@ -407,13 +407,14 @@ public class PlayerService extends Service {
     }
     //This function enables end of song skipping for endless streaming
     public void enable_endless_stream() {
+        Random rand = new Random();
         //Adding player listener
         OfflinePlayerManager.getInstance().current_player.addListener(new Player.Listener() {
             @Override
-            public void onIsPlayingChanged(boolean isPlaying) {
-                Player.Listener.super.onIsPlayingChanged(isPlaying);
-                //Skipping to new song if song finished
-                if (OfflinePlayerManager.getInstance().current_player.getDuration()-OfflinePlayerManager.getInstance().current_player.getCurrentPosition() <= 1000*SongQueue.getInstance().speed) {
+            public void onPlaybackStateChanged(int playbackState) {
+                long duration = OfflinePlayerManager.getInstance().current_player.getDuration();
+                long current = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
+                if (playbackState == Player.STATE_ENDED || (duration - current <= 3000 && duration - current >= 0)) {
                     int pos;
                     if (SongQueue.getInstance().current_position == SongQueue.getInstance().song_list.size() - 1 &&
                             SongQueue.getInstance().shuffle_on != true) {
@@ -423,7 +424,6 @@ public class PlayerService extends Service {
                         if (SongQueue.getInstance().shuffle_on != true) {
                             pos = SongQueue.getInstance().current_position + 1;
                         } else {
-                            Random rand = new Random();
                             pos = rand.nextInt(SongQueue.getInstance().song_list.size());
                         }
                         MusicFile song = SongQueue.getInstance().song_list.get(pos);
@@ -433,6 +433,8 @@ public class PlayerService extends Service {
                         playMusic(song);
                         handleSkip();
                     }
+                } else {
+                    ;
                 }
             }
         });

@@ -251,16 +251,9 @@ public class MediaOverlay extends Fragment {
                     session_id = player.getAudioSessionId();
                     //Initializing reverb from Song manager class
                     String display_title = format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", ");
-                    //Applying audio effects
-                    apply_audio_effect();
-                    player.prepare();
-                    player.play();
                     overlaySongTitle.setText(display_title);
                     //Displaying circular view
                     set_up_circular_view(musicFile);
-                    //Adds player to Player session manager
-                    OfflinePlayerManager.getInstance().addPlayer(player);
-                    OfflinePlayerManager.getInstance().setCurrent_player(player);
                     //Setting up seekbar
                     set_up_bar();
                     //Adding song to database
@@ -650,11 +643,7 @@ public class MediaOverlay extends Fragment {
                         textCurrentTime.setText(formatTime(player.getCurrentPosition()));
                         SongQueue.getInstance().setCurrent_time(player.getCurrentPosition());
                         //Handling song finished functionality
-                        if (player.getDuration()-player.getCurrentPosition() <= 1000*song_speed) {
-                            move_to_next();
-                        } else {
-                            handler.postDelayed(this, 1000);
-                        }
+                        handler.postDelayed(this, 1000);
                     }
                 } catch (Exception e) {
                     ;
@@ -662,25 +651,6 @@ public class MediaOverlay extends Fragment {
             }
         };
         handler.post(runnable);
-    }
-    //This function moves to next song once it's finished
-    public void move_to_next() {
-        Random rand = new Random();
-        player.pause();
-        //Moving to next song in recycler view if shuffle is off
-        if (shuffle_on == false) {
-            //Handling the event that it's the last song in the recycler view
-            if (position == musicFiles.size() - 1) {
-                ;
-            } else {
-                position += 1;
-            }
-        } else {
-            position = rand.nextInt(musicFiles.size());
-        }
-        musicFile = musicFiles.get(position);
-        playerService.updateNotification(musicFile);
-        open_new_overlay();
     }
     //This function stops updating seekbar
     private void stopSeekBarUpdate() {
