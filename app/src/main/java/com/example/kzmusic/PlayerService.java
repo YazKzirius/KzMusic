@@ -15,6 +15,8 @@ import android.os.Build;
 import android.os.IBinder;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -408,13 +410,14 @@ public class PlayerService extends Service {
     //This function enables end of song skipping for endless streaming
     public void enable_endless_stream() {
         Random rand = new Random();
+        //Track list
+        List<MusicFile> tracks = new ArrayList<>();
+        List<Integer> positions = new ArrayList<>();
         //Adding player listener
         OfflinePlayerManager.getInstance().current_player.addListener(new Player.Listener() {
             @Override
             public void onPlaybackStateChanged(int playbackState) {
-                long duration = OfflinePlayerManager.getInstance().current_player.getDuration();
-                long current = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
-                if (playbackState == Player.STATE_ENDED || (duration - current <= 3000 && duration - current >= 0)) {
+                if (playbackState == Player.STATE_ENDED) {
                     int pos;
                     if (SongQueue.getInstance().current_position == SongQueue.getInstance().song_list.size() - 1 &&
                             SongQueue.getInstance().shuffle_on != true) {
@@ -426,14 +429,18 @@ public class PlayerService extends Service {
                         } else {
                             pos = rand.nextInt(SongQueue.getInstance().song_list.size());
                         }
-                        MusicFile song = SongQueue.getInstance().song_list.get(pos);
+                        MusicFile file = SongQueue.getInstance().song_list.get(pos);
+                        tracks.add(file);
+                        positions.add(pos);
+                        MusicFile song = tracks.get(0);
+                        int i = positions.get(0);
                         SongQueue.getInstance().addSong(song);
-                        SongQueue.getInstance().setPosition(pos);
+                        SongQueue.getInstance().setPosition(i);
                         updateNotification(song);
                         playMusic(song);
                         handleSkip();
                     }
-                } else {
+                }  else {
                     ;
                 }
             }
