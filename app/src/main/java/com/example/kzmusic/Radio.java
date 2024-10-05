@@ -25,15 +25,25 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 
 import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import okhttp3.FormBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -75,6 +85,10 @@ public class Radio extends Fragment {
     Boolean liked_on = false;
     Boolean shuffle_on = false;
     private long last_position;
+    String CLIENT_SECRET = "7c15410b4f714a839cc3ad8f661a6513";
+    private static final String AUTH_URL = "https://accounts.spotify.com/authorize";
+    private static final String TOKEN_URL = "https://accounts.spotify.com/api/token";
+    int REQUEST_CODE = 1337;
 
     public Radio(String token) {
         // Required empty public constructor
@@ -313,8 +327,7 @@ public class Radio extends Fragment {
     }
 
     //This function searches for random music using API queries and updates the current tracklist
-    public void display_random_music(String token) {
-        accesstoken = token;
+    public void display_random_music(String accesstoken) {
         String[] randomQueries = {"happy", "sad", "party", "chill", "love", "workout"};
         String randomQuery = randomQueries[(int) (Math.random() * randomQueries.length)];
         SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
@@ -460,6 +473,55 @@ public class Radio extends Fragment {
             });
         }
     }
+    // This function refreshes an expired access token
+    public void refreshAccessToken(String refresh) {
+        if (refresh != null) {
+            OkHttpClient client = new OkHttpClient();
+
+            RequestBody formBody = new FormBody.Builder()
+                    .add("grant_type", "refresh_token")
+                    .add("refresh_token", refresh)
+                    .add("client_id", CLIENT_ID)
+                    .add("client_secret", CLIENT_SECRET)
+                    .build();
+
+            Request request = new Request.Builder()
+                    .url(TOKEN_URL)
+                    .post(formBody)
+                    .build();
+
+            client.newCall(request).enqueue(new okhttp3.Callback() {
+                @Override
+                public void onFailure(okhttp3.Call call, IOException e) {
+                    e.printStackTrace();
+                }
+
+                @Override
+                public void onResponse(okhttp3.Call call, okhttp3.Response response) throws IOException {
+                    if (response.isSuccessful()) {
+                        String responseBody = response.body().string();
+                        try {
+                            JSONObject json = new JSONObject(responseBody);
+                            String newAccessToken = json.getString("access_token");
+                            long newExpirationTime = json.getLong("expires_in");
+
+                            // Ensure UI updates are made on the main thread
+                            Toast.makeText(getContext(), "New: "+newAccessToken, Toast.LENGTH_LONG).show();
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            ;
+                        }
+                    } else {
+                        ;
+                    }
+                }
+            });
+        } else {
+           ;
+        }
+    }
+
     private void stopPlayerService() {
         Intent intent = new Intent(requireContext(), PlayerService.class);
         requireContext().stopService(intent);

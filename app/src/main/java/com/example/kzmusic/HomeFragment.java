@@ -46,6 +46,7 @@ public class HomeFragment extends Fragment {
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
     String accesstoken;
+    String refresh;
     View view;
     SessionManager sessionManager;
     String email;
@@ -124,11 +125,8 @@ public class HomeFragment extends Fragment {
         text1.setText(username+" radio:");
         text3.setText(username+" mix");
         text4.setText(username+" Top 10");
-        if (getArguments() != null) {
-            accesstoken = getArguments().getString("Token");
-        } else {
-            accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
-        }
+        //Getting token
+        accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
         //Setting up Homepage and getting given accesstoken
         set_up_buttons();
         set_up_spotify_play();

@@ -135,12 +135,11 @@ public class GetStarted extends AppCompatActivity {
                         String accessToken = json.getString("access_token");
                         String refresh = json.getString("refresh_token");
                         long expirationTime = json.getLong("expires_in");
-
+                        OnlinePlayerManager.getInstance().setAccess_token(accessToken);
+                        OnlinePlayerManager.getInstance().setRefresh_token(refresh);
+                        OnlinePlayerManager.getInstance().setExpiration_time(expiration_time);
                         // Proceed to the next activity with the token
                         Intent newIntent = new Intent(GetStarted.this, MainPage.class);
-                        newIntent.putExtra("Token", accessToken);
-                        newIntent.putExtra("refresh", refresh);
-                        newIntent.putExtra("expiration_time", expirationTime);
                         startActivity(newIntent);
                         finish();
 

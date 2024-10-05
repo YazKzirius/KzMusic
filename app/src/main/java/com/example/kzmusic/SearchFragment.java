@@ -136,11 +136,8 @@ public class SearchFragment extends Fragment {
         playback_bar = view.findViewById(R.id.playback_bar);
         RecyclerView recyclerView = view.findViewById(R.id.recycler_view3);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        if (getArguments() != null) {
-            accesstoken = getArguments().getString("Token");
-        } else {
-            accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
-        }
+        //Getting token
+        accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
         musicAdapter = new MusicAdapter(trackList, getContext(), new MusicAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(SearchResponse.Track track) {

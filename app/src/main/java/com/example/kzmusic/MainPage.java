@@ -50,15 +50,9 @@ public class MainPage extends AppCompatActivity {
         username = sessionManager.getUsername();
         email = sessionManager.getEmail();
         Toast.makeText(this, "Welcome " + username+"!", Toast.LENGTH_SHORT).show();
-        if (bundle != null ) {
-            String token = bundle.getString("Token");
-            long exp_time = bundle.getLong("expiration_time");
-            String refresh = bundle.getString("refresh");
-            schedule_token_refresh(exp_time-120, refresh);
-            send_data(token, exp_time);
-        } else {
-            ;
-        }
+        long exp_time = OnlinePlayerManager.getInstance().getExpiration_time();
+        String refresh = OnlinePlayerManager.getInstance().getRefresh_token();
+        schedule_token_refresh(exp_time-300, refresh);
         //Default fragment
         //Setting token refresh time 2 minutes before expiration
         if (savedInstanceState == null) {
@@ -67,11 +61,11 @@ public class MainPage extends AppCompatActivity {
         create_fragments();
     }
     //This function sends user data to fragments
-    public void send_data(String t, long time) {
+    public void send_data(String t, String r) {
         // Sending data to Home fragment
         Bundle bundle = new Bundle();
         bundle.putString("Token", t);
-        bundle.putLong("expiration_time", time);
+        bundle.putString("refresh", r);
         Fragment homeFragment = new HomeFragment();
         homeFragment.setArguments(bundle);
         getSupportFragmentManager().beginTransaction()
@@ -122,8 +116,8 @@ public class MainPage extends AppCompatActivity {
         Runnable refreshRunnable = new Runnable() {
             @Override
             public void run() {
-                refreshAccessToken(r);
                 // Schedule the next refresh
+                refreshAccessToken(r);
                 handler.postDelayed(this, refreshTime); // 55 minutes
             }
         };
@@ -207,13 +201,12 @@ public class MainPage extends AppCompatActivity {
                             JSONObject json = new JSONObject(responseBody);
                             String newAccessToken = json.getString("access_token");
                             long newExpirationTime = json.getLong("expires_in");
-
+                            OnlinePlayerManager.getInstance().setAccess_token(newAccessToken);
+                            OnlinePlayerManager.getInstance().setExpiration_time(newExpirationTime);
                             // Ensure UI updates are made on the main thread
                             runOnUiThread(() -> {
-                                OnlinePlayerManager.getInstance().setAccess_token(newAccessToken);
-                                OnlinePlayerManager.getInstance().setExpiration_time(newExpirationTime);
                                 // Schedule the next token refresh
-                                schedule_token_refresh(newExpirationTime - 120, refresh);
+                                schedule_token_refresh(newExpirationTime - 300, refresh);
                             });
 
                         } catch (JSONException e) {
