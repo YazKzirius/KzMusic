@@ -133,11 +133,13 @@ public class GetStarted extends AppCompatActivity {
                     try {
                         JSONObject json = new JSONObject(responseBody);
                         String accessToken = json.getString("access_token");
+                        String refresh = json.getString("refresh_token");
                         long expirationTime = json.getLong("expires_in");
 
                         // Proceed to the next activity with the token
                         Intent newIntent = new Intent(GetStarted.this, MainPage.class);
                         newIntent.putExtra("Token", accessToken);
+                        newIntent.putExtra("refresh", refresh);
                         newIntent.putExtra("expiration_time", expirationTime);
                         startActivity(newIntent);
                         finish();

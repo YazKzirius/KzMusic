@@ -86,10 +86,10 @@
             android:layout_below="@id/current_song_title"/>
 
         <ImageButton
-            android:id="@+id/down_button"
+            android:id="@+id/up_button"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:src="@drawable/ic_down"
+            android:src="@drawable/ic_up"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:layout_marginStart="10dp"

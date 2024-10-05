@@ -116,7 +116,7 @@ public class Radio extends Fragment {
         art = view.findViewById(R.id.current_song_art);
         title = view.findViewById(R.id.current_song_title);
         Artist = view.findViewById(R.id.current_song_artist);
-        ic_down = view.findViewById(R.id.down_button);
+        ic_down = view.findViewById(R.id.up_button);
         playback_bar = view.findViewById(R.id.playback_bar);
         recyclerView=view.findViewById(R.id.recycler_view1);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));

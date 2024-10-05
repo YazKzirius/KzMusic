@@ -111,7 +111,7 @@ public class HomeFragment extends Fragment {
         art = view.findViewById(R.id.current_song_art);
         title = view.findViewById(R.id.current_song_title);
         Artist = view.findViewById(R.id.current_song_artist);
-        ic_down = view.findViewById(R.id.down_button);
+        ic_down = view.findViewById(R.id.up_button);
         playback_bar = view.findViewById(R.id.playback_bar);
         sessionManager = new SessionManager(getContext());
         username = sessionManager.getUsername();
@@ -126,6 +126,8 @@ public class HomeFragment extends Fragment {
         text4.setText(username+" Top 10");
         if (getArguments() != null) {
             accesstoken = getArguments().getString("Token");
+        } else {
+            accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
         }
         //Setting up Homepage and getting given accesstoken
         set_up_buttons();

@@ -3,10 +3,12 @@ package com.example.kzmusic;
 //Imports
 import android.content.Context;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -89,12 +91,9 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
                     holder.liked.setImageResource(R.drawable.ic_liked);
                 }
                 table.close();
-
             }
         });
     }
-
-
     @Override
     //This function gets the number of tracks in tracklist
     public int getItemCount() {
@@ -120,12 +119,14 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
         public ImageView albumImage;
         TextView release;
         ImageButton liked;
+        ImageButton menu;
 
         public ViewHolder(View itemView) {
             super(itemView);
             trackName = itemView.findViewById(R.id.track_name);
             artistName = itemView.findViewById(R.id.artist_name);
             albumImage = itemView.findViewById(R.id.album_image);
+            menu = itemView.findViewById(R.id.menu_btn);
             liked = itemView.findViewById(R.id.liked_btn);
             release = itemView.findViewById(R.id.release_date);
         }

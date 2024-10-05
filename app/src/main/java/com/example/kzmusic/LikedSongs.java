@@ -120,7 +120,7 @@ public class LikedSongs extends Fragment {
         art = view.findViewById(R.id.current_song_art);
         title = view.findViewById(R.id.current_song_title);
         Artist = view.findViewById(R.id.current_song_artist);
-        ic_down = view.findViewById(R.id.down_button);
+        ic_down = view.findViewById(R.id.up_button);
         playback_bar = view.findViewById(R.id.playback_bar);
         //Getting user info
         sessionManager = new SessionManager(getContext());
@@ -308,20 +308,6 @@ public class LikedSongs extends Fragment {
                 text1.setText("No internet connection, please try again.");
             }
         });
-    }
-    //This function replaces a tracklist with a list of track names
-    public List<String> filterTrackNames(List<String> tracks, String exactTrackName) {
-        // Use streams to filter and map tracks based on the exact track name
-        List<String> trackNames = tracks.stream()
-                .filter(track -> track.equalsIgnoreCase(exactTrackName))
-                .map(track -> {
-                    // If the track name matches the exact parameter, return the track name
-                    return track;
-                })
-                .collect(Collectors.toList());
-
-        // Return the list of track names
-        return trackNames;
     }
     //This function replaces a tracklist with a list of track names
     public List<String> get_track_names(List<SearchResponse.Track> trackList) {

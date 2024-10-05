@@ -132,12 +132,14 @@ public class SearchFragment extends Fragment {
         art = view.findViewById(R.id.current_song_art);
         title = view.findViewById(R.id.current_song_title);
         Artist = view.findViewById(R.id.current_song_artist);
-        ic_down = view.findViewById(R.id.down_button);
+        ic_down = view.findViewById(R.id.up_button);
         playback_bar = view.findViewById(R.id.playback_bar);
         RecyclerView recyclerView = view.findViewById(R.id.recycler_view3);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         if (getArguments() != null) {
             accesstoken = getArguments().getString("Token");
+        } else {
+            accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
         }
         musicAdapter = new MusicAdapter(trackList, getContext(), new MusicAdapter.OnItemClickListener() {
             @Override

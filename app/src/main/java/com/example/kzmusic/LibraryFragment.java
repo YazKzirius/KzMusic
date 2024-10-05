@@ -102,11 +102,13 @@ public class LibraryFragment extends Fragment {
         art = view.findViewById(R.id.current_song_art);
         title = view.findViewById(R.id.current_song_title);
         Artist = view.findViewById(R.id.current_song_artist);
-        ic_down = view.findViewById(R.id.down_button);
+        ic_down = view.findViewById(R.id.up_button);
         playback_bar = view.findViewById(R.id.playback_bar);
         //Setting up bottom playback navigator
         if (getArguments() != null) {
             token = getArguments().getString("Token");
+        } else {
+            token = OnlinePlayerManager.getInstance().getAccess_token();
         }
         set_up_spotify_play();
         set_up_play_bar();
