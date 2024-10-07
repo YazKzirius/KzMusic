@@ -7,6 +7,11 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.work.Data;
+import androidx.work.ExistingPeriodicWorkPolicy;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
+
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import android.os.Handler;
 import android.os.IBinder;
@@ -17,6 +22,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -33,12 +39,6 @@ public class MainPage extends AppCompatActivity {
     String email;
     String username;
     SessionManager sessionManager;
-    String CLIENT_ID = "21dc131ad4524c6aae75a9d0256b1b70";
-    String CLIENT_SECRET = "7c15410b4f714a839cc3ad8f661a6513";
-    String REDIRECT_URI = "kzmusic://callback";
-    private static final String AUTH_URL = "https://accounts.spotify.com/authorize";
-    private static final String TOKEN_URL = "https://accounts.spotify.com/api/token";
-    int REQUEST_CODE = 1337;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,17 +112,14 @@ public class MainPage extends AppCompatActivity {
     }
     public void schedule_token_refresh(long refresh_time, String r) {
         long refreshTime = System.currentTimeMillis() + refresh_time * 1000;
-        Handler handler = new Handler(Looper.getMainLooper());
-        Runnable refreshRunnable = new Runnable() {
-            @Override
-            public void run() {
-                // Schedule the next refresh
-                refreshAccessToken(r);
-                handler.postDelayed(this, refreshTime); // 55 minutes
-            }
-        };
-        // Start the initial refresh
-        handler.post(refreshRunnable);
+        refreshTime = refresh_time/(1000*60);
+        WorkManager workManager = WorkManager.getInstance(this);
+        PeriodicWorkRequest refreshWorkRequest = new PeriodicWorkRequest.Builder(
+                TokenManager.class, refreshTime, TimeUnit.MINUTES)
+                .setInputData(new Data.Builder().putString("refresh", r).build())
+                .build();
+        workManager.enqueueUniquePeriodicWork("TokenRefresh", ExistingPeriodicWorkPolicy.REPLACE, refreshWorkRequest);
+
     }
     //This function checks if a string is only digits
     public boolean isOnlyDigits(String str) {
@@ -168,59 +165,6 @@ public class MainPage extends AppCompatActivity {
         table.open();
         table.update_song_duration(email, display_title, (int) (duration/(1000 * SongQueue.getInstance().speed)));
         table.close();
-    }
-    // This function refreshes an expired access token
-    public void refreshAccessToken(String refresh) {
-        if (refresh != null) {
-            OkHttpClient client = new OkHttpClient();
-
-            RequestBody formBody = new FormBody.Builder()
-                    .add("grant_type", "refresh_token")
-                    .add("refresh_token", refresh)
-                    .add("client_id", CLIENT_ID)
-                    .add("client_secret", CLIENT_SECRET)
-                    .build();
-
-            Request request = new Request.Builder()
-                    .url(TOKEN_URL)
-                    .post(formBody)
-                    .build();
-
-            client.newCall(request).enqueue(new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    e.printStackTrace();
-                    runOnUiThread(() -> Toast.makeText(MainPage.this, "Failed to refresh token", Toast.LENGTH_SHORT).show());
-                }
-
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    if (response.isSuccessful()) {
-                        String responseBody = response.body().string();
-                        try {
-                            JSONObject json = new JSONObject(responseBody);
-                            String newAccessToken = json.getString("access_token");
-                            long newExpirationTime = json.getLong("expires_in");
-                            OnlinePlayerManager.getInstance().setAccess_token(newAccessToken);
-                            OnlinePlayerManager.getInstance().setExpiration_time(newExpirationTime);
-                            // Ensure UI updates are made on the main thread
-                            runOnUiThread(() -> {
-                                // Schedule the next token refresh
-                                schedule_token_refresh(newExpirationTime - 300, refresh);
-                            });
-
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                            runOnUiThread(() -> Toast.makeText(MainPage.this, e.getMessage(), Toast.LENGTH_SHORT).show());
-                        }
-                    } else {
-                        runOnUiThread(() -> Toast.makeText(MainPage.this, "Failed to refresh token: " + response.message(), Toast.LENGTH_SHORT).show());
-                    }
-                }
-            });
-        } else {
-            Toast.makeText(MainPage.this, "Refresh token is null", Toast.LENGTH_SHORT).show();
-        }
     }
     @Override
     public void onDestroy() {

@@ -152,7 +152,7 @@ public class Radio extends Fragment {
         sessionManager = new SessionManager(getContext());
         recyclerView.setAdapter(musicAdapter);
         if (sessionManager.getSavedTracklist("TRACK_LIST_RADIO").size() == 0) {
-            display_random_music(accesstoken);
+            display_random_music();
         } else {
             musicAdapter.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_RADIO"));
         }
@@ -321,33 +321,39 @@ public class Radio extends Fragment {
             @Override
             public void onClick(View v) {
                 musicAdapter.clear_tracks();
-                display_random_music(accesstoken);
+                display_random_music();
             }
         });
     }
 
     //This function searches for random music using API queries and updates the current tracklist
-    public void display_random_music(String accesstoken) {
-        String[] randomQueries = {"happy", "sad", "party", "chill", "love", "workout"};
-        String randomQuery = randomQueries[(int) (Math.random() * randomQueries.length)];
-        SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
-        Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
-        call.enqueue(new Callback<SearchResponse>() {
-            @Override
-            public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    musicAdapter.updateTracks(response.body().getTracks().getItems());
-                    sessionManager.save_Tracklist_radio(response.body().getTracks().getItems());
-                } else {
-                    ;
+    public void display_random_music() {
+        accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
+        if (accesstoken == null) {
+            TextView text1 = view.findViewById(R.id.made_for_user);
+            text1.setText("No internet connection, please try again.");
+        } else {
+            String[] randomQueries = {"happy", "sad", "party", "chill", "love", "workout"};
+            String randomQuery = randomQueries[(int) (Math.random() * randomQueries.length)];
+            SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
+            Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
+            call.enqueue(new Callback<SearchResponse>() {
+                @Override
+                public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        musicAdapter.updateTracks(response.body().getTracks().getItems());
+                        sessionManager.save_Tracklist_radio(response.body().getTracks().getItems());
+                    } else {
+                        ;
+                    }
                 }
-            }
-            @Override
-            public void onFailure(Call<SearchResponse> call, Throwable t) {
-                TextView text1 = view.findViewById(R.id.made_for_user);
-                text1.setText("No internet connection, please try again.");
-            }
-        });
+                @Override
+                public void onFailure(Call<SearchResponse> call, Throwable t) {
+                    TextView text1 = view.findViewById(R.id.made_for_user);
+                    text1.setText("No internet connection, please try again.");
+                }
+            });
+        }
     }
     //This function assigns data from playback overlay to bottom navigation
     public void set_up_play_bar() {
@@ -473,55 +479,6 @@ public class Radio extends Fragment {
             });
         }
     }
-    // This function refreshes an expired access token
-    public void refreshAccessToken(String refresh) {
-        if (refresh != null) {
-            OkHttpClient client = new OkHttpClient();
-
-            RequestBody formBody = new FormBody.Builder()
-                    .add("grant_type", "refresh_token")
-                    .add("refresh_token", refresh)
-                    .add("client_id", CLIENT_ID)
-                    .add("client_secret", CLIENT_SECRET)
-                    .build();
-
-            Request request = new Request.Builder()
-                    .url(TOKEN_URL)
-                    .post(formBody)
-                    .build();
-
-            client.newCall(request).enqueue(new okhttp3.Callback() {
-                @Override
-                public void onFailure(okhttp3.Call call, IOException e) {
-                    e.printStackTrace();
-                }
-
-                @Override
-                public void onResponse(okhttp3.Call call, okhttp3.Response response) throws IOException {
-                    if (response.isSuccessful()) {
-                        String responseBody = response.body().string();
-                        try {
-                            JSONObject json = new JSONObject(responseBody);
-                            String newAccessToken = json.getString("access_token");
-                            long newExpirationTime = json.getLong("expires_in");
-
-                            // Ensure UI updates are made on the main thread
-                            Toast.makeText(getContext(), "New: "+newAccessToken, Toast.LENGTH_LONG).show();
-
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                            ;
-                        }
-                    } else {
-                        ;
-                    }
-                }
-            });
-        } else {
-           ;
-        }
-    }
-
     private void stopPlayerService() {
         Intent intent = new Intent(requireContext(), PlayerService.class);
         requireContext().stopService(intent);

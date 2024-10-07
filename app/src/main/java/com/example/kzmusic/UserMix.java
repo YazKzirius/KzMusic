@@ -156,7 +156,7 @@ public class UserMix extends Fragment {
             try {
                 String[] randomQueries = generate_top_artists(musicFiles);
                 for (String query : randomQueries) {
-                    display_generated_music(access_token, query);
+                    display_generated_music(query);
                 }
             } catch (Exception e) {
                 text.setText("No media files, please update library.");
@@ -240,7 +240,7 @@ public class UserMix extends Fragment {
                     musicAdapter.clear_tracks();
                     String[] randomQueries = generate_top_artists(musicFiles);
                     for (String query : randomQueries) {
-                        display_generated_music(access_token, query);
+                        display_generated_music(query);
                     }
                 } catch (Exception e) {
                     TextView text = view.findViewById(R.id.made_for_user);
@@ -396,30 +396,36 @@ public class UserMix extends Fragment {
         });
     }
     //This function searches for random music using API queries and updates the current tracklist
-    public void display_generated_music(String token, String artist) {
-        access_token = token;
-        String randomQuery = "artist: " + artist;
-        SpotifyApiService apiService = RetrofitClient.getClient(access_token).create(SpotifyApiService.class);
-        Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
-        call.enqueue(new Callback<SearchResponse>() {
-            @Override
-            public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    musicAdapter.updateTracks(response.body().getTracks().getItems().subList(0, 4));
-                    tracklist.addAll(response.body().getTracks().getItems().subList(0, 4));
-                    if (tracklist.size() == 40) {
-                        sessionManager.save_Tracklist_mix(tracklist);
+    public void display_generated_music(String artist) {
+        access_token = OnlinePlayerManager.getInstance().getAccess_token();
+        if (access_token == null) {
+            TextView text1 = view.findViewById(R.id.made_for_user);
+            text1.setText("No internet connection, please try again.");
+        } else {
+            String randomQuery = "artist: " + artist;
+            SpotifyApiService apiService = RetrofitClient.getClient(access_token).create(SpotifyApiService.class);
+            Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
+            call.enqueue(new Callback<SearchResponse>() {
+                @Override
+                public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        musicAdapter.updateTracks(response.body().getTracks().getItems().subList(0, 4));
+                        tracklist.addAll(response.body().getTracks().getItems().subList(0, 4));
+                        if (tracklist.size() == 40) {
+                            sessionManager.save_Tracklist_mix(tracklist);
+                        }
+                    } else {
+                        ;
                     }
-                } else {
-                    ;
                 }
-            }
-            @Override
-            public void onFailure(Call<SearchResponse> call, Throwable t) {
-                TextView text1 = view.findViewById(R.id.made_for_user);
-                text1.setText("No internet connection, please try again.");
-            }
-        });
+                @Override
+                public void onFailure(Call<SearchResponse> call, Throwable t) {
+                    TextView text1 = view.findViewById(R.id.made_for_user);
+                    text1.setText("No internet connection, please try again.");
+                }
+            });
+        }
+
     }
     //This function gets the User's top 10 artists and using and algorithm
     //It then generates music based on that information

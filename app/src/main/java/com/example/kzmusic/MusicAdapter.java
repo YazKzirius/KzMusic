@@ -3,6 +3,7 @@ package com.example.kzmusic;
 //Imports
 import android.content.Context;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -93,6 +94,39 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
                 table.close();
             }
         });
+        holder.menu.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showPopupMenu(v);
+            }
+        });
+    }
+    private void showPopupMenu(View view) {
+        PopupMenu popupMenu = new PopupMenu(context, view);
+        MenuInflater inflater = popupMenu.getMenuInflater();
+        inflater.inflate(R.menu.track_menu, popupMenu.getMenu());
+        popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                switch (item.getItemId()) {
+                    case R.id.menu_go_to_artist:
+                        Toast.makeText(context, "Go to artist selected", Toast.LENGTH_SHORT).show();
+                        // Add your logic here
+                        return true;
+                    case R.id.menu_go_to_album:
+                        Toast.makeText(context, "Go to album selected", Toast.LENGTH_SHORT).show();
+                        // Add your logic here
+                        return true;
+                    case R.id.menu_play_similar_songs:
+                        Toast.makeText(context, "Play similar songs selected", Toast.LENGTH_SHORT).show();
+                        // Add your logic here
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        });
+        popupMenu.show();
     }
     @Override
     //This function gets the number of tracks in tracklist

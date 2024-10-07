@@ -136,8 +136,6 @@ public class SearchFragment extends Fragment {
         playback_bar = view.findViewById(R.id.playback_bar);
         RecyclerView recyclerView = view.findViewById(R.id.recycler_view3);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        //Getting token
-        accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
         musicAdapter = new MusicAdapter(trackList, getContext(), new MusicAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(SearchResponse.Track track) {
@@ -169,7 +167,7 @@ public class SearchFragment extends Fragment {
                 if (s.length() == 0) {
                     ;
                 } else {
-                    search_track(trackName, accesstoken);
+                    search_track(trackName);
                 }
             }
 
@@ -179,7 +177,7 @@ public class SearchFragment extends Fragment {
             }
         });
         View.setText("Search results:");
-        display_random(accesstoken);
+        display_random();
         Button search_button = view.findViewById(R.id.search_button);
         search_button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -187,13 +185,13 @@ public class SearchFragment extends Fragment {
                 //Searching for random tracks based on the name input
                 String input = search.getText().toString();
                 if (input.equals("")) {
-                    display_random(accesstoken);
+                    display_random();
                     View.setText("Search results:");
                 } else {
                     //Displaying results
-                    search_track(input, accesstoken);
+                    search_track(input);
                     View.setText("Search results:");
-                    display_random(accesstoken);
+                    display_random();
                 }
             }
         });
@@ -207,9 +205,9 @@ public class SearchFragment extends Fragment {
                     String input = search.getText().toString();
                     //Displaying search results
                     if (input.equals("")) {
-                        display_random(accesstoken);
+                        display_random();
                     } else {
-                        search_track(input, accesstoken);
+                        search_track(input);
                     }
                     View.setText("Search results:");
                     return true; // Return true to indicate the event was handled
@@ -280,56 +278,66 @@ public class SearchFragment extends Fragment {
     }
     //This function makes an API call using previous access token to search for random music
     //It does this based on the track_name entered
-    private void search_track(String track_name, String token) {
-        accesstoken = token;
-        String randomQuery = track_name;
-        SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
-        Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
-        call.enqueue(new Callback<SearchResponse>() {
-            @Override
-            public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    trackList.clear();
-                    trackList.addAll(response.body().getTracks().getItems());
-                    musicAdapter.notifyDataSetChanged();
-                } else {
-                    Intent intent = new Intent(getContext(), GetStarted.class);
-                    startActivity(intent);
+    private void search_track(String track_name) {
+        accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
+        if (accesstoken == null) {
+            TextView text1 = view.findViewById(R.id.results);
+            text1.setText("No internet connection, please try again.");
+        } else {
+            String randomQuery = track_name;
+            SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
+            Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
+            call.enqueue(new Callback<SearchResponse>() {
+                @Override
+                public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        trackList.clear();
+                        trackList.addAll(response.body().getTracks().getItems());
+                        musicAdapter.notifyDataSetChanged();
+                    } else {
+                        Intent intent = new Intent(getContext(), GetStarted.class);
+                        startActivity(intent);
+                    }
                 }
-            }
-            @Override
-            public void onFailure(Call<SearchResponse> call, Throwable t) {
-                TextView text1 = view.findViewById(R.id.results);
-                text1.setText("No internet connection, please try again.");
-            }
-        });
+                @Override
+                public void onFailure(Call<SearchResponse> call, Throwable t) {
+                    TextView text1 = view.findViewById(R.id.results);
+                    text1.setText("No internet connection, please try again.");
+                }
+            });
+        }
     }
     //This function gets random music based on catergory
     //It does this before the user chooses to search for a random track
-    private void display_random(String token) {
-        accesstoken = token;
-        String[] randomQueries = {"happy", "sad", "party", "chill", "love", "workout"};
-        String randomQuery = randomQueries[(int) (Math.random() * randomQueries.length)];
-        SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
-        Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
-        call.enqueue(new Callback<SearchResponse>() {
-            @Override
-            public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    trackList.clear();
-                    trackList.addAll(response.body().getTracks().getItems());
-                    musicAdapter.notifyDataSetChanged();
-                } else {
-                    Intent intent = new Intent(getContext(), GetStarted.class);
-                    startActivity(intent);
+    private void display_random() {
+        accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
+        if (accesstoken == null) {
+            TextView text1 = view.findViewById(R.id.results);
+            text1.setText("No internet connection, please try again.");
+        } else {
+            String[] randomQueries = {"happy", "sad", "party", "chill", "love", "workout"};
+            String randomQuery = randomQueries[(int) (Math.random() * randomQueries.length)];
+            SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
+            Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
+            call.enqueue(new Callback<SearchResponse>() {
+                @Override
+                public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        trackList.clear();
+                        trackList.addAll(response.body().getTracks().getItems());
+                        musicAdapter.notifyDataSetChanged();
+                    } else {
+                        Intent intent = new Intent(getContext(), GetStarted.class);
+                        startActivity(intent);
+                    }
                 }
-            }
-            @Override
-            public void onFailure(Call<SearchResponse> call, Throwable t) {
-                TextView text1 = view.findViewById(R.id.results);
-                text1.setText("No internet connection, please try again.");
-            }
-        });
+                @Override
+                public void onFailure(Call<SearchResponse> call, Throwable t) {
+                    TextView text1 = view.findViewById(R.id.results);
+                    text1.setText("No internet connection, please try again.");
+                }
+            });
+        }
     }
     public void update_total_duration() {
         long duration = OfflinePlayerManager.getInstance().current_player.getCurrentPosition() - last_position;

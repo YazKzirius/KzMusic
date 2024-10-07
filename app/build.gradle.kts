@@ -71,5 +71,7 @@ dependencies {
     implementation("androidx.camera:camera-view:1.1.0")
     // Use this dependency to use the dynamically downloaded model in Google Play Services
     implementation("com.google.android.gms:play-services-mlkit-face-detection:17.1.0")
+    //Worker implementation
+    implementation("androidx.work:work-runtime:2.7.1")
 
 }

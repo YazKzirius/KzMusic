@@ -252,48 +252,52 @@ public class Top10Songs extends Fragment {
     }
     //This function makes an API call using previous access token to search for random music
     //It does this based on the track_name entered
-    private void search_track(String track_name, String Artist,  String token) {
-        String accesstoken = token;
-        String randomQuery = "track:" + track_name + " artist:" + Artist;
-        SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
-        Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
-        call.enqueue(new Callback<SearchResponse>() {
-            @Override
-            public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    //Getting track data and formatting
-                    List<SearchResponse.Track> Tracks = response.body().getTracks().getItems();
-                    List<String> tracks = get_track_names(Tracks);
-                    //Getting indices of specified information
-                    int i = tracks.indexOf(track_name+" by "+Artist);
-                    //Checking if it doesn't exist and performs j-index dependent adding
-                    if (i == -1) {
-                        i = tracks.indexOf(track_name);
-                        ///Checking if both indices are equal
-                        if (i != -1) {
-                            tracklist.add(Tracks.get(i));
+    private void search_track(String track_name, String Artist) {
+        String accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
+        if (accesstoken == null)  {
+            ;
+        } else {
+            String randomQuery = "track:" + track_name + " artist:" + Artist;
+            SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
+            Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
+            call.enqueue(new Callback<SearchResponse>() {
+                @Override
+                public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        //Getting track data and formatting
+                        List<SearchResponse.Track> Tracks = response.body().getTracks().getItems();
+                        List<String> tracks = get_track_names(Tracks);
+                        //Getting indices of specified information
+                        int i = tracks.indexOf(track_name+" by "+Artist);
+                        //Checking if it doesn't exist and performs j-index dependent adding
+                        if (i == -1) {
+                            i = tracks.indexOf(track_name);
+                            ///Checking if both indices are equal
+                            if (i != -1) {
+                                tracklist.add(Tracks.get(i));
+                            } else {
+                                //Otherwise get first element of tracklist
+                                tracklist.add(Tracks.get(0));
+                            }
                         } else {
                             //Otherwise get first element of tracklist
-                            tracklist.add(Tracks.get(0));
+                            tracklist.add(Tracks.get(i));
                         }
+                        if (tracklist.size() == 5) {
+                            sort_track_list();
+                        }
+                        //Checking for more than One of the same track
                     } else {
-                        //Otherwise get first element of tracklist
-                        tracklist.add(Tracks.get(i));
+                        ;
                     }
-                    if (tracklist.size() == 5) {
-                        sort_track_list();
-                    }
-                    //Checking for more than One of the same track
-                } else {
+
+                }
+                @Override
+                public void onFailure(Call<SearchResponse> call, Throwable t) {
                     ;
                 }
-
-            }
-            @Override
-            public void onFailure(Call<SearchResponse> call, Throwable t) {
-                ;
-            }
-        });
+            });
+        }
     }
     //This function replaces a tracklist with a list of track names
     public List<String> get_track_names(List<SearchResponse.Track> trackList) {
@@ -353,7 +357,7 @@ public class Top10Songs extends Fragment {
                         if (title.split(" by ").length == 2) {
                             track_name = title.split(" by ")[0];
                             artist = title.split(" by ")[1];
-                            search_track(track_name, artist, token);
+                            search_track(track_name, artist);
                         }
                     } else {
                         ;
