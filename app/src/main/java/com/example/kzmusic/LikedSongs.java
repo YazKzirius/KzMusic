@@ -79,9 +79,9 @@ public class LikedSongs extends Fragment {
     Boolean shuffle_on = false;
     private long last_position;
 
-    public LikedSongs(String token) {
+    public LikedSongs() {
         // Required empty public constructor
-        this.token = token;
+        ;
     }
 
     /**
@@ -94,7 +94,7 @@ public class LikedSongs extends Fragment {
      */
     // TODO: Rename and change types and number of parameters
     public static LikedSongs newInstance(String param1, String param2) {
-        LikedSongs fragment = new LikedSongs(param1);
+        LikedSongs fragment = new LikedSongs();
         Bundle args = new Bundle();
         args.putString(ARG_PARAM1, param1);
         args.putString(ARG_PARAM2, param2);
@@ -233,6 +233,8 @@ public class LikedSongs extends Fragment {
     //This function makes an API call using previous access token to search for random music
     //It does this based on the track_name entered
     private void search_track(String track_name, String Artist, String url) {
+        String refresh = OnlinePlayerManager.getInstance().getRefresh_token();
+        TokenManager.getInstance().refreshAccessToken(refresh);
         String accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
         if (accesstoken == null) {
             TextView text1 = view.findViewById(R.id.results);

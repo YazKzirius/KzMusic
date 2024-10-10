@@ -50,9 +50,6 @@ public class MainPage extends AppCompatActivity {
         username = sessionManager.getUsername();
         email = sessionManager.getEmail();
         Toast.makeText(this, "Welcome " + username+"!", Toast.LENGTH_SHORT).show();
-        long exp_time = OnlinePlayerManager.getInstance().getExpiration_time();
-        String refresh = OnlinePlayerManager.getInstance().getRefresh_token();
-        schedule_token_refresh(exp_time-300, refresh);
         //Default fragment
         //Setting token refresh time 2 minutes before expiration
         if (savedInstanceState == null) {
@@ -109,17 +106,6 @@ public class MainPage extends AppCompatActivity {
             getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, fragment).commit();
             return true;
         });
-    }
-    public void schedule_token_refresh(long refresh_time, String r) {
-        long refreshTime = System.currentTimeMillis() + refresh_time * 1000;
-        refreshTime = refresh_time/(1000*60);
-        WorkManager workManager = WorkManager.getInstance(this);
-        PeriodicWorkRequest refreshWorkRequest = new PeriodicWorkRequest.Builder(
-                TokenManager.class, refreshTime, TimeUnit.MINUTES)
-                .setInputData(new Data.Builder().putString("refresh", r).build())
-                .build();
-        workManager.enqueueUniquePeriodicWork("TokenRefresh", ExistingPeriodicWorkPolicy.REPLACE, refreshWorkRequest);
-
     }
     //This function checks if a string is only digits
     public boolean isOnlyDigits(String str) {

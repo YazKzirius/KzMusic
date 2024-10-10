@@ -90,9 +90,9 @@ public class Radio extends Fragment {
     private static final String TOKEN_URL = "https://accounts.spotify.com/api/token";
     int REQUEST_CODE = 1337;
 
-    public Radio(String token) {
+    public Radio() {
         // Required empty public constructor
-        this.accesstoken = token;
+        ;
     }
 
     /**
@@ -105,7 +105,7 @@ public class Radio extends Fragment {
      */
     // TODO: Rename and change types and number of parameters
     public static Radio newInstance(String param1, String param2) {
-        Radio fragment = new Radio(param1);
+        Radio fragment = new Radio();
         Bundle args = new Bundle();
         args.putString(ARG_PARAM1, param1);
         args.putString(ARG_PARAM2, param2);
@@ -328,6 +328,8 @@ public class Radio extends Fragment {
 
     //This function searches for random music using API queries and updates the current tracklist
     public void display_random_music() {
+        String refresh = OnlinePlayerManager.getInstance().getRefresh_token();
+        TokenManager.getInstance().refreshAccessToken(refresh);
         accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
         if (accesstoken == null) {
             TextView text1 = view.findViewById(R.id.made_for_user);
@@ -343,6 +345,16 @@ public class Radio extends Fragment {
                     if (response.isSuccessful() && response.body() != null) {
                         musicAdapter.updateTracks(response.body().getTracks().getItems());
                         sessionManager.save_Tracklist_radio(response.body().getTracks().getItems());
+                    } else if (response.code() == 401) { // Handle expired access token
+                        String newRefresh = OnlinePlayerManager.getInstance().getRefresh_token();
+                        TokenManager.getInstance().refreshAccessToken(newRefresh);
+                        String newAccessToken = OnlinePlayerManager.getInstance().getAccess_token();
+                        if (newAccessToken != null) {
+                            display_random_music(); // Retry with new access token
+                        } else {
+                            TextView text1 = view.findViewById(R.id.made_for_user);
+                            text1.setText("Failed to refresh access token, please try again.");
+                        }
                     } else {
                         ;
                     }

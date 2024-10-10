@@ -84,9 +84,9 @@ public class UserMix extends Fragment {
     Boolean shuffle_on = false;
     private long last_position;
 
-    public UserMix(String token) {
+    public UserMix() {
         // Required empty public constructor
-        this.access_token = token;
+        ;
     }
 
     /**
@@ -99,7 +99,7 @@ public class UserMix extends Fragment {
      */
     // TODO: Rename and change types and number of parameters
     public static UserMix newInstance(String param1, String param2) {
-        UserMix fragment = new UserMix(param1);
+        UserMix fragment = new UserMix();
         Bundle args = new Bundle();
         args.putString(ARG_PARAM1, param1);
         args.putString(ARG_PARAM2, param2);
@@ -397,6 +397,8 @@ public class UserMix extends Fragment {
     }
     //This function searches for random music using API queries and updates the current tracklist
     public void display_generated_music(String artist) {
+        String refresh = OnlinePlayerManager.getInstance().getRefresh_token();
+        TokenManager.getInstance().refreshAccessToken(refresh);
         access_token = OnlinePlayerManager.getInstance().getAccess_token();
         if (access_token == null) {
             TextView text1 = view.findViewById(R.id.made_for_user);

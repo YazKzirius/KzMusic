@@ -45,8 +45,6 @@ public class HomeFragment extends Fragment {
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
-    String accesstoken;
-    String refresh;
     View view;
     SessionManager sessionManager;
     String email;
@@ -125,8 +123,6 @@ public class HomeFragment extends Fragment {
         text1.setText(username+" radio:");
         text3.setText(username+" mix");
         text4.setText(username+" Top 10");
-        //Getting token
-        accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
         //Setting up Homepage and getting given accesstoken
         set_up_buttons();
         set_up_spotify_play();
@@ -183,7 +179,7 @@ public class HomeFragment extends Fragment {
         button1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Fragment newFragment = new Radio(accesstoken);
+                Fragment newFragment = new Radio();
                 FragmentManager fragmentManager = getParentFragmentManager();
                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                 fragmentTransaction.replace(R.id.fragment_container, newFragment);
@@ -194,7 +190,7 @@ public class HomeFragment extends Fragment {
         button2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Fragment newFragment = new Top10Songs(accesstoken);
+                Fragment newFragment = new Top10Songs();
                 FragmentManager fragmentManager = getParentFragmentManager();
                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                 fragmentTransaction.replace(R.id.fragment_container, newFragment);
@@ -205,7 +201,7 @@ public class HomeFragment extends Fragment {
         button3.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Fragment newFragment = new UserMix(accesstoken);
+                Fragment newFragment = new UserMix();
                 FragmentManager fragmentManager = getParentFragmentManager();
                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                 fragmentTransaction.replace(R.id.fragment_container, newFragment);

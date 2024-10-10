@@ -21,26 +21,24 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-public class TokenManager extends Worker {
+public class TokenManager {
+    private static TokenManager instance;
     String CLIENT_ID = "21dc131ad4524c6aae75a9d0256b1b70";
     String CLIENT_SECRET = "7c15410b4f714a839cc3ad8f661a6513";
     String REDIRECT_URI = "kzmusic://callback";
     private static final String AUTH_URL = "https://accounts.spotify.com/authorize";
     private static final String TOKEN_URL = "https://accounts.spotify.com/api/token";
     int REQUEST_CODE = 1337;
-    public TokenManager(@NonNull Context context, @NonNull WorkerParameters params) {
-        super(context, params);
+    public static synchronized TokenManager getInstance() {
+        if (instance == null) {
+            instance = new TokenManager();
+        }
+        return instance;
     }
-
-    @NonNull
-    @Override
-    public Result doWork() {
-        String token = getInputData().getString("refresh");
-        refreshAccessToken(token);
-        return Result.success();
+    private TokenManager() {
+       ;
     }
-
-    private void refreshAccessToken(String refresh) {
+    public void refreshAccessToken(String refresh) {
         if (refresh != null) {
             OkHttpClient client = new OkHttpClient();
 
@@ -74,8 +72,6 @@ public class TokenManager extends Worker {
                             long newExpirationTime = json.getLong("expires_in");
                             OnlinePlayerManager.getInstance().setAccess_token(newAccessToken);
                             OnlinePlayerManager.getInstance().setExpiration_time(newExpirationTime);
-                            // Schedule the next token refresh
-                            scheduleNextTokenRefresh(newExpirationTime - 300, refresh);
 
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -91,14 +87,5 @@ public class TokenManager extends Worker {
         } else {
             // Handle null refresh token
         }
-    }
-
-    private void scheduleNextTokenRefresh(long refreshTime, String r) {
-        WorkManager workManager = WorkManager.getInstance(getApplicationContext());
-        PeriodicWorkRequest refreshWorkRequest = new PeriodicWorkRequest.Builder(
-                TokenManager.class, refreshTime, TimeUnit.SECONDS)
-                .setInputData(new Data.Builder().putString("refresh", r).build())
-                .build();
-        workManager.enqueueUniquePeriodicWork("TokenRefresh", ExistingPeriodicWorkPolicy.REPLACE, refreshWorkRequest);
     }
 }

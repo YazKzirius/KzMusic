@@ -60,7 +60,6 @@ public class LibraryFragment extends Fragment {
     PlayerService playerService;
     Boolean isBound;
     ServiceConnection serviceConnection;
-    String token;
     private long last_position;
 
     public LibraryFragment() {
@@ -104,8 +103,6 @@ public class LibraryFragment extends Fragment {
         Artist = view.findViewById(R.id.current_song_artist);
         ic_down = view.findViewById(R.id.up_button);
         playback_bar = view.findViewById(R.id.playback_bar);
-        //Getting token
-        token = OnlinePlayerManager.getInstance().getAccess_token();
         //Setting up bottom playback navigator
         set_up_spotify_play();
         set_up_play_bar();
@@ -287,7 +284,7 @@ public class LibraryFragment extends Fragment {
         button2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Fragment liked = new LikedSongs(token);
+                Fragment liked = new LikedSongs();
                 FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                 fragmentTransaction.replace(R.id.fragment_container, liked);
