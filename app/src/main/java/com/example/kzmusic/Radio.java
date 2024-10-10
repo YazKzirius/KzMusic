@@ -325,7 +325,11 @@ public class Radio extends Fragment {
             }
         });
     }
-
+    //This function navigates to a new activity given parameters
+    public void navigate_to_activity(Class <?> target) {
+        Intent intent = new Intent(getContext(), target);
+        startActivity(intent);
+    }
     //This function searches for random music using API queries and updates the current tracklist
     public void display_random_music() {
         String refresh = OnlinePlayerManager.getInstance().getRefresh_token();
@@ -346,15 +350,7 @@ public class Radio extends Fragment {
                         musicAdapter.updateTracks(response.body().getTracks().getItems());
                         sessionManager.save_Tracklist_radio(response.body().getTracks().getItems());
                     } else if (response.code() == 401) { // Handle expired access token
-                        String newRefresh = OnlinePlayerManager.getInstance().getRefresh_token();
-                        TokenManager.getInstance().refreshAccessToken(newRefresh);
-                        String newAccessToken = OnlinePlayerManager.getInstance().getAccess_token();
-                        if (newAccessToken != null) {
-                            display_random_music(); // Retry with new access token
-                        } else {
-                            TextView text1 = view.findViewById(R.id.made_for_user);
-                            text1.setText("Failed to refresh access token, please try again.");
-                        }
+                        navigate_to_activity(GetStarted.class);
                     } else {
                         ;
                     }

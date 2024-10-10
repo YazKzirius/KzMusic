@@ -101,6 +101,7 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
             }
         });
     }
+    //This function shows pop up menu when menu button is clicked
     private void showPopupMenu(View view) {
         PopupMenu popupMenu = new PopupMenu(context, view);
         MenuInflater inflater = popupMenu.getMenuInflater();

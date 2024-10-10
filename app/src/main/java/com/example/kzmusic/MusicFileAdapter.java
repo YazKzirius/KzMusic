@@ -6,9 +6,13 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.os.Bundle;
 import android.widget.Toast;
@@ -63,6 +67,13 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
             new_position = SongQueue.getInstance().song_list.indexOf(musicFile);;
         } else {
             new_position = holder.getLayoutPosition();
+            holder.menu.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showPopupMenu(v);
+
+                }
+            });
         }
         holder.nameTextView.setText(new_position+1+". "+format_title(musicFile.getName()));
         holder.artistTextView.setText(musicFile.getArtist().replaceAll("/",", "));
@@ -101,6 +112,30 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
                 currentlyPlayingHolder = holder;
             }
         });
+    }
+    //This function shows pop up menu when button is clicked
+    private void showPopupMenu(View view) {
+        PopupMenu popupMenu = new PopupMenu(context, view);
+        MenuInflater inflater = popupMenu.getMenuInflater();
+        inflater.inflate(R.menu.song_menu, popupMenu.getMenu());
+        popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                switch (item.getItemId()) {
+                    case R.id.menu_go_to_artist:
+                        Toast.makeText(context, "Go to artist selected", Toast.LENGTH_SHORT).show();
+                        // Add your logic here
+                        return true;
+                    case R.id.menu_go_to_album:
+                        Toast.makeText(context, "Go to album selected", Toast.LENGTH_SHORT).show();
+                        // Add your logic here
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        });
+        popupMenu.show();
     }
     //This function formats song title display
     //Removes unnecessary data from title
@@ -159,12 +194,16 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
         TextView nameTextView;
         TextView artistTextView;
         ImageView albumImageView;
+        ImageButton menu;
 
         public MusicViewHolder(@NonNull View itemView) {
             super(itemView);
             nameTextView = itemView.findViewById(R.id.track_name);
             artistTextView = itemView.findViewById(R.id.artist_name);
             albumImageView = itemView.findViewById(R.id.album_image);
+            if (SongQueue.getInstance().current_resource == R.layout.item_song2) {
+                menu = itemView.findViewById(R.id.menu_btn);
+            }
         }
 
     }

@@ -20,9 +20,12 @@ import android.provider.MediaStore;
 
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.graphics.Bitmap;
@@ -173,9 +176,20 @@ public class MediaOverlay extends Fragment {
         set_up_speed_and_pitch();
         //Setting up reverberation seekbar functionality
         set_up_reverb();
+        //Setting up menu
+        set_up_pop_menu();
         return view;
     }
-
+    //This button sets up pop up menu display
+    public void set_up_pop_menu() {
+        ImageButton menu = view.findViewById(R.id.menu_btn2);
+        menu.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showPopupMenu(v);
+            }
+        });
+    }
     //This function sets up music image view
     public void set_up_circular_view(MusicFile file) {
         // Load album image
@@ -817,6 +831,30 @@ public class MediaOverlay extends Fragment {
             handler.removeCallbacks(runnable);
         }
 
+    }
+    //This function shows pop up menu when button is clicked
+    private void showPopupMenu(View view) {
+        PopupMenu popupMenu = new PopupMenu(getContext(), view);
+        MenuInflater inflater = popupMenu.getMenuInflater();
+        inflater.inflate(R.menu.song_menu, popupMenu.getMenu());
+        popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                switch (item.getItemId()) {
+                    case R.id.menu_go_to_artist:
+                        Toast.makeText(getContext(), "Go to artist selected", Toast.LENGTH_SHORT).show();
+                        // Add your logic here
+                        return true;
+                    case R.id.menu_go_to_album:
+                        Toast.makeText(getContext(), "Go to album selected", Toast.LENGTH_SHORT).show();
+                        // Add your logic here
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        });
+        popupMenu.show();
     }
     private void startPlayerService() {
         Intent intent = new Intent(requireContext(), PlayerService.class);

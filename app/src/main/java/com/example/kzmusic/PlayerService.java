@@ -29,8 +29,10 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
+import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
+import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
 
@@ -407,7 +409,15 @@ public class PlayerService extends Service {
         table.update_song_duration(email, display_title, (int) (duration/(1000 * SongQueue.getInstance().speed)));
         table.close();
     }
-    //This function enables end of song skipping for endless streaming
+    //This function simulates end of song
+    public void simulateEndOfSong() {
+        // Call this method to simulate the end of a song
+        OfflinePlayerManager.getInstance().current_player.stop();
+        OfflinePlayerManager.getInstance().current_player.seekTo(OfflinePlayerManager.getInstance().current_player.getDuration());
+        OfflinePlayerManager.getInstance().current_player.release();
+    }
+
+        //This function enables end of song skipping for endless streaming
     public void enable_endless_stream() {
         Random rand = new Random();
         //Track list
@@ -415,9 +425,13 @@ public class PlayerService extends Service {
         List<Integer> positions = new ArrayList<>();
         //Adding player listener
         OfflinePlayerManager.getInstance().current_player.addListener(new Player.Listener() {
+
             @Override
             public void onPlaybackStateChanged(int playbackState) {
                 if (playbackState == Player.STATE_ENDED) {
+                    simulateEndOfSong();
+                    OfflinePlayerManager.getInstance().current_player.stop();
+                    OfflinePlayerManager.getInstance().current_player.release();
                     int pos;
                     if (SongQueue.getInstance().current_position == SongQueue.getInstance().song_list.size() - 1 &&
                             SongQueue.getInstance().shuffle_on != true) {
@@ -443,6 +457,11 @@ public class PlayerService extends Service {
                 }  else {
                     ;
                 }
+            }
+            @Override
+            public void onPlayerError(PlaybackException error) {
+                Player.Listener.super.onPlayerError(error);
+                Toast.makeText(getApplicationContext(), "error", Toast.LENGTH_SHORT).show();
             }
         });
     }
