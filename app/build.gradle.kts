@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.androidApplication)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -73,5 +74,8 @@ dependencies {
     implementation("com.google.android.gms:play-services-mlkit-face-detection:17.1.0")
     //Worker implementation
     implementation("androidx.work:work-runtime:2.7.1")
+    //Google firebase
+    implementation(platform("com.google.firebase:firebase-bom:33.4.0"))
+    implementation("com.google.firebase:firebase-analytics")
 
 }
