@@ -1,5 +1,6 @@
 package com.example.kzmusic;
 
+//Imports
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
@@ -36,6 +37,8 @@ import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
 
+
+//Song player service / Media notification class
 public class PlayerService extends Service {
 
     String CHANNEL_ID = "player_channel_id";
