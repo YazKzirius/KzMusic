@@ -26,6 +26,7 @@ public class SongQueue {
     long last_postion = 0;
     int pointer = 0;
     int current_resource;
+    int audio_session_id;
     private SongQueue() {
         this.songs_played = new ArrayList<>();
 
@@ -78,6 +79,14 @@ public class SongQueue {
 
     public void setLast_postion(long last_postion) {
         this.last_postion = last_postion;
+    }
+
+    public void setAudio_session_id(int audio_session_id) {
+        this.audio_session_id = audio_session_id;
+    }
+
+    public int getAudio_session_id() {
+        return audio_session_id;
     }
 
     public long getLast_postion() {

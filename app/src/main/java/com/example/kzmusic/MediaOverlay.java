@@ -163,11 +163,8 @@ public class MediaOverlay extends Fragment {
         position = SongQueue.getInstance().current_position;
         is_looping = SongQueue.getInstance().is_looping;
         shuffle_on = SongQueue.getInstance().shuffle_on;
-        song_speed = SongQueue.getInstance().speed;
-        song_pitch = SongQueue.getInstance().pitch;
-        reverb_level = SongQueue.getInstance().reverb_level;
         //Playing music
-        playMusic(musicFile);
+        set_up_view(musicFile);
         //Loading previous music files
         loadMusicFiles();
         //Setting up media buttons
@@ -232,6 +229,8 @@ public class MediaOverlay extends Fragment {
             public void onServiceConnected(ComponentName name, IBinder service) {
                 PlayerService.LocalBinder binder = (PlayerService.LocalBinder) service;
                 playerService = binder.getService();
+                //Playing new song
+                playerService.playMusic(musicFile);
                 //This updates notifcation ui every new call
                 playerService.updateNotification(musicFile);
                 isBound = true;
@@ -259,11 +258,7 @@ public class MediaOverlay extends Fragment {
                 if (shouldSkip != null && shouldSkip) {
                     // Handle the skip event in the fragment
                     musicFile = SongQueue.getInstance().current_song;
-                    position = SongQueue.getInstance().current_position;
                     player = OfflinePlayerManager.getInstance().current_player;
-                    //Initializing song properties
-                    session_id = player.getAudioSessionId();
-                    apply_audio_effect();
                     //Initializing reverb from Song manager class
                     String display_title = format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", ");
                     overlaySongTitle.setText(display_title);
@@ -319,6 +314,36 @@ public class MediaOverlay extends Fragment {
                 }
             }
         });
+        //Setting up for End events
+        sharedViewModel.getEndEvent().observe(getViewLifecycleOwner(), event -> {
+            if (event != null) {
+                Boolean End = event.getContentIfNotHandled();
+                if (End != null && End) {
+                    // Handle the skip event in the fragment
+                    musicFile = SongQueue.getInstance().current_song;
+                    //Initializing reverb from Song manager class
+                    String display_title = format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", ");
+                    //Adding song to database
+                    SessionManager sessionManager = new SessionManager(getContext());
+                    String email = sessionManager.getEmail();
+                    UsersTable table = new UsersTable(getContext());
+                    table.open();
+                    if (table.song_added(email, display_title) == true) {
+                        table.update_song_times_played(email, display_title);
+                    } else {
+                        table.add_new_song(email, display_title);
+                    }
+                    table.close();
+                }
+            }
+        });
+        //Setting up for seekbar events
+        sharedViewModel.getUpdateEvent().observe(getViewLifecycleOwner(), event -> {
+            if (event != null) {
+               set_up_bar();
+            }
+        });
+
 
     }
     //This function updates the total duration field in SQL database
@@ -339,51 +364,61 @@ public class MediaOverlay extends Fragment {
     //This function sets up and implements button functionality
     public void set_up_media_buttons() {
         //Pause/play functionality
-        btnPlayPause.setOnClickListener(v -> {
-            if (player.isPlaying()) {
-                player.pause();
-                //Update duration in database
-                update_total_duration();
-                // Stop the GIF by clearing the ImageView
-                Glide.with(getContext()).clear(song_gif);
-                song_gif.setImageDrawable(null);
-                //Updating service state
-                playerService.updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
-                playerService.showNotification(playerService.stateBuilder.build());
-                btnPlayPause.setImageResource(R.drawable.ic_play);
-            } else {
-                player.play();
-                //Updating service state
-                playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
-                playerService.showNotification(playerService.stateBuilder.build());
-                btnPlayPause.setImageResource(R.drawable.ic_pause);
-                set_up_circular_view(musicFile);
+        btnPlayPause.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (player.isPlaying()) {
+                    player.pause();
+                    //Update duration in database
+                    update_total_duration();
+                    // Stop the GIF by clearing the ImageView
+                    Glide.with(getContext()).clear(song_gif);
+                    song_gif.setImageDrawable(null);
+                    //Updating service state
+                    playerService.updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
+                    playerService.showNotification(playerService.stateBuilder.build());
+                    btnPlayPause.setImageResource(R.drawable.ic_play);
+                } else {
+                    player.play();
+                    //Updating service state
+                    playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
+                    playerService.showNotification(playerService.stateBuilder.build());
+                    btnPlayPause.setImageResource(R.drawable.ic_pause);
+                    set_up_circular_view(musicFile);
+                }
             }
         });
         //Loop functionality
         //If loop was on previously, keep loop on otherwise, continue
         if (is_looping == true) {
             //Setting repeat mode on and replacing icon
-            player.setRepeatMode(ExoPlayer.REPEAT_MODE_ONE);
             SongQueue.getInstance().setIs_looping(true);
+            playerService.updatePlaybackState(PlaybackStateCompat.REPEAT_MODE_ONE);
+            playerService.updateNotification(musicFile);
             btnLoop.setImageResource(R.drawable.ic_loop_on);
         } else {
             //Setting repeat mode off and replacing icon
-            player.setRepeatMode(ExoPlayer.REPEAT_MODE_OFF);
             SongQueue.getInstance().setIs_looping(false);
             btnLoop.setImageResource(R.drawable.ic_loop);
         }
         //Loop button click functionality
-        btnLoop.setOnClickListener(v -> {
-            is_looping = !is_looping;
-            if (is_looping == true) {
-                player.setRepeatMode(ExoPlayer.REPEAT_MODE_ONE);
-                SongQueue.getInstance().setIs_looping(true);
-                btnLoop.setImageResource(R.drawable.ic_loop_on);
-            } else {
-                player.setRepeatMode(ExoPlayer.REPEAT_MODE_OFF);
-                SongQueue.getInstance().setIs_looping(false);
-                btnLoop.setImageResource(R.drawable.ic_loop);
+        btnLoop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Loop functionality
+                is_looping = !is_looping;
+                //If loop was on previously, keep loop on otherwise, continue
+                if (is_looping == true) {
+                    //Setting repeat mode on and replacing icon
+                    playerService.updatePlaybackState(PlaybackStateCompat.REPEAT_MODE_ONE);
+                    playerService.updateNotification(musicFile);
+                    SongQueue.getInstance().setIs_looping(true);
+                    btnLoop.setImageResource(R.drawable.ic_loop_on);
+                } else {
+                    //Setting repeat mode off and replacing icon
+                    SongQueue.getInstance().setIs_looping(false);
+                    btnLoop.setImageResource(R.drawable.ic_loop);
+                }
             }
         });
         //Skip button functionality
@@ -455,38 +490,11 @@ public class MediaOverlay extends Fragment {
             }
         });
 
-
     }
 
     //This function sets up and implements a live rewind seekbar
     public void set_up_bar() {
-        //Seekbar functionality
-        player.addListener(new Player.Listener() {
-            @Override
-            public void onIsPlayingChanged(boolean isPlaying) {
-                if (isPlaying) {
-                    startSeekBarUpdate();
-                } else {
-                    stopSeekBarUpdate();
-                }
-            }
-
-            @Override
-            public void onPlaybackStateChanged(int state) {
-                if (state == Player.STATE_READY) {
-                    long duration = player.getDuration();
-                    if (formatTime(duration) == textTotalDuration.getText()) {
-                        ;
-                    } else {
-                        textTotalDuration.setText(formatTime(duration));
-                    }
-                    seekBar.setMax((int) duration);
-                } else {
-                    // Handle unknown duration case, possibly set to live stream duration handling
-                    textTotalDuration.setText("0:00");
-                }
-            }
-        });
+        startSeekBarUpdate();
         //If player is already ready then, initialize differently for bottom navigation bar opening
         if (player.getPlaybackState() == Player.STATE_READY) {
             long duration = player.getDuration();
@@ -499,12 +507,6 @@ public class MediaOverlay extends Fragment {
         } else {
             // Handle unknown duration case, possibly set to live stream duration handling
             textTotalDuration.setText("0:00");
-        }
-        //Checking if player is currently playing already
-        if (player.isPlaying()) {;
-            startSeekBarUpdate();
-        } else {
-            stopSeekBarUpdate();
         }
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -529,66 +531,20 @@ public class MediaOverlay extends Fragment {
     }
 
     //This function plays the specified music file
-    private void playMusic(MusicFile musicFile) {
-        //Playing resuming song at previous duration if the same song as last
-        if (SongQueue.getInstance().get_size() > 1) {
-            int index = SongQueue.getInstance().pointer - 1;
-            //Getting current and previous song names
-            String s1 = musicFile.getName();
-            String s2 = SongQueue.getInstance().get_specified(index - 1).getName();
-            if (s1.equals(s2)) {
-                //Resuming at left point
-                //Use previous player
-                player = OfflinePlayerManager.getInstance().current_player;
-                last_position = player.getCurrentPosition();
-                SongQueue.getInstance().setLast_postion(last_position);
-                //Resuming at left point
-                if (player.isPlaying()) {
-                    startSeekBarUpdate();
-                }
-            } else {
-                OfflinePlayerManager.getInstance().stopAllPlayers();
-                player = new ExoPlayer.Builder(getContext()).build();
-                Uri uri = Uri.fromFile(new File(musicFile.getPath()));
-                MediaItem mediaItem = MediaItem.fromUri(uri);
-                player.setMediaItem(mediaItem);
-            }
-        } else {
-            player = new ExoPlayer.Builder(getContext()).build();
-            Uri uri = Uri.fromFile(new File(musicFile.getPath()));
-            MediaItem mediaItem = MediaItem.fromUri(uri);
-            player.setMediaItem(mediaItem);
-        }
-        //Initializing song properties
-        session_id = player.getAudioSessionId();
-        //Initializing reverb from Song manager class
-        String display_title = format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", ");
-        //Applying audio effects
-        apply_audio_effect();
-        player.prepare();
-        player.play();
-        overlaySongTitle.setText(display_title);
-        //Displaying circular view
-        set_up_circular_view(musicFile);
-        //Adds player to Player session manager
-        OfflinePlayerManager.getInstance().addPlayer(player);
-        OfflinePlayerManager.getInstance().setCurrent_player(player);
-        //Setting up seekbar
-        set_up_bar();
+    private void set_up_view(MusicFile musicFile) {
         //Setting up notification
         startPlayerService();
         set_up_skipping();
-        //Adding song to database
-        SessionManager sessionManager = new SessionManager(getContext());
-        String email = sessionManager.getEmail();
-        UsersTable table = new UsersTable(getContext());
-        table.open();
-        if (table.song_added(email, display_title) == true) {
-            table.update_song_times_played(email, display_title);
-        } else {
-            table.add_new_song(email, display_title);
-        }
-        table.close();
+        player = OfflinePlayerManager.getInstance().current_player;
+        //Initializing song properties
+        session_id = SongQueue.getInstance().getAudio_session_id();
+        apply_audio_effect();
+        //Initializing reverb from Song manager class
+        String display_title = format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", ");
+        //Applying audio effects
+        overlaySongTitle.setText(display_title);
+        //Displaying circular view
+        set_up_circular_view(musicFile);
     }
 
     //This function checks if a string is only digits
@@ -629,21 +585,21 @@ public class MediaOverlay extends Fragment {
     //This function assigns audio effects to the exoplayer like speed/reverb
     public void apply_audio_effect() {
         //Initialising reverb settings
-        SongQueue.getInstance().initialize_reverb(session_id);
         reverb = SongQueue.getInstance().reverb;
+        song_speed = SongQueue.getInstance().speed;
+        song_pitch = SongQueue.getInstance().pitch;
+        reverb_level = SongQueue.getInstance().reverb_level;
         //Setting playback speed properties
-        player.setPlaybackParameters(new PlaybackParameters(song_speed, song_pitch));
-        speed_text.setText(String.format("Speed + pitch: %.1fx", song_speed));
         //Setting up speed+pitch seekbar
         seekBarSpeed.setMax(200);
         seekBarSpeed.setMin(50);
         seekBarSpeed.setProgress((int) (song_speed * 100));
-        //Setting reverberation properties
-        setReverbPreset(reverb_level);
+        speed_text.setText(String.format("Speed + pitch: %.1fx", song_speed));
         //Setting reverb bar to lowest
         seekBarReverb.setMax(1000);
         seekBarReverb.setMin(-1000);
         seekBarReverb.setProgress(reverb_level);
+        setReverbPreset(reverb_level);
     }
 
     //This function updates the seekbar based on the duration of song
@@ -807,20 +763,19 @@ public class MediaOverlay extends Fragment {
     private void setReverbPreset(int progress) {
         //Computing reverberation parameters based of reverb level data proportionality
         try {
-            int room_level = -2000 + (progress + 1000);
-            double decay_level = 10000;
-            reverb.setReverbLevel((short) progress);
-            reverb.setDecayTime((int) decay_level);
-            reverb.setRoomLevel((short) room_level);
-            reverb.setEnabled(true);
             //Estimating percentage of seekbar complete
             double percentage = ((double) (progress + 1000) / 2000) * 100;
             reverb_level = progress;
             reverb_text.setText("Reverberation: " + (int) percentage / 2 + "%");
             seekBar.setProgress(progress);
             SongQueue.getInstance().setReverb_level(reverb_level);
+            if (playerService != null) {
+                playerService.setReverbPreset(progress);
+            } else {
+                ;
+            }
         } catch (Exception e) {
-            Toast.makeText(getContext(), "Something went wrong with audio effects", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
     @Override

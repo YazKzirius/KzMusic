@@ -66,6 +66,7 @@ public class PlayerService extends Service {
         }
         //Updating channel ID settings
         SongQueue.getInstance().update_id();
+        //Playing the song
         NOTIFICATION_ID = SongQueue.getInstance().NOTIFICATION_ID;
         CHANNEL_ID += NOTIFICATION_ID;
         createNotificationChannel();
@@ -99,14 +100,17 @@ public class PlayerService extends Service {
         }
         //Initializing song properties
         session_id = player.getAudioSessionId();
+
         String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
+        //Adds player to Player session manager
+        OfflinePlayerManager.getInstance().addPlayer(player);
+        OfflinePlayerManager.getInstance().setCurrent_player(player);
+        SongQueue.getInstance().setAudio_session_id(session_id);
+        enable_endless_stream();
         //Applying audio effects
         apply_audio_effect();
         player.prepare();
         player.play();
-        //Adds player to Player session manager
-        OfflinePlayerManager.getInstance().addPlayer(player);
-        OfflinePlayerManager.getInstance().setCurrent_player(player);
         //Adding song to database
         SessionManager sessionManager = new SessionManager(getApplicationContext());
         String email = sessionManager.getEmail();
@@ -130,7 +134,7 @@ public class PlayerService extends Service {
         setReverbPreset(SongQueue.getInstance().reverb_level);
     }
     //This function sets reverb level based on seekbar progress level
-    private void setReverbPreset(int progress) {
+    public void setReverbPreset(int progress) {
         //Computing reverberation parameters based of reverb level data proportionality
         try {
             int room_level = -2000 + (progress + 1000);
@@ -149,6 +153,12 @@ public class PlayerService extends Service {
             sharedViewModel.triggerSkipEvent();
         }
     }
+    public void handleEnd() {
+        // Trigger the End event in the ViewModel
+        if (sharedViewModel != null) {
+            sharedViewModel.triggerEndEvent();
+        }
+    }
     public void handlePause() {
         // Trigger the skip event in the ViewModel
         if (sharedViewModel != null) {
@@ -161,7 +171,18 @@ public class PlayerService extends Service {
             sharedViewModel.triggerPlayEvent();
         }
     }
-
+    public void handleUpdate() {
+        // Trigger the skip event in the ViewModel
+        if (sharedViewModel != null) {
+            sharedViewModel.triggerUpdateEvent();
+        }
+    }
+    public void handleStop() {
+        // Trigger the skip event in the ViewModel
+        if (sharedViewModel != null) {
+            sharedViewModel.triggerStopEvent();
+        }
+    }
     public void setViewModel(SharedViewModel viewModel) {
         this.sharedViewModel = viewModel;
     }
@@ -286,7 +307,13 @@ public class PlayerService extends Service {
     }
 
     public void updatePlaybackState(int state) {
-        stateBuilder.setState(state, 0, 1.0f);
+        //Checking if state is on repeat and implementing functionality
+        if (state == PlaybackStateCompat.REPEAT_MODE_ONE) {
+            OfflinePlayerManager.getInstance().current_player.setRepeatMode(Player.REPEAT_MODE_ONE);
+            stateBuilder.setState(stateBuilder.build().getState(), 0, 1.0f);
+        } else {
+            stateBuilder.setState(state, 0, 1.0f);
+        }
         mediaSession.setPlaybackState(stateBuilder.build());
     }
 
@@ -394,8 +421,6 @@ public class PlayerService extends Service {
                 startForeground(NOTIFICATION_ID, builder.build());
             }
         });
-        //Enable endless stream
-        enable_endless_stream();
     }
     public void update_total_duration() {
         last_position = SongQueue.getInstance().getLast_postion();
@@ -417,25 +442,32 @@ public class PlayerService extends Service {
         OfflinePlayerManager.getInstance().current_player.release();
     }
 
-        //This function enables end of song skipping for endless streaming
+    //This function enables end of song skipping for endless streaming
     public void enable_endless_stream() {
         Random rand = new Random();
-        //Track list
-        List<MusicFile> tracks = new ArrayList<>();
-        List<Integer> positions = new ArrayList<>();
         //Adding player listener
         OfflinePlayerManager.getInstance().current_player.addListener(new Player.Listener() {
+            @Override
+            public void onIsPlayingChanged(boolean isPlaying) {
+                if (isPlaying) {
+                    handleUpdate();
+                } else {
+                    handleStop();
+                }
+            }
 
             @Override
             public void onPlaybackStateChanged(int playbackState) {
                 if (playbackState == Player.STATE_ENDED) {
                     simulateEndOfSong();
-                    OfflinePlayerManager.getInstance().current_player.stop();
-                    OfflinePlayerManager.getInstance().current_player.release();
                     int pos;
+                    MusicFile song;
+                    //Handling event of reaching last song
                     if (SongQueue.getInstance().current_position == SongQueue.getInstance().song_list.size() - 1 &&
                             SongQueue.getInstance().shuffle_on != true) {
-                        ;
+                        update_total_duration();
+                        pos = 0;
+                        song = SongQueue.getInstance().song_list.get(pos);
                     } else {
                         update_total_duration();
                         if (SongQueue.getInstance().shuffle_on != true) {
@@ -443,25 +475,31 @@ public class PlayerService extends Service {
                         } else {
                             pos = rand.nextInt(SongQueue.getInstance().song_list.size());
                         }
-                        MusicFile file = SongQueue.getInstance().song_list.get(pos);
-                        tracks.add(file);
-                        positions.add(pos);
-                        MusicFile song = tracks.get(0);
-                        int i = positions.get(0);
-                        SongQueue.getInstance().addSong(song);
-                        SongQueue.getInstance().setPosition(i);
-                        updateNotification(song);
-                        playMusic(song);
-                        handleSkip();
+                        //Checking if next song is the same song and handling exception accordingly
+                        song = SongQueue.getInstance().song_list.get(pos);
+                        if (song.getName().equals(SongQueue.getInstance().current_song.getName())) {
+                            if (SongQueue.getInstance().shuffle_on != true) {
+                                pos += 1;
+                                song = SongQueue.getInstance().song_list.get(pos);
+                            } else {
+                                while (song == SongQueue.getInstance().current_song) {
+                                    pos = rand.nextInt(SongQueue.getInstance().song_list.size());
+                                    song = SongQueue.getInstance().song_list.get(pos);
+                                }
+                            }
+                        } else {
+                            ;
+                        }
                     }
+                    //Skipping song
+                    SongQueue.getInstance().addSong(song);
+                    SongQueue.getInstance().setPosition(pos);
+                    updateNotification(song);
+                    playMusic(song);
+                    handleEnd();
                 }  else {
                     ;
                 }
-            }
-            @Override
-            public void onPlayerError(PlaybackException error) {
-                Player.Listener.super.onPlayerError(error);
-                Toast.makeText(getApplicationContext(), "error", Toast.LENGTH_SHORT).show();
             }
         });
     }
