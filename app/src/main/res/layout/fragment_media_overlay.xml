@@ -170,12 +170,12 @@
             android:max="200"
             android:progress="100"
             android:paddingEnd="8dp"
-            android:layout_marginTop="25dp"/>
+            android:layout_marginTop="10dp"/>
         <TextView
             android:id="@+id/speed_text"
             android:layout_width="wrap_content"
             android:layout_height="20dp"
-            android:text="Speed + pitch: 1.0x"
+            android:text="1.0x"
             android:textSize="15sp"
             android:textColor="@color/white"/>
 
@@ -186,7 +186,7 @@
             android:max="200"
             android:progress="100"
             android:paddingEnd="8dp"
-            android:layout_marginTop="40dp"/>
+            android:layout_marginTop="35dp"/>
         <TextView
             android:id="@+id/reverb_text"
             android:layout_width="wrap_content"

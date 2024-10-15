@@ -253,8 +253,6 @@ public class Top10Songs extends Fragment {
     //This function makes an API call using previous access token to search for random music
     //It does this based on the track_name entered
     private void search_track(String track_name, String Artist) {
-        String refresh = OnlinePlayerManager.getInstance().getRefresh_token();
-        TokenManager.getInstance().refreshAccessToken(refresh);
         String accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
         if (accesstoken == null)  {
             ;
@@ -289,6 +287,9 @@ public class Top10Songs extends Fragment {
                             sort_track_list();
                         }
                         //Checking for more than One of the same track
+                    } else if (response.code() == 401) { // Handle expired access token
+                        String refresh = OnlinePlayerManager.getInstance().getRefresh_token();
+                        TokenManager.getInstance().refreshAccessToken(refresh);
                     } else {
                         ;
                     }

@@ -163,6 +163,10 @@ public class MediaOverlay extends Fragment {
         position = SongQueue.getInstance().current_position;
         is_looping = SongQueue.getInstance().is_looping;
         shuffle_on = SongQueue.getInstance().shuffle_on;
+        //Setting up notification
+        startPlayerService();
+        //Setting up skipping;
+        set_up_skipping();
         //Playing music
         set_up_view(musicFile);
         //Loading previous music files
@@ -431,7 +435,7 @@ public class MediaOverlay extends Fragment {
                 if (shuffle_on == false) {
                     //Handling the event that current song is top of recycler view
                     if (position == 0) {
-                        ;
+                        position = musicFiles.size() - 1;
                     } else {
                         position -= 1;
                     }
@@ -439,8 +443,14 @@ public class MediaOverlay extends Fragment {
                     position = rand.nextInt(musicFiles.size());
                 }
                 musicFile = musicFiles.get(position);
+                //Updating total song duration in database
+                update_total_duration();
+                //Adding new song to queue
+                SongQueue.getInstance().addSong(musicFile);
+                SongQueue.getInstance().setPosition(position);
                 playerService.updateNotification(musicFile);
-                open_new_overlay();
+                playerService.playMusic(musicFile);
+                set_up_view(musicFile);
             }
         });
         btnSkip_right.setOnClickListener(new View.OnClickListener() {
@@ -451,7 +461,7 @@ public class MediaOverlay extends Fragment {
                 if (shuffle_on == false) {
                     //Handling the event that it's the last song in the recycler view
                     if (position == musicFiles.size() - 1) {
-                        ;
+                        position = 0;
                     } else {
                         position += 1;
                     }
@@ -459,8 +469,14 @@ public class MediaOverlay extends Fragment {
                     position = rand.nextInt(musicFiles.size());
                 }
                 musicFile = musicFiles.get(position);
+                //Updating total song duration in database
+                update_total_duration();
+                //Adding new song to queue
+                SongQueue.getInstance().addSong(musicFile);
+                SongQueue.getInstance().setPosition(position);
                 playerService.updateNotification(musicFile);
-                open_new_overlay();
+                playerService.playMusic(musicFile);
+                set_up_view(musicFile);
             }
         });
         //Implementing shuffle button functionality
@@ -531,17 +547,14 @@ public class MediaOverlay extends Fragment {
     }
 
     //This function plays the specified music file
-    private void set_up_view(MusicFile musicFile) {
-        //Setting up notification
-        startPlayerService();
-        set_up_skipping();
+    private void set_up_view(MusicFile musicFile) {;
         player = OfflinePlayerManager.getInstance().current_player;
         //Initializing song properties
         session_id = SongQueue.getInstance().getAudio_session_id();
-        apply_audio_effect();
         //Initializing reverb from Song manager class
         String display_title = format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", ");
         //Applying audio effects
+        apply_audio_effect();
         overlaySongTitle.setText(display_title);
         //Displaying circular view
         set_up_circular_view(musicFile);
@@ -594,7 +607,7 @@ public class MediaOverlay extends Fragment {
         seekBarSpeed.setMax(200);
         seekBarSpeed.setMin(50);
         seekBarSpeed.setProgress((int) (song_speed * 100));
-        speed_text.setText(String.format("Speed + pitch: %.1fx", song_speed));
+        speed_text.setText(String.format("%.1fx", song_speed));
         //Setting reverb bar to lowest
         seekBarReverb.setMax(1000);
         seekBarReverb.setMin(-1000);
@@ -701,11 +714,6 @@ public class MediaOverlay extends Fragment {
     //This function opens a new overlay
     //This function opens the playback handling overlay
     public void open_new_overlay() {
-        //Updating total song duration in database
-        update_total_duration();
-        //Adding new song to queue
-        SongQueue.getInstance().addSong(musicFile);
-        SongQueue.getInstance().setPosition(position);
         Fragment media_page = new MediaOverlay();
         FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
@@ -723,7 +731,7 @@ public class MediaOverlay extends Fragment {
                 float speed = Math.max(0.5f, Math.min(progress / 100f, 2.0f));
                 song_pitch = speed;
                 song_speed = speed;
-                speed_text.setText(String.format("Speed + pitch: %.1fx", speed)); // Update the speed text
+                speed_text.setText(String.format("%.1fx", speed)); // Update the speed text
                 player.setPlaybackParameters(new PlaybackParameters(song_speed, song_pitch));
                 seekBarSpeed.setProgress(progress);
                 SongQueue.getInstance().setSpeed(song_speed);

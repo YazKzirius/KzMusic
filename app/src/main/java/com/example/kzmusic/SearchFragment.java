@@ -279,8 +279,6 @@ public class SearchFragment extends Fragment {
     //This function makes an API call using previous access token to search for random music
     //It does this based on the track_name entered
     private void search_track(String track_name) {
-        String refresh = OnlinePlayerManager.getInstance().getRefresh_token();
-        TokenManager.getInstance().refreshAccessToken(refresh);
         accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
         if (accesstoken == null) {
             TextView text1 = view.findViewById(R.id.results);
@@ -296,6 +294,9 @@ public class SearchFragment extends Fragment {
                         trackList.clear();
                         trackList.addAll(response.body().getTracks().getItems());
                         musicAdapter.notifyDataSetChanged();
+                    } else if (response.code() == 401) { // Handle expired access token
+                        String refresh = OnlinePlayerManager.getInstance().getRefresh_token();
+                        TokenManager.getInstance().refreshAccessToken(refresh);
                     } else {
                         Intent intent = new Intent(getContext(), GetStarted.class);
                         startActivity(intent);
@@ -312,8 +313,6 @@ public class SearchFragment extends Fragment {
     //This function gets random music based on catergory
     //It does this before the user chooses to search for a random track
     private void display_random() {
-        String refresh = OnlinePlayerManager.getInstance().getRefresh_token();
-        TokenManager.getInstance().refreshAccessToken(refresh);
         accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
         if (accesstoken == null) {
             TextView text1 = view.findViewById(R.id.results);
@@ -330,6 +329,9 @@ public class SearchFragment extends Fragment {
                         trackList.clear();
                         trackList.addAll(response.body().getTracks().getItems());
                         musicAdapter.notifyDataSetChanged();
+                    } else if (response.code() == 401) { // Handle expired access token
+                        String refresh = OnlinePlayerManager.getInstance().getRefresh_token();
+                        TokenManager.getInstance().refreshAccessToken(refresh);
                     } else {
                         Intent intent = new Intent(getContext(), GetStarted.class);
                         startActivity(intent);

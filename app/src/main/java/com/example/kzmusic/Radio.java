@@ -332,8 +332,6 @@ public class Radio extends Fragment {
     }
     //This function searches for random music using API queries and updates the current tracklist
     public void display_random_music() {
-        String refresh = OnlinePlayerManager.getInstance().getRefresh_token();
-        TokenManager.getInstance().refreshAccessToken(refresh);
         accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
         if (accesstoken == null) {
             TextView text1 = view.findViewById(R.id.made_for_user);
@@ -350,7 +348,8 @@ public class Radio extends Fragment {
                         musicAdapter.updateTracks(response.body().getTracks().getItems());
                         sessionManager.save_Tracklist_radio(response.body().getTracks().getItems());
                     } else if (response.code() == 401) { // Handle expired access token
-                       Toast.makeText(getContext(), ""+response.message(), Toast.LENGTH_LONG).show();
+                        String refresh = OnlinePlayerManager.getInstance().getRefresh_token();
+                        TokenManager.getInstance().refreshAccessToken(refresh);
                     } else {
                         ;
                     }

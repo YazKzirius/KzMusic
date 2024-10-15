@@ -57,35 +57,6 @@ public class MainPage extends AppCompatActivity {
         }
         create_fragments();
     }
-    //This function sends user data to fragments
-    public void send_data(String t, String r) {
-        // Sending data to Home fragment
-        Bundle bundle = new Bundle();
-        bundle.putString("Token", t);
-        bundle.putString("refresh", r);
-        Fragment homeFragment = new HomeFragment();
-        homeFragment.setArguments(bundle);
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, homeFragment)
-                .addToBackStack(null)
-                .commit();
-
-        // Sending data to Search fragment
-        Fragment searchFragment = new SearchFragment();
-        searchFragment.setArguments(bundle);
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, searchFragment)
-                .addToBackStack(null)
-                .commit();
-
-        // Sending data to Library fragment
-        Fragment libraryFragment = new LibraryFragment();
-        libraryFragment.setArguments(bundle);
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, libraryFragment)
-                .addToBackStack(null)
-                .commit();
-    }
     //This function creates main page fragments
     public void create_fragments() {
         //Fragment navigation menu

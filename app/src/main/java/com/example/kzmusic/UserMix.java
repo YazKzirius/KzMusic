@@ -397,8 +397,6 @@ public class UserMix extends Fragment {
     }
     //This function searches for random music using API queries and updates the current tracklist
     public void display_generated_music(String artist) {
-        String refresh = OnlinePlayerManager.getInstance().getRefresh_token();
-        TokenManager.getInstance().refreshAccessToken(refresh);
         access_token = OnlinePlayerManager.getInstance().getAccess_token();
         if (access_token == null) {
             TextView text1 = view.findViewById(R.id.made_for_user);
@@ -416,6 +414,9 @@ public class UserMix extends Fragment {
                         if (tracklist.size() == 40) {
                             sessionManager.save_Tracklist_mix(tracklist);
                         }
+                    } else if (response.code() == 401) { // Handle expired access token
+                        String refresh = OnlinePlayerManager.getInstance().getRefresh_token();
+                        TokenManager.getInstance().refreshAccessToken(refresh);
                     } else {
                         ;
                     }

@@ -3,6 +3,7 @@ package com.example.kzmusic;
 //Imports
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.view.LayoutInflater;
@@ -78,6 +79,18 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
         holder.nameTextView.setText(new_position+1+". "+format_title(musicFile.getName()));
         holder.artistTextView.setText(musicFile.getArtist().replaceAll("/",", "));
         Uri albumArtUri = getAlbumArtUri(musicFile.getAlbumId());
+        if (SongQueue.getInstance().current_song != null) {
+            if (format_title(musicFile.getName()).equals(format_title(SongQueue.getInstance().current_song.getName()))) {
+                holder.nameTextView.setTextColor(context.getResources().getColor(R.color.purple));
+                holder.nameTextView.setText("Playing "+format_title(musicFile.getName()));
+                holder.artistTextView.setTextColor(context.getResources().getColor(R.color.purple));
+            } else {
+                holder.nameTextView.setTextColor(context.getResources().getColor(R.color.white));
+                holder.artistTextView.setTextColor(context.getResources().getColor(R.color.white));
+            }
+        } else {
+            ;
+        }
         Glide.with(context).asBitmap().load(albumArtUri).into(new CustomTarget<Bitmap>() {
             @Override
             public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {

@@ -2,5 +2,5 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="purple">#800080</color> <!-- You can use different shades of purple -->
+    <color name="purple">#7600bc</color> <!-- You can use different shades of purple -->
 </resources>
