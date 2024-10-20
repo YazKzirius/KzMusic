@@ -295,8 +295,9 @@ public class SearchFragment extends Fragment {
                         trackList.addAll(response.body().getTracks().getItems());
                         musicAdapter.notifyDataSetChanged();
                     } else if (response.code() == 401) { // Handle expired access token
-                        String refresh = OnlinePlayerManager.getInstance().getRefresh_token();
-                        TokenManager.getInstance().refreshAccessToken(refresh);
+                        OnlinePlayerManager.getInstance().setAccess_token(null);
+                        OnlinePlayerManager.getInstance().setRefresh_token(null);
+                        navigate_to_activity(GetStarted.class);
                     } else {
                         Intent intent = new Intent(getContext(), GetStarted.class);
                         startActivity(intent);
@@ -309,6 +310,11 @@ public class SearchFragment extends Fragment {
                 }
             });
         }
+    }
+    //This function navigates to a new activity given parameters
+    public void navigate_to_activity(Class <?> target) {
+        Intent intent = new Intent(getContext(), target);
+        startActivity(intent);
     }
     //This function gets random music based on catergory
     //It does this before the user chooses to search for a random track
@@ -330,8 +336,9 @@ public class SearchFragment extends Fragment {
                         trackList.addAll(response.body().getTracks().getItems());
                         musicAdapter.notifyDataSetChanged();
                     } else if (response.code() == 401) { // Handle expired access token
-                        String refresh = OnlinePlayerManager.getInstance().getRefresh_token();
-                        TokenManager.getInstance().refreshAccessToken(refresh);
+                        OnlinePlayerManager.getInstance().setAccess_token(null);
+                        OnlinePlayerManager.getInstance().setRefresh_token(null);
+                        navigate_to_activity(GetStarted.class);
                     } else {
                         Intent intent = new Intent(getContext(), GetStarted.class);
                         startActivity(intent);

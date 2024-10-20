@@ -415,8 +415,9 @@ public class UserMix extends Fragment {
                             sessionManager.save_Tracklist_mix(tracklist);
                         }
                     } else if (response.code() == 401) { // Handle expired access token
-                        String refresh = OnlinePlayerManager.getInstance().getRefresh_token();
-                        TokenManager.getInstance().refreshAccessToken(refresh);
+                        OnlinePlayerManager.getInstance().setAccess_token(null);
+                        OnlinePlayerManager.getInstance().setRefresh_token(null);
+                        navigate_to_activity(GetStarted.class);
                     } else {
                         ;
                     }
@@ -428,7 +429,11 @@ public class UserMix extends Fragment {
                 }
             });
         }
-
+    }
+    //This function navigates to a new activity given parameters
+    public void navigate_to_activity(Class <?> target) {
+        Intent intent = new Intent(getContext(), target);
+        startActivity(intent);
     }
     //This function gets the User's top 10 artists and using and algorithm
     //It then generates music based on that information

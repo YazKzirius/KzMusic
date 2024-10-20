@@ -348,8 +348,9 @@ public class Radio extends Fragment {
                         musicAdapter.updateTracks(response.body().getTracks().getItems());
                         sessionManager.save_Tracklist_radio(response.body().getTracks().getItems());
                     } else if (response.code() == 401) { // Handle expired access token
-                        String refresh = OnlinePlayerManager.getInstance().getRefresh_token();
-                        TokenManager.getInstance().refreshAccessToken(refresh);
+                        OnlinePlayerManager.getInstance().setAccess_token(null);
+                        OnlinePlayerManager.getInstance().setRefresh_token(null);
+                        navigate_to_activity(GetStarted.class);
                     } else {
                         ;
                     }

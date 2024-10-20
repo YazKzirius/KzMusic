@@ -288,8 +288,9 @@ public class Top10Songs extends Fragment {
                         }
                         //Checking for more than One of the same track
                     } else if (response.code() == 401) { // Handle expired access token
-                        String refresh = OnlinePlayerManager.getInstance().getRefresh_token();
-                        TokenManager.getInstance().refreshAccessToken(refresh);
+                        OnlinePlayerManager.getInstance().setAccess_token(null);
+                        OnlinePlayerManager.getInstance().setRefresh_token(null);
+                        navigate_to_activity(GetStarted.class);
                     } else {
                         ;
                     }
@@ -301,6 +302,11 @@ public class Top10Songs extends Fragment {
                 }
             });
         }
+    }
+    //This function navigates to a new activity given parameters
+    public void navigate_to_activity(Class <?> target) {
+        Intent intent = new Intent(getContext(), target);
+        startActivity(intent);
     }
     //This function replaces a tracklist with a list of track names
     public List<String> get_track_names(List<SearchResponse.Track> trackList) {
