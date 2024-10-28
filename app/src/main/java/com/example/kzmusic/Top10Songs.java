@@ -255,7 +255,8 @@ public class Top10Songs extends Fragment {
     private void search_track(String track_name, String Artist) {
         String accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
         if (accesstoken == null)  {
-            ;
+            TextView text1 = view.findViewById(R.id.x_top_vids);
+            text1.setText("No internet connection, please try again.");
         } else {
             String randomQuery = "track:" + track_name + " artist:" + Artist;
             SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
@@ -290,7 +291,6 @@ public class Top10Songs extends Fragment {
                     } else if (response.code() == 401) { // Handle expired access token
                         OnlinePlayerManager.getInstance().setAccess_token(null);
                         OnlinePlayerManager.getInstance().setRefresh_token(null);
-                        navigate_to_activity(GetStarted.class);
                     } else {
                         ;
                     }
@@ -298,7 +298,8 @@ public class Top10Songs extends Fragment {
                 }
                 @Override
                 public void onFailure(Call<SearchResponse> call, Throwable t) {
-                    ;
+                    TextView text1 = view.findViewById(R.id.x_top_vids);
+                    text1.setText("No internet connection, please try again.");
                 }
             });
         }

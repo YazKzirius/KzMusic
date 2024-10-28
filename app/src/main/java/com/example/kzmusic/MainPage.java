@@ -1,5 +1,6 @@
 package com.example.kzmusic;
 //Importing important modules
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
@@ -39,6 +40,7 @@ public class MainPage extends AppCompatActivity {
     String email;
     String username;
     SessionManager sessionManager;
+    private static final int ALARM_REQUEST_CODE = 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +58,7 @@ public class MainPage extends AppCompatActivity {
             getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new HomeFragment()).commit();
         }
         create_fragments();
+        setAlarm();
     }
     //This function creates main page fragments
     public void create_fragments() {
@@ -123,6 +126,15 @@ public class MainPage extends AppCompatActivity {
         table.update_song_duration(email, display_title, (int) (duration/(1000 * SongQueue.getInstance().speed)));
         table.close();
     }
+    private void setAlarm() {
+        Intent intent = new Intent(this, AlarmReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, ALARM_REQUEST_CODE, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        long triggerTime = System.currentTimeMillis(); // Start time
+        long intervalTime = (OnlinePlayerManager.getInstance().getExpiration_time() - 300) * 1000;
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, triggerTime, intervalTime, pendingIntent);
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
