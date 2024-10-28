@@ -347,6 +347,8 @@ public class Radio extends Fragment {
                     if (response.isSuccessful() && response.body() != null) {
                         musicAdapter.updateTracks(response.body().getTracks().getItems());
                         sessionManager.save_Tracklist_radio(response.body().getTracks().getItems());
+                    } else if (response.code() == 401) { // Handle expired access token
+                        TokenManager.getInstance().refreshAccessToken(OnlinePlayerManager.getInstance().getRefresh_token());
                     } else {
                         ;
                     }

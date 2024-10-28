@@ -414,7 +414,9 @@ public class UserMix extends Fragment {
                         if (tracklist.size() == 40) {
                             sessionManager.save_Tracklist_mix(tracklist);
                         }
-                    }  else {
+                    } else if (response.code() == 401) { // Handle expired access token
+                        TokenManager.getInstance().refreshAccessToken(OnlinePlayerManager.getInstance().getRefresh_token());
+                    } else {
                         ;
                     }
                 }

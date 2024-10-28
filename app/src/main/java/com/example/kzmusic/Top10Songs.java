@@ -289,8 +289,7 @@ public class Top10Songs extends Fragment {
                         }
                         //Checking for more than One of the same track
                     } else if (response.code() == 401) { // Handle expired access token
-                        OnlinePlayerManager.getInstance().setAccess_token(null);
-                        OnlinePlayerManager.getInstance().setRefresh_token(null);
+                        TokenManager.getInstance().refreshAccessToken(OnlinePlayerManager.getInstance().getRefresh_token());
                     } else {
                         ;
                     }
