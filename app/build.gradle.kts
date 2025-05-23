@@ -43,15 +43,15 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
-    implementation("com.google.android.gms:play-services-auth:21.1.0")
-    implementation("com.google.code.gson:gson:2.8.6")
-    implementation("com.google.android.material:material:1.4.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.")
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
+    implementation("com.google.code.gson:gson:2.10.1")
+    implementation(libs.material)
+    implementation(libs.constraintlayout)
     implementation("com.google.android.exoplayer:exoplayer:2.19.1")
     implementation("com.google.android.exoplayer:exoplayer-ui:2.19.1")
     implementation("com.google.android.exoplayer:exoplayer-core:2.19.1")
     implementation("com.google.android.exoplayer:extension-mediasession:2.19.1")
-    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation(libs.appcompat)
     //Spotify API
     implementation("com.spotify.android:auth:1.2.5")
     // Retrofit for API requests and HTTP
@@ -59,22 +59,23 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:okhttp:4.9.1")
     implementation("com.squareup.okhttp3:logging-interceptor:4.9.1")
-    implementation("androidx.recyclerview:recyclerview:1.2.1")
+    implementation("androidx.recyclerview:recyclerview:1.4.0")
     // Glide for image loading
     implementation("com.github.bumptech.glide:glide:4.12.0")
     annotationProcessor("com.github.bumptech.glide:compiler:4.12.0")
     // CameraX dependencies
-    implementation("androidx.camera:camera-core:1.1.0")
-    implementation("androidx.camera:camera-camera2:1.1.0")
-    implementation("androidx.camera:camera-lifecycle:1.1.0")
-    implementation("androidx.camera:camera-view:1.1.0")
+    implementation("androidx.camera:camera-core:1.4.2")
+    implementation("androidx.camera:camera-camera2:1.4.2")
+    implementation("androidx.camera:camera-lifecycle:1.4.2")
+    implementation("androidx.camera:camera-view:1.4.2")
     // Use this dependency to use the dynamically downloaded model in Google Play Services
     implementation("com.google.android.gms:play-services-mlkit-face-detection:17.1.0")
     //Worker implementation
-    implementation("androidx.work:work-runtime:2.7.1")
+    implementation("androidx.work:work-runtime:2.10.1")
     //Google firebase
-    implementation(platform("com.google.firebase:firebase-bom:33.4.0"))
+    implementation(platform("com.google.firebase:firebase-bom:33.14.0"))
     implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-firestore:24.10.2")
+    implementation("com.google.firebase:firebase-firestore:25.1.4")
+    implementation("com.google.firebase:firebase-auth:23.2.1")
 
 }
