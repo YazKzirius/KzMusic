@@ -40,8 +40,6 @@ dependencies {
     implementation(libs.activity)
     implementation(libs.constraintlayout)
     implementation(libs.preference)
-    implementation(files("C:\\Users\\yaz33\\AndroidStudioProjects\\Kzmusic\\spotify-app-remote-release-0.8.0.aar"))
-    implementation(files("C:\\Users\\yaz33\\AndroidStudioProjects\\Kzmusic\\app\\libs\\TarsosDSP-Android-latest.jar"))
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
@@ -77,5 +75,6 @@ dependencies {
     //Google firebase
     implementation(platform("com.google.firebase:firebase-bom:33.4.0"))
     implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-firestore:24.10.2")
 
 }

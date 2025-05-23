@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "251450547660",
+    "project_id": "kzmusic-55d18",
+    "storage_bucket": "kzmusic-55d18.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:251450547660:android:b934ebed77f609b7e4d169",
+        "android_client_info": {
+          "package_name": "com.example.kzmusic"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFCRGOdzwBrJzzTDT88bgNSt-bEVeGu8o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
