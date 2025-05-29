@@ -62,7 +62,8 @@ public class GetStarted extends AppCompatActivity {
             startActivity(intent);
             finish();
         } else {
-            set_up_spotify_auth();
+            KzmusicFirebase db = new KzmusicFirebase(getApplicationContext());
+            db.create_users();
         }
         //Get started button functionality
         Button btn = findViewById(R.id.get_started_btn);
