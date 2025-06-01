@@ -27,6 +27,7 @@ public class SongQueue {
     int pointer = 0;
     int current_resource;
     int audio_session_id;
+    int duration_played = 0;
     private SongQueue() {
         this.songs_played = new ArrayList<>();
 
@@ -113,6 +114,14 @@ public class SongQueue {
         NOTIFICATION_ID += 1;
         CHANNEL_ID += ""+NOTIFICATION_ID;
     }
+    public void update_duration(int duration) {
+        duration_played += duration;
+    }
+
+    public void setDuration_played(int duration_played) {
+        this.duration_played = duration_played;
+    }
+
     //This function checks if a string is only digits
     public boolean isOnlyDigits(String str) {
         str = str.replaceAll(" ", "");

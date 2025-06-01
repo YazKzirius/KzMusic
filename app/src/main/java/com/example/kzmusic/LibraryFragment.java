@@ -26,6 +26,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.google.android.exoplayer2.ExoPlayer;
@@ -255,25 +256,17 @@ public class LibraryFragment extends Fragment {
         fragmentTransaction.replace(R.id.fragment_container, media_page);
         fragmentTransaction.commit();
     }
+    //This function updates the total duration value
     public void update_total_duration() {
         long currentPosition = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
         long duration = currentPosition - last_position;
-
+        Toast.makeText(getContext(), ""+duration, Toast.LENGTH_LONG).show();
         // 🔥 Prevent negative duration
         if (duration < 0) {
             Log.e("ExoPlayer", "Negative duration detected! Resetting to 0.");
             duration = 0;
         }
-        String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
-
-        // Applying audio effects
-        // Updating song database
-        SessionManager sessionManager = new SessionManager(getContext());
-        String email = sessionManager.getEmail();
-        SongsFirestore table = new SongsFirestore(getContext());
-
-        table.updateTotalDuration(email, display_title, (int) (duration / (1000 * SongQueue.getInstance().speed)));
-
+        SongQueue.getInstance().update_duration((int) (duration / (1000 * SongQueue.getInstance().speed)));
         // ✅ Update last position safely
         last_position = currentPosition;
         SongQueue.getInstance().setLast_postion(last_position);

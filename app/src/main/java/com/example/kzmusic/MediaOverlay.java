@@ -282,8 +282,6 @@ public class MediaOverlay extends Fragment {
                 Boolean shouldPlayPause = event.getContentIfNotHandled();
                 if (shouldPlayPause != null && shouldPlayPause) {
                     player = OfflinePlayerManager.getInstance().current_player;
-                    //Update duration in database
-                    update_total_duration();
                     // Stop the GIF by clearing the ImageView
                     Glide.with(getContext()).clear(song_gif);
                     song_gif.setImageDrawable(null);
@@ -312,8 +310,6 @@ public class MediaOverlay extends Fragment {
             if (event != null) {
                 Boolean End = event.getContentIfNotHandled();
                 if (End != null && End) {
-                    // Handle the skip event in the fragment
-                    update_total_duration();
                     musicFile = SongQueue.getInstance().current_song;
                 }
             }
@@ -327,31 +323,22 @@ public class MediaOverlay extends Fragment {
 
 
     }
-    //This function updates the total duration field in SQL database
+    //This function updates the total duration value
     public void update_total_duration() {
         long currentPosition = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
         long duration = currentPosition - last_position;
-
+        Toast.makeText(getContext(), ""+duration, Toast.LENGTH_LONG).show();
         // 🔥 Prevent negative duration
         if (duration < 0) {
             Log.e("ExoPlayer", "Negative duration detected! Resetting to 0.");
             duration = 0;
         }
-
-        String display_title = format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", ");
-
-        // Applying audio effects
-        // Updating song database
-        SessionManager sessionManager = new SessionManager(getContext());
-        String email = sessionManager.getEmail();
-        SongsFirestore table = new SongsFirestore(getContext());
-
-        table.updateTotalDuration(email, display_title, (int) (duration / (1000 * SongQueue.getInstance().speed)));
-
+        SongQueue.getInstance().update_duration((int) (duration / (1000 * SongQueue.getInstance().speed)));
         // ✅ Update last position safely
         last_position = currentPosition;
         SongQueue.getInstance().setLast_postion(last_position);
     }
+
     //This function sets up and implements button functionality
     public void set_up_media_buttons() {
         //Pause/play functionality
@@ -420,6 +407,12 @@ public class MediaOverlay extends Fragment {
                 player.pause();
                 //Updating total song duration in database
                 update_total_duration();
+                SessionManager sessionManager = new SessionManager(getContext());
+                String email = sessionManager.getEmail();
+                SongsFirestore table = new SongsFirestore(getContext());
+                String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
+                table.updateTotalDuration(email, display_title, SongQueue.getInstance().duration_played);
+                SongQueue.getInstance().setDuration_played(0);
                 //Moving to next song in recycler view if shuffle is off
                 if (shuffle_on == false) {
                     //Handling the event that current song is top of recycler view
@@ -445,6 +438,12 @@ public class MediaOverlay extends Fragment {
             public void onClick(View v) {
                 player.pause();
                 update_total_duration();
+                SessionManager sessionManager = new SessionManager(getContext());
+                String email = sessionManager.getEmail();
+                SongsFirestore table = new SongsFirestore(getContext());
+                String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
+                table.updateTotalDuration(email, display_title, SongQueue.getInstance().duration_played);
+                SongQueue.getInstance().setDuration_played(0);
                 //Moving to next song in recycler view if shuffle is off
                 if (shuffle_on == false) {
                     //Handling the event that it's the last song in the recycler view

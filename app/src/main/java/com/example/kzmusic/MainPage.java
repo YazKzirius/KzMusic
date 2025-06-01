@@ -113,26 +113,17 @@ public class MainPage extends AppCompatActivity {
         }
         return title;
     }
-    //This function updates the total song duration attribute in database
+    //This function updates the total duration value
     public void update_total_duration() {
         long currentPosition = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
         long duration = currentPosition - SongQueue.getInstance().last_postion;
-
+        Toast.makeText(getApplicationContext(), ""+duration, Toast.LENGTH_LONG).show();
         // 🔥 Prevent negative duration
         if (duration < 0) {
             Log.e("ExoPlayer", "Negative duration detected! Resetting to 0.");
             duration = 0;
         }
-        String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
-
-        // Applying audio effects
-        // Updating song database
-        SessionManager sessionManager = new SessionManager(getApplicationContext());
-        String email = sessionManager.getEmail();
-        SongsFirestore table = new SongsFirestore(getApplicationContext());
-
-        table.updateTotalDuration(email, display_title, (int) (duration / (1000 * SongQueue.getInstance().speed)));
-
+        SongQueue.getInstance().update_duration((int) (duration / (1000 * SongQueue.getInstance().speed)));
         // ✅ Update last position safely
         SongQueue.getInstance().setLast_postion(currentPosition);
     }
