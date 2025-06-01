@@ -3,6 +3,7 @@ package com.example.kzmusic;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -112,17 +113,28 @@ public class MainPage extends AppCompatActivity {
         }
         return title;
     }
-    //This function updates the total song duration attribute in databse
+    //This function updates the total song duration attribute in database
     public void update_total_duration() {
-        long duration = OfflinePlayerManager.getInstance().current_player.getCurrentPosition() - SongQueue.getInstance().last_postion;
+        long currentPosition = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
+        long duration = currentPosition - SongQueue.getInstance().last_postion;
+
+        // 🔥 Prevent negative duration
+        if (duration < 0) {
+            Log.e("ExoPlayer", "Negative duration detected! Resetting to 0.");
+            duration = 0;
+        }
         String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
-        //Updating song duration database
+
+        // Applying audio effects
+        // Updating song database
         SessionManager sessionManager = new SessionManager(getApplicationContext());
         String email = sessionManager.getEmail();
-        UsersTable table = new UsersTable(getApplicationContext());
-        table.open();
-        table.update_song_duration(email, display_title, (int) (duration/(1000 * SongQueue.getInstance().speed)));
-        table.close();
+        SongsFirestore table = new SongsFirestore(getApplicationContext());
+
+        table.updateTotalDuration(email, display_title, (int) (duration / (1000 * SongQueue.getInstance().speed)));
+
+        // ✅ Update last position safely
+        SongQueue.getInstance().setLast_postion(currentPosition);
     }
 
     @Override

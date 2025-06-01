@@ -25,7 +25,6 @@ import java.util.Map;
 public class UsersFirestore {
     FirebaseFirestore db = FirebaseFirestore.getInstance();
     FirebaseAuth auth = FirebaseAuth.getInstance();
-    SessionManager sessionManager;
 
     Context context;
     public UsersFirestore(Context context) {

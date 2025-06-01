@@ -19,6 +19,7 @@ import android.os.Looper;
 import android.provider.MediaStore;
 
 import android.support.v4.media.session.PlaybackStateCompat;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -270,18 +271,6 @@ public class MediaOverlay extends Fragment {
                     set_up_circular_view(musicFile);
                     //Setting up seekbar
                     set_up_bar();
-                    //Adding song to database
-                    SessionManager sessionManager = new SessionManager(getContext());
-                    String email = sessionManager.getEmail();
-                    UsersTable table = new UsersTable(getContext());
-                    table.open();
-                    if (table.song_added(email, display_title) == true) {
-                        table.update_song_times_played(email, display_title);
-                    } else {
-                        table.add_new_song(email, display_title);
-                    }
-                    table.close();
-
                 } else {
                     ;
                 }
@@ -324,20 +313,8 @@ public class MediaOverlay extends Fragment {
                 Boolean End = event.getContentIfNotHandled();
                 if (End != null && End) {
                     // Handle the skip event in the fragment
+                    update_total_duration();
                     musicFile = SongQueue.getInstance().current_song;
-                    //Initializing reverb from Song manager class
-                    String display_title = format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", ");
-                    //Adding song to database
-                    SessionManager sessionManager = new SessionManager(getContext());
-                    String email = sessionManager.getEmail();
-                    UsersTable table = new UsersTable(getContext());
-                    table.open();
-                    if (table.song_added(email, display_title) == true) {
-                        table.update_song_times_played(email, display_title);
-                    } else {
-                        table.add_new_song(email, display_title);
-                    }
-                    table.close();
                 }
             }
         });
@@ -352,18 +329,28 @@ public class MediaOverlay extends Fragment {
     }
     //This function updates the total duration field in SQL database
     public void update_total_duration() {
-        long duration = OfflinePlayerManager.getInstance().current_player.getCurrentPosition() - last_position;
+        long currentPosition = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
+        long duration = currentPosition - last_position;
+
+        // 🔥 Prevent negative duration
+        if (duration < 0) {
+            Log.e("ExoPlayer", "Negative duration detected! Resetting to 0.");
+            duration = 0;
+        }
+
         String display_title = format_title(musicFile.getName()) + " by " + musicFile.getArtist().replaceAll("/", ", ");
-        //Applying audio effects
-        //Updating song database
+
+        // Applying audio effects
+        // Updating song database
         SessionManager sessionManager = new SessionManager(getContext());
         String email = sessionManager.getEmail();
-        UsersTable table = new UsersTable(getContext());
-        table.open();
-        table.update_song_duration(email, display_title, (int) (duration/(1000 * song_speed)));
-        last_position = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
+        SongsFirestore table = new SongsFirestore(getContext());
+
+        table.updateTotalDuration(email, display_title, (int) (duration / (1000 * SongQueue.getInstance().speed)));
+
+        // ✅ Update last position safely
+        last_position = currentPosition;
         SongQueue.getInstance().setLast_postion(last_position);
-        table.close();
     }
     //This function sets up and implements button functionality
     public void set_up_media_buttons() {
@@ -431,6 +418,8 @@ public class MediaOverlay extends Fragment {
             @Override
             public void onClick(View v) {
                 player.pause();
+                //Updating total song duration in database
+                update_total_duration();
                 //Moving to next song in recycler view if shuffle is off
                 if (shuffle_on == false) {
                     //Handling the event that current song is top of recycler view
@@ -443,8 +432,6 @@ public class MediaOverlay extends Fragment {
                     position = rand.nextInt(musicFiles.size());
                 }
                 musicFile = musicFiles.get(position);
-                //Updating total song duration in database
-                update_total_duration();
                 //Adding new song to queue
                 SongQueue.getInstance().addSong(musicFile);
                 SongQueue.getInstance().setPosition(position);
@@ -457,6 +444,7 @@ public class MediaOverlay extends Fragment {
             @Override
             public void onClick(View v) {
                 player.pause();
+                update_total_duration();
                 //Moving to next song in recycler view if shuffle is off
                 if (shuffle_on == false) {
                     //Handling the event that it's the last song in the recycler view
@@ -470,7 +458,6 @@ public class MediaOverlay extends Fragment {
                 }
                 musicFile = musicFiles.get(position);
                 //Updating total song duration in database
-                update_total_duration();
                 //Adding new song to queue
                 SongQueue.getInstance().addSong(musicFile);
                 SongQueue.getInstance().setPosition(position);

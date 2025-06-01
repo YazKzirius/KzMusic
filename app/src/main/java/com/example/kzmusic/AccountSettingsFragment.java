@@ -19,6 +19,7 @@ import androidx.lifecycle.ViewModelProvider;
 import android.os.IBinder;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -273,16 +274,29 @@ public class AccountSettingsFragment extends Fragment {
         fragmentTransaction.replace(R.id.fragment_container, media_page);
         fragmentTransaction.commit();
     }
+
     public void update_total_duration() {
-        long duration = OfflinePlayerManager.getInstance().current_player.getCurrentPosition() - last_position;
+        long currentPosition = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
+        long duration = currentPosition - last_position;
+
+        // 🔥 Prevent negative duration
+        if (duration < 0) {
+            Log.e("ExoPlayer", "Negative duration detected! Resetting to 0.");
+            duration = 0;
+        }
         String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
-        //Updating song duration database
+
+        // Applying audio effects
+        // Updating song database
         SessionManager sessionManager = new SessionManager(getContext());
         String email = sessionManager.getEmail();
-        UsersTable table = new UsersTable(getContext());
-        table.open();
-        table.update_song_duration(email, display_title, (int) (duration/(1000 * SongQueue.getInstance().speed)));
-        table.close();
+        SongsFirestore table = new SongsFirestore(getContext());
+
+        table.updateTotalDuration(email, display_title, (int) (duration / (1000 * SongQueue.getInstance().speed)));
+
+        // ✅ Update last position safely
+        last_position = currentPosition;
+        SongQueue.getInstance().setLast_postion(last_position);
     }
     //This function handles Spotify overlay play/pause
     public void set_up_spotify_play() {

@@ -25,6 +25,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.media.session.MediaButtonReceiver;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
@@ -94,17 +95,18 @@ public class PlayerService extends Service {
                 Uri uri = Uri.fromFile(new File(musicFile.getPath()));
                 MediaItem mediaItem = MediaItem.fromUri(uri);
                 player.setMediaItem(mediaItem);
+                add_song(musicFile);
+
             }
         } else {
             player = new ExoPlayer.Builder(getApplicationContext()).build();
             Uri uri = Uri.fromFile(new File(musicFile.getPath()));
             MediaItem mediaItem = MediaItem.fromUri(uri);
             player.setMediaItem(mediaItem);
+            add_song(musicFile);
         }
         //Initializing song properties
         session_id = player.getAudioSessionId();
-
-        String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
         //Adds player to Player session manager
         OfflinePlayerManager.getInstance().addPlayer(player);
         OfflinePlayerManager.getInstance().setCurrent_player(player);
@@ -114,17 +116,33 @@ public class PlayerService extends Service {
         apply_audio_effect();
         player.prepare();
         player.play();
+
+    }
+    //This function adds new song to firestore collection
+    public void add_song(MusicFile musicFile) {
+        String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
         //Adding song to database
         SessionManager sessionManager = new SessionManager(getApplicationContext());
         String email = sessionManager.getEmail();
-        UsersTable table = new UsersTable(getApplicationContext());
-        table.open();
-        if (table.song_added(email, display_title) == true) {
-            table.update_song_times_played(email, display_title);
-        } else {
-            table.add_new_song(email, display_title);
-        }
-        table.close();
+        SongsFirestore table = new SongsFirestore(getApplicationContext());
+        table.db.collection("Users").whereEqualTo("EMAIL", email).get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (!querySnapshot.isEmpty()) {
+                        String user_id = querySnapshot.getDocuments().get(0).getId();
+                        // 🔥 Check if the same song exists for the user
+                        table.db.collection("Songs")
+                                .whereEqualTo("TITLE", display_title)
+                                .whereEqualTo("USER_ID", user_id) // Ensure user does not have this song already
+                                .get()
+                                .addOnSuccessListener(songSnapshot -> {
+                                    if (songSnapshot.isEmpty()) {
+                                        table.add_new_song(email, display_title, musicFile.getArtist());
+                                    } else {
+                                        table.updateTimesPlayed(email, display_title);
+                                    }
+                                });
+                    }
+                });
     }
     //This function assigns audio effects to the exoplayer like speed/reverb
     public void apply_audio_effect() {
@@ -426,16 +444,27 @@ public class PlayerService extends Service {
         });
     }
     public void update_total_duration() {
-        last_position = SongQueue.getInstance().getLast_postion();
-        long duration = OfflinePlayerManager.getInstance().current_player.getCurrentPosition() - last_position;
+        long currentPosition = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
+        long duration = currentPosition - last_position;
+
+        // 🔥 Prevent negative duration
+        if (duration < 0) {
+            Log.e("ExoPlayer", "Negative duration detected! Resetting to 0.");
+            duration = 0;
+        }
         String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
-        //Updating song duration database
+
+        // Applying audio effects
+        // Updating song database
         SessionManager sessionManager = new SessionManager(getApplicationContext());
         String email = sessionManager.getEmail();
-        UsersTable table = new UsersTable(getApplicationContext());
-        table.open();
-        table.update_song_duration(email, display_title, (int) (duration/(1000 * SongQueue.getInstance().speed)));
-        table.close();
+        SongsFirestore table = new SongsFirestore(getApplicationContext());
+
+        table.updateTotalDuration(email, display_title, (int) (duration / (1000 * SongQueue.getInstance().speed)));
+
+        // ✅ Update last position safely
+        last_position = currentPosition;
+        SongQueue.getInstance().setLast_postion(last_position);
     }
     //This function simulates end of song
     public void simulateEndOfSong() {
