@@ -247,7 +247,6 @@ public class LibraryFragment extends Fragment {
     public void open_new_overlay(MusicFile file, int position) {
         //Adding song to queue
         stopPlayerService();
-        update_total_duration();
         SongQueue.getInstance().addSong(file);
         SongQueue.getInstance().setPosition(position);
         Fragment media_page = new MediaOverlay();
@@ -255,21 +254,6 @@ public class LibraryFragment extends Fragment {
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.fragment_container, media_page);
         fragmentTransaction.commit();
-    }
-    //This function updates the total duration value
-    public void update_total_duration() {
-        long currentPosition = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
-        long duration = currentPosition - last_position;
-        Toast.makeText(getContext(), ""+duration, Toast.LENGTH_LONG).show();
-        // 🔥 Prevent negative duration
-        if (duration < 0) {
-            Log.e("ExoPlayer", "Negative duration detected! Resetting to 0.");
-            duration = 0;
-        }
-        SongQueue.getInstance().update_duration((int) (duration / (1000 * SongQueue.getInstance().speed)));
-        // ✅ Update last position safely
-        last_position = currentPosition;
-        SongQueue.getInstance().setLast_postion(last_position);
     }
     //This function sets up library button functionality
     public void set_up_library() {

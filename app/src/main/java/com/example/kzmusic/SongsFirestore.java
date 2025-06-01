@@ -95,31 +95,4 @@ public class SongsFirestore {
                     }
                 });
     }
-    //This function updates the song duration in the Songs collection
-    public void updateTotalDuration(String email, String title, int durationToAdd) {
-        db.collection("Users").whereEqualTo("EMAIL", email).get()
-                .addOnSuccessListener(userSnapshot -> {
-                    if (!userSnapshot.isEmpty()) {
-                        String userId = userSnapshot.getDocuments().get(0).getId();
-
-                        // 🔍 Find the song belonging to this user
-                        db.collection("Songs").whereEqualTo("TITLE", title).whereEqualTo("USER_ID", userId).get()
-                                .addOnSuccessListener(songSnapshot -> {
-                                    if (!songSnapshot.isEmpty()) {
-                                        String songId = songSnapshot.getDocuments().get(0).getId();
-
-                                        // ✅ Increase total duration
-                                        db.collection("Songs").document(songId)
-                                                .update("TOTAL_DURATION", FieldValue.increment(durationToAdd))
-                                                .addOnSuccessListener(aVoid -> Log.d("Firestore", "Total duration updated!"))
-                                                .addOnFailureListener(e -> Log.e("Firestore", "Error updating total duration", e));
-                                    } else {
-                                        Log.e("Firestore", "Song not found for this user.");
-                                    }
-                                });
-                    } else {
-                        Log.e("Firestore", "User not found.");
-                    }
-                });
-    }
 }

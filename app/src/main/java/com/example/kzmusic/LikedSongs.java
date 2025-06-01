@@ -220,21 +220,6 @@ public class LikedSongs extends Fragment {
             }
         });
     }
-    //This function updates the total duration value
-    public void update_total_duration() {
-        long currentPosition = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
-        long duration = currentPosition - last_position;
-        Toast.makeText(getContext(), ""+duration, Toast.LENGTH_LONG).show();
-        // 🔥 Prevent negative duration
-        if (duration < 0) {
-            Log.e("ExoPlayer", "Negative duration detected! Resetting to 0.");
-            duration = 0;
-        }
-        SongQueue.getInstance().update_duration((int) (duration / (1000 * SongQueue.getInstance().speed)));
-        // ✅ Update last position safely
-        last_position = currentPosition;
-        SongQueue.getInstance().setLast_postion(last_position);
-    }
     //This function makes an API call using previous access token to search for random music
     //It does this based on the track_name entered
     private void search_track(String track_name, String Artist, String url) {
@@ -551,7 +536,6 @@ public class LikedSongs extends Fragment {
     public void open_new_overlay(MusicFile file, int position) {
         //Adding song to queue
         stopPlayerService();
-        update_total_duration();
         SongQueue.getInstance().addSong(file);
         SongQueue.getInstance().setPosition(position);
         Fragment media_page = new MediaOverlay();

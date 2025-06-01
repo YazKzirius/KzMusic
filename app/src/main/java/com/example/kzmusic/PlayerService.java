@@ -274,8 +274,6 @@ public class PlayerService extends Service {
             @Override
             public void onPause() {
                 super.onPause();
-                //Update duration database
-                update_total_duration();
                 OfflinePlayerManager.getInstance().current_player.pause();
                 //Update database duration
                 updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
@@ -290,14 +288,6 @@ public class PlayerService extends Service {
                         SongQueue.getInstance().shuffle_on != true) {
                     ;
                 } else {
-                    update_total_duration();
-                    //Updating duration table
-                    SessionManager sessionManager = new SessionManager(getApplicationContext());
-                    String email = sessionManager.getEmail();
-                    SongsFirestore table = new SongsFirestore(getApplicationContext());
-                    String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
-                    table.updateTotalDuration(email, display_title, SongQueue.getInstance().duration_played);
-                    SongQueue.getInstance().setDuration_played(0);
                     if (SongQueue.getInstance().shuffle_on != true) {
                         pos = SongQueue.getInstance().current_position + 1;
                     } else {
@@ -319,13 +309,6 @@ public class PlayerService extends Service {
                         SongQueue.getInstance().shuffle_on != true) {
                     ;
                 } else {
-                    update_total_duration();
-                    SessionManager sessionManager = new SessionManager(getApplicationContext());
-                    String email = sessionManager.getEmail();
-                    SongsFirestore table = new SongsFirestore(getApplicationContext());
-                    String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
-                    table.updateTotalDuration(email, display_title, SongQueue.getInstance().duration_played);
-                    SongQueue.getInstance().setDuration_played(0);
                     if (SongQueue.getInstance().shuffle_on != true) {
                         pos = SongQueue.getInstance().current_position - 1;
                     } else {
@@ -460,21 +443,6 @@ public class PlayerService extends Service {
             }
         });
     }
-    //This function updates the total duration value
-    public void update_total_duration() {
-        long currentPosition = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
-        long duration = currentPosition - last_position;
-        Toast.makeText(getApplicationContext(), ""+duration, Toast.LENGTH_LONG).show();
-        // 🔥 Prevent negative duration
-        if (duration < 0) {
-            Log.e("ExoPlayer", "Negative duration detected! Resetting to 0.");
-            duration = 0;
-        }
-        SongQueue.getInstance().update_duration((int) (duration / (1000 * SongQueue.getInstance().speed)));
-        // ✅ Update last position safely
-        last_position = currentPosition;
-        SongQueue.getInstance().setLast_postion(last_position);
-    }
     //This function simulates end of song
     public void simulateEndOfSong() {
         // Call this method to simulate the end of a song
@@ -503,14 +471,6 @@ public class PlayerService extends Service {
                     simulateEndOfSong();
                     int pos;
                     MusicFile song;
-                    //Handling event of reaching last song
-                    update_total_duration();
-                    SessionManager sessionManager = new SessionManager(getApplicationContext());
-                    String email = sessionManager.getEmail();
-                    SongsFirestore table = new SongsFirestore(getApplicationContext());
-                    String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
-                    table.updateTotalDuration(email, display_title, SongQueue.getInstance().duration_played);
-                    SongQueue.getInstance().setDuration_played(0);
                     if (SongQueue.getInstance().current_position == SongQueue.getInstance().song_list.size() - 1 &&
                             SongQueue.getInstance().shuffle_on != true) {
                         pos = 0;

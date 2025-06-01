@@ -113,20 +113,6 @@ public class MainPage extends AppCompatActivity {
         }
         return title;
     }
-    //This function updates the total duration value
-    public void update_total_duration() {
-        long currentPosition = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
-        long duration = currentPosition - SongQueue.getInstance().last_postion;
-        Toast.makeText(getApplicationContext(), ""+duration, Toast.LENGTH_LONG).show();
-        // 🔥 Prevent negative duration
-        if (duration < 0) {
-            Log.e("ExoPlayer", "Negative duration detected! Resetting to 0.");
-            duration = 0;
-        }
-        SongQueue.getInstance().update_duration((int) (duration / (1000 * SongQueue.getInstance().speed)));
-        // ✅ Update last position safely
-        SongQueue.getInstance().setLast_postion(currentPosition);
-    }
 
     @Override
     public void onDestroy() {
@@ -137,7 +123,6 @@ public class MainPage extends AppCompatActivity {
         if (OfflinePlayerManager.getInstance().get_size() > 0) {
             OfflinePlayerManager.getInstance().StopAllSessions();
         }
-        update_total_duration();
         SongQueue.getInstance().clear_songs();
     }
 }
