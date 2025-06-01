@@ -2,6 +2,7 @@ package com.example.kzmusic;
 //Importing important modules
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -18,6 +19,10 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 //This class implements the registration page of applications
 //Allows the user to create a new account and adds to SQL Users table
@@ -31,6 +36,7 @@ public class NewAccount extends AppCompatActivity {
     String Password;
     Boolean is_registered = false;
     SessionManager sessionManager;
+    String web_client_id = "251450547660-lprr10a6rtrlj97h3v6gn3h7jmskcgbj.apps.googleusercontent.com";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,19 +90,12 @@ public class NewAccount extends AppCompatActivity {
                 //Validating data user entered
                 validate_data();
                 if (is_registered == true) {
-                    //Adding checking if already exists
-                    if (can_register() == false) {
-                        //Display error message and don't register
-                        Toast.makeText(getApplicationContext(), "Registration Error: User already exists with that email", Toast.LENGTH_SHORT).show();
-                    } else {
-                        //If moves to spotify authorisation
-                        UsersTable table = new UsersTable(getApplicationContext());
-                        table.open();
-                        table.add_account(Username, Email, Password);
-                        table.close();
-                        sessionManager.createLoginSession(Username, Email);
-                        navigate_to_activity(GetStarted.class);
-                    }
+                    //Adding new user and registering new user
+                    //Moves to spotify authorisation
+                    UsersFirestore table = new UsersFirestore(getApplicationContext());
+                    table.registerUser(get_username(), get_email(), get_password());
+                    sessionManager.createLoginSession(Username, Email);
+                    navigate_to_activity(GetStarted.class);
                 } else {
                     ;
                 }
@@ -197,7 +196,11 @@ public class NewAccount extends AppCompatActivity {
     //This function manages google sign-in
     //Uses Google-API to sign-user into google account
     public void set_up_g_signin() {
-        gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestEmail().build();
+        gso =  new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(web_client_id) // 🔥 Ensures Firebase retrieves the token
+                .requestEmail()
+                .build();
+
         gsc = GoogleSignIn.getClient(this, gso);
         findViewById(R.id.Gsignin_btn2).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -226,24 +229,32 @@ public class NewAccount extends AppCompatActivity {
         try {
             GoogleSignInAccount account = completedTask.getResult(ApiException.class);
             // Signed in successfully, show authenticated UI.
-            UsersTable table = new UsersTable(getApplicationContext());
-            table.open();
             //Move to next activity
             Username = account.getDisplayName();
             Email = account.getEmail();
-            Password = "";
+            authenticateWithFirebase(account);
             sessionManager.createLoginSession(Username, Email);
-            if (!table.user_exists(Email)) {
-                table.add_account(Username, Email, Password);
-                navigate_to_activity(GetStarted.class);
-            }
-            else {
-                navigate_to_activity(GetStarted.class);
-            }
-            table.close();
+            navigate_to_activity(GetStarted.class);
             //Throwing API exception and with error message
         } catch (ApiException e) {
             Toast.makeText(this, "Sign-in Error: Sign in failed", Toast.LENGTH_SHORT).show();
         }
+    }
+    //This function handles Google sign-in with firebase
+    private void authenticateWithFirebase(GoogleSignInAccount account) {
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        AuthCredential credential = GoogleAuthProvider.getCredential(account.getIdToken(), null);
+        auth.signInWithCredential(credential)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        if (auth.getCurrentUser() != null) {
+                            UsersFirestore table = new UsersFirestore(getApplicationContext());
+                            table.add_account(account.getDisplayName(), account.getEmail(), auth.getCurrentUser().getUid());
+                            Log.d("Firebase", "Registered with Google");
+                        }
+                    } else {
+                        Log.e("FirebaseAuth", "Google sign-in failed", task.getException());
+                    }
+                });
     }
 }

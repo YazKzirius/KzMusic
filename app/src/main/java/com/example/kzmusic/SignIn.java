@@ -1,12 +1,15 @@
 package com.example.kzmusic;
 
 //Importing important modules
+import android.accounts.Account;
 import android.os.Bundle;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.content.Intent;
@@ -18,6 +21,11 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.firestore.DocumentSnapshot;
+
 import android.widget.Toast;
 
 //This class implements the Sign-in page for application
@@ -29,6 +37,7 @@ public class SignIn extends AppCompatActivity {
     String email;
     String password;
     SessionManager sessionManager;
+    String web_client_id = "251450547660-lprr10a6rtrlj97h3v6gn3h7jmskcgbj.apps.googleusercontent.com";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,31 +99,35 @@ public class SignIn extends AppCompatActivity {
     }
     //This function checks if user details are valid in SQL Users table
     public void check_user_details() {
-        Boolean is_valid = false;
         //Getting entered data
         email = get_email();
         password = get_password();
         //Opening Users table
-        UsersTable table = new UsersTable(getApplicationContext());
-        table.open();
-        //Checking if user exists
-        if (table.user_exists(email)) {
-            //Checking if user exists
-            is_valid = table.checkLogin(email, password);
-            if (is_valid) {
-                //Navigating to new activity with display message
-                Toast.makeText(getApplicationContext(), "Welcome back: "+table.find_name_by_email(email).replaceAll(" ","")+"!", Toast.LENGTH_SHORT).show();
-                sessionManager.createLoginSession(table.find_name_by_email(email), email);
-                navigate_to_activity(GetStarted.class);
-                table.close();
-            } else {
-                //Displaying error message
-                Toast.makeText(getApplicationContext(), "Sign-in Error: Invalid Credentials entered", Toast.LENGTH_SHORT).show();
-            }
-        } else {
-            //Displaying another error message
-            Toast.makeText(getApplicationContext(), "Sign-in Error: User doesn't exist", Toast.LENGTH_SHORT).show();
-        }
+        UsersFirestore table = new UsersFirestore(getApplicationContext());
+        //Signing in user
+        table.db.collection("Users").whereEqualTo("EMAIL", email).get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (querySnapshot.isEmpty()) {
+                        Toast.makeText(getApplicationContext(), "Sign-in Error: User doesn't exist", Toast.LENGTH_LONG).show();
+                    } else {
+                        FirebaseAuth auth = FirebaseAuth.getInstance();
+                        auth.signInWithEmailAndPassword(email, password)
+                                .addOnCompleteListener(task -> {
+                                    if (task.isSuccessful()) {
+                                        Log.d("FirebaseAuth", "User signed in successfully!");
+                                        //Get specific username from email
+                                        DocumentSnapshot document = querySnapshot.getDocuments().get(0); // Get first matching document
+                                        String username = document.getString("USERNAME"); // Retrieve username
+                                        sessionManager.createLoginSession(username, email);
+                                        Toast.makeText(getApplicationContext(), "Welcome back: "+username.replaceAll(" ","")+"!", Toast.LENGTH_SHORT).show();
+                                        navigate_to_activity(GetStarted.class);
+                                    } else {
+                                        Toast.makeText(getApplicationContext(), "Sign-in Error: Invalid credentials entered", Toast.LENGTH_LONG).show();
+                                    }
+                                });
+                    }
+                });
+
     }
     //This function sets up sign in button
     //Implements checking functions
@@ -129,7 +142,10 @@ public class SignIn extends AppCompatActivity {
     //This function manages google sign-in
     //Uses Google-API to sign-user into google account
     public void set_up_g_signin() {
-        gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestEmail().build();
+        gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(web_client_id) // 🔥 Ensures Firebase retrieves the token
+                .requestEmail()
+                .build();
         gsc = GoogleSignIn.getClient(this, gso);
         findViewById(R.id.Gsignin_btn).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -159,21 +175,31 @@ public class SignIn extends AppCompatActivity {
             GoogleSignInAccount account = completedTask.getResult(ApiException.class);
             // Signed in successfully, show authenticated UI.
             //Check if user exists already
-            //If exists continue as usual, if not sign in and add to table, else continue as usual
-            UsersTable table = new UsersTable(getApplicationContext());
-            table.open();
-            if (!table.user_exists(account.getEmail())) {
-                table.add_account(account.getDisplayName(), account.getEmail(), "");
-                sessionManager.createLoginSession(account.getDisplayName(), account.getEmail());
-                navigate_to_activity(GetStarted.class);
-            } else {
-                sessionManager.createLoginSession(account.getDisplayName(), account.getEmail());
-                navigate_to_activity(GetStarted.class);
-            }
+            //Move to next activity
+            authenticateWithFirebase(account);
+            sessionManager.createLoginSession(account.getDisplayName(), account.getEmail());
+            navigate_to_activity(GetStarted.class);
         //Throwing API exception and with error message
         } catch (ApiException e) {
             Toast.makeText(this, "Sign-in Error: Sign in failed", Toast.LENGTH_SHORT).show();
         }
+    }
+    //This function handles Google sign-in with firebase
+    private void authenticateWithFirebase(GoogleSignInAccount account) {
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        AuthCredential credential = GoogleAuthProvider.getCredential(account.getIdToken(), null);
+        auth.signInWithCredential(credential)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        if (auth.getCurrentUser() != null) {
+                            UsersFirestore table = new UsersFirestore(getApplicationContext());
+                            table.add_account(account.getDisplayName(), account.getEmail(), auth.getCurrentUser().getUid());
+                            Log.d("Firebase", "Registered with Google");
+                        }
+                    } else {
+                        Log.e("FirebaseAuth", "Google sign-in failed", task.getException());
+                    }
+                });
     }
 
 

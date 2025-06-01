@@ -12,7 +12,20 @@
           "package_name": "com.example.kzmusic"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "251450547660-cf3peb4nemlmqntqi6h5r87ku9fsp3if.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.kzmusic",
+            "certificate_hash": "4602c200138d376fde896cff36618072af852e9c"
+          }
+        },
+        {
+          "client_id": "251450547660-lprr10a6rtrlj97h3v6gn3h7jmskcgbj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAFCRGOdzwBrJzzTDT88bgNSt-bEVeGu8o"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "251450547660-lprr10a6rtrlj97h3v6gn3h7jmskcgbj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
