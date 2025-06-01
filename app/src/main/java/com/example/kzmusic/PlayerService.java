@@ -450,7 +450,7 @@ public class PlayerService extends Service {
         // 🔥 Prevent negative duration
         if (duration < 0) {
             Log.e("ExoPlayer", "Negative duration detected! Resetting to 0.");
-            duration = 0;
+            duration = duration * -1;
         }
         String display_title = format_title(SongQueue.getInstance().current_song.getName()) + " by " + SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
 

@@ -25,7 +25,6 @@ import java.util.Map;
 
 public class SongsFirestore {
     FirebaseFirestore db = FirebaseFirestore.getInstance();
-    FirebaseAuth auth = FirebaseAuth.getInstance();
     Context context;
     public SongsFirestore(Context context) {
         this.context = context;
