@@ -2,6 +2,7 @@ package com.example.kzmusic;
 
 //Imports
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -12,14 +13,13 @@ import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.bumptech.glide.Glide;
-
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 //This manages Spotify Music recycler view display
 public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> {
@@ -54,19 +54,36 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
         holder.trackName.setText(position+1+". "+track.getName());
         holder.artistName.setText(track.getArtists().get(0).getName());
         holder.release.setText((track.getAlbum().getRelease_date().split("-"))[0]);
-        UsersTable table = new UsersTable(context);
+        SavedSongsFirestore table = new SavedSongsFirestore(context);
         sessionManager = new SessionManager(context);
         username = sessionManager.getUsername();
         email = sessionManager.getEmail();
         //Checking if song is liked and displaying necessary icons
         String title = track.getName()+" by "+track.getArtists().get(0).getName(
         );
-        table.open();
-        if (table.song_liked(title, email) == true) {
-            holder.liked.setImageResource(R.drawable.ic_liked);
-        } else {
-            holder.liked.setImageResource(R.drawable.ic_liked_off);
-        }
+        table.db.collection("Users").whereEqualTo("EMAIL", email).get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (!querySnapshot.isEmpty()) {
+                        String user_id = querySnapshot.getDocuments().get(0).getId();
+                        // 🔥 Check if the same song exists for the user
+                        table.db.collection("SavedSongs")
+                                .whereEqualTo("TITLE", title)
+                                .whereEqualTo("USER_ID", user_id) // Ensure user does not have this song already
+                                .get()
+                                .addOnSuccessListener(songSnapshot -> {
+                                    if (songSnapshot.isEmpty()) {
+                                        // ✅ Song is unique for this user, proceed to add
+                                        holder.liked.setImageResource(R.drawable.ic_liked_off);
+                                    } else {
+                                        holder.liked.setImageResource(R.drawable.ic_liked);
+                                    }
+                                })
+                                .addOnFailureListener(e -> Log.e("Firebase", "Error checking song existence", e));
+                    } else {
+                        Log.e("Firebase", "User not found.");
+                    }
+                })
+                .addOnFailureListener(e -> Log.e("Firebase", "Error retrieving user", e));
         // Use Glide to load album image
         Glide.with(context)
                 .load(track.getAlbum().getImages().get(0).getUrl())
@@ -75,23 +92,37 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
         holder.liked.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                UsersTable table = new UsersTable(context);
+                SavedSongsFirestore table = new SavedSongsFirestore(context);
                 sessionManager = new SessionManager(context);
                 username = sessionManager.getUsername();
                 email = sessionManager.getEmail();
                 String title = track.getName()+" by "+track.getArtists().get(0).getName();
                 String url = track.getAlbum().getImages().get(0).getUrl();
-                table.open();
-                //If song is already liked, remove it from liked database
-                if (table.song_liked(title, email) == true) {
-                    holder.liked.setImageResource(R.drawable.ic_liked_off);
-                    table.remove_liked(email, title);
-                //Otherwise, add it to liked database
-                } else {
-                    table.add_liked_song(email, title, url);
-                    holder.liked.setImageResource(R.drawable.ic_liked);
-                }
-                table.close();
+                //Saving songs to Saved collection if not already saved
+                table.db.collection("Users").whereEqualTo("EMAIL", email).get()
+                        .addOnSuccessListener(querySnapshot -> {
+                            if (!querySnapshot.isEmpty()) {
+                                String user_id = querySnapshot.getDocuments().get(0).getId();
+                                // 🔥 Check if the same song exists for the user
+                                table.db.collection("SavedSongs")
+                                        .whereEqualTo("TITLE", title)
+                                        .whereEqualTo("USER_ID", user_id) // Ensure user does not have this song already
+                                        .get()
+                                        .addOnSuccessListener(songSnapshot -> {
+                                            if (songSnapshot.isEmpty()) {
+                                                table.save_new_song(email, title, url);
+                                                holder.liked.setImageResource(R.drawable.ic_liked);
+                                            } else {
+                                                table.remove_saved_song(email, title);
+                                                holder.liked.setImageResource(R.drawable.ic_liked_off);
+                                            }
+                                        })
+                                        .addOnFailureListener(e -> Log.e("Firebase", "Error checking song existence", e));
+                            } else {
+                                Log.e("Firebase", "User not found.");
+                            }
+                        })
+                        .addOnFailureListener(e -> Log.e("Firebase", "Error retrieving user", e));
             }
         });
         holder.menu.setOnClickListener(new View.OnClickListener() {

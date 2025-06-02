@@ -66,4 +66,35 @@ public class SavedSongsFirestore {
                 })
                 .addOnFailureListener(e -> Log.e("Firebase", "Error retrieving user", e));
     }
+    //This function removes a saved song from the collection
+    public void remove_saved_song(String email, String title) {
+        db.collection("Users").whereEqualTo("EMAIL", email).get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (!querySnapshot.isEmpty()) {
+                        String user_id = querySnapshot.getDocuments().get(0).getId();
+
+                        // 🔥 Find the saved song for this user
+                        db.collection("SavedSongs")
+                                .whereEqualTo("TITLE", title)
+                                .whereEqualTo("USER_ID", user_id)
+                                .get()
+                                .addOnSuccessListener(songSnapshot -> {
+                                    if (!songSnapshot.isEmpty()) {
+                                        // ✅ Delete the first matching song document
+                                        String songId = songSnapshot.getDocuments().get(0).getId();
+                                        db.collection("SavedSongs").document(songId)
+                                                .delete()
+                                                .addOnSuccessListener(aVoid -> Log.d("Firebase", "Song removed successfully!"))
+                                                .addOnFailureListener(e -> Log.e("Firebase", "Error removing song", e));
+                                    } else {
+                                        Log.e("Firebase", "No saved song found for this user.");
+                                    }
+                                })
+                                .addOnFailureListener(e -> Log.e("Firebase", "Error retrieving saved song", e));
+                    } else {
+                        Log.e("Firebase", "User not found.");
+                    }
+                })
+                .addOnFailureListener(e -> Log.e("Firebase", "Error retrieving user", e));
+    }
 }
