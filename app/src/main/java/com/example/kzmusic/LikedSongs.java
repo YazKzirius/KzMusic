@@ -165,7 +165,7 @@ public class LikedSongs extends Fragment {
         username = sessionManager.getUsername();
         email = sessionManager.getEmail();
         //Saving songs to Saved collection if not already saved
-        table.db.collection("Users").whereEqualTo("EMAIL", email).get()
+        table.db.collection("Users").whereEqualTo("EMAIL", email).limit(1).get()
                 .addOnSuccessListener(querySnapshot -> {
                             if (!querySnapshot.isEmpty()) {
                                 String user_id = querySnapshot.getDocuments().get(0).getId();
@@ -204,7 +204,7 @@ public class LikedSongs extends Fragment {
             public void onClick(View v) {
                 //Clearing liked songs
                 SavedSongsFirestore table = new SavedSongsFirestore(getContext());
-                table.db.collection("Users").whereEqualTo("EMAIL", email).get()
+                table.db.collection("Users").whereEqualTo("EMAIL", email).limit(1).get()
                         .addOnSuccessListener(querySnapshot -> {
                                     if (!querySnapshot.isEmpty()) {
                                         String user_id = querySnapshot.getDocuments().get(0).getId();
@@ -383,39 +383,40 @@ public class LikedSongs extends Fragment {
     public void get_liked_songs() {
         SavedSongsFirestore table = new SavedSongsFirestore(getContext());
         sessionManager = new SessionManager(getContext());
-        username = sessionManager.getUsername();
-        email = sessionManager.getEmail();
-        //Saving songs to Saved collection if not already saved
-        table.db.collection("Users").whereEqualTo("EMAIL", email).get()
+        String email = sessionManager.getEmail();
+
+        table.db.collection("Users").whereEqualTo("EMAIL", email).limit(1).get()
                 .addOnSuccessListener(querySnapshot -> {
                     if (!querySnapshot.isEmpty()) {
-                        String user_id = querySnapshot.getDocuments().get(0).getId();
-                        // 🔥 Check if the same song exists for the user
-                        table.db.collection("SavedSongs")
-                                .whereEqualTo("USER_ID", user_id) // Ensure user does not have this song already
-                                .get()
+                        String userId = querySnapshot.getDocuments().get(0).getId();
+
+                        table.db.collection("SavedSongs").whereEqualTo("USER_ID", userId).get()
                                 .addOnSuccessListener(songSnapshot -> {
+                                    TextView text = view.findViewById(R.id.x_liked);
+
                                     if (songSnapshot.isEmpty()) {
-                                        TextView text = view.findViewById(R.id.x_liked);
                                         text.setText("No liked songs");
                                     } else {
-                                        for (DocumentSnapshot documentSnapshot : songSnapshot.getDocuments()) {
-                                            String title = documentSnapshot.getString("TITLE");
+                                        List<DocumentSnapshot> documents = songSnapshot.getDocuments();
+                                        for (DocumentSnapshot doc : documents) {
+                                            String title = doc.getString("TITLE");
                                             String track_name = title;
                                             String artist = "";
-                                            if (title.split(" by ").length == 2) {
-                                                track_name = title.split(" by ")[0];
-                                                artist = title.split(" by ")[1];
+
+                                            if (title != null && title.contains(" by ")) {
+                                                String[] parts = title.split(" by ");
+                                                if (parts.length == 2) {
+                                                    track_name = parts[0];
+                                                    artist = parts[1];
+                                                }
                                             }
-                                            String url = documentSnapshot.getString("ALBUM_URL");
+
                                             try {
-                                                search_track(track_name, artist, url);
+                                                search_track(track_name, artist, doc.getString("ALBUM_URL"));
                                             } catch (Exception e) {
-                                                TextView text = view.findViewById(R.id.x_liked);
                                                 text.setText("No internet connection, please try again.");
                                                 Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_LONG).show();
                                             }
-
                                         }
                                     }
                                 })

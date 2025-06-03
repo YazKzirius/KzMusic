@@ -184,19 +184,14 @@ public class Radio extends Fragment {
             public void onClick(View v) {
                 liked_on = !liked_on;
                 //If liked all button on, like all songs in recycler view and display liked icon
+                SavedSongsFirestore table = new SavedSongsFirestore(getContext());
+                String email = sessionManager.getEmail();
                 if (liked_on == true) {
                     btn1.setImageResource(R.drawable.ic_liked);
                     for (SearchResponse.Track track : sessionManager.getSavedTracklist("TRACK_LIST_RADIO")) {
-                        UsersTable table = new UsersTable(getContext());
-                        table.open();
-                        String email = sessionManager.getEmail();
                         String title = track.getName()+" by "+track.getArtists().get(0).getName();
                         String url = track.getAlbum().getImages().get(0).getUrl();
-                        if (table.song_liked(title, email) == true) {
-                            ;
-                        } else {
-                            table.add_liked_song(email, title, url);
-                        }
+                        table.save_new_song(email, title, url);
                         musicAdapter.clear_tracks();
                         musicAdapter.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_RADIO"));
 
@@ -205,11 +200,8 @@ public class Radio extends Fragment {
                 } else {
                     btn1.setImageResource(R.drawable.ic_liked_off);
                     for (SearchResponse.Track track : sessionManager.getSavedTracklist("TRACK_LIST_RADIO")) {
-                        UsersTable table = new UsersTable(getContext());
-                        table.open();
-                        String email = sessionManager.getEmail();
                         String title = track.getName()+" by "+track.getArtists().get(0).getName();
-                        table.remove_liked(email, title);
+                        table.remove_saved_song(email, title);
                         musicAdapter.clear_tracks();
                         musicAdapter.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_RADIO"));
 
@@ -251,19 +243,20 @@ public class Radio extends Fragment {
     }
     //This function checks if all songs in view are liked
     public Boolean all_liked() {
-        if (sessionManager.getSavedTracklist("TRACK_LIST_RADIO").size() > 0) {
-            for (SearchResponse.Track track : sessionManager.getSavedTracklist("TRACK_LIST_RADIO")) {
-                UsersTable table = new UsersTable(getContext());
-                table.open();
-                String email = sessionManager.getEmail();
-                String title = track.getName()+" by "+track.getArtists().get(0).getName();
-                if (table.song_liked(title, email) == false) {
+        SavedSongsFirestore table = new SavedSongsFirestore(getContext());
+        String email = sessionManager.getEmail();
+        List<SearchResponse.Track> trackList = sessionManager.getSavedTracklist("TRACK_LIST_RADIO");
+        if (!trackList.isEmpty()) {
+            for (SearchResponse.Track track : trackList) {
+                String title = track.getName() + " by " + track.getArtists().get(0).getName();
+                if (table.is_saved(email, title)) {
+                    ;
+                } else {
                     return false;
                 }
             }
             return true;
         } else {
-            //Setting up liked all button
             return false;
         }
     }

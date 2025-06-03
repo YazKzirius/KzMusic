@@ -61,7 +61,7 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
         //Checking if song is liked and displaying necessary icons
         String title = track.getName()+" by "+track.getArtists().get(0).getName(
         );
-        table.db.collection("Users").whereEqualTo("EMAIL", email).get()
+        table.db.collection("Users").whereEqualTo("EMAIL", email).limit(1).get()
                 .addOnSuccessListener(querySnapshot -> {
                     if (!querySnapshot.isEmpty()) {
                         String user_id = querySnapshot.getDocuments().get(0).getId();
@@ -99,7 +99,7 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
                 String title = track.getName()+" by "+track.getArtists().get(0).getName();
                 String url = track.getAlbum().getImages().get(0).getUrl();
                 //Saving songs to Saved collection if not already saved
-                table.db.collection("Users").whereEqualTo("EMAIL", email).get()
+                table.db.collection("Users").whereEqualTo("EMAIL", email).limit(1).get()
                         .addOnSuccessListener(querySnapshot -> {
                             if (!querySnapshot.isEmpty()) {
                                 String user_id = querySnapshot.getDocuments().get(0).getId();

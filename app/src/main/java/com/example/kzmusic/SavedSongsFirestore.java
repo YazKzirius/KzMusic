@@ -2,6 +2,7 @@ package com.example.kzmusic;
 
 import android.content.Context;
 
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.FirebaseFirestore;
 import android.content.Context;
 import android.util.Log;
@@ -17,11 +18,14 @@ import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.SetOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.OnFailureListener;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SavedSongsFirestore {
@@ -32,7 +36,7 @@ public class SavedSongsFirestore {
     }
     //This function saves a new song to the Saved songs collection
     public void save_new_song(String email, String title, String album_url) {
-        db.collection("Users").whereEqualTo("EMAIL", email).get()
+        db.collection("Users").whereEqualTo("EMAIL", email).limit(1).get()
                 .addOnSuccessListener(querySnapshot -> {
                     if (!querySnapshot.isEmpty()) {
                         String user_id = querySnapshot.getDocuments().get(0).getId();
@@ -68,7 +72,7 @@ public class SavedSongsFirestore {
     }
     //This function removes a saved song from the collection
     public void remove_saved_song(String email, String title) {
-        db.collection("Users").whereEqualTo("EMAIL", email).get()
+        db.collection("Users").whereEqualTo("EMAIL", email).limit(1).get()
                 .addOnSuccessListener(querySnapshot -> {
                     if (!querySnapshot.isEmpty()) {
                         String user_id = querySnapshot.getDocuments().get(0).getId();
@@ -97,4 +101,32 @@ public class SavedSongsFirestore {
                 })
                 .addOnFailureListener(e -> Log.e("Firebase", "Error retrieving user", e));
     }
+    //This function checks if a song is saved in firestore collection
+    public boolean is_saved(String email, String title) {
+        try {
+            // 🔍 Get user ID first
+            QuerySnapshot userSnapshot = Tasks.await(db.collection("Users")
+                    .whereEqualTo("EMAIL", email)
+                    .limit(1)
+                    .get());
+            Toast.makeText(context, "user", Toast.LENGTH_LONG).show();
+            if (userSnapshot.isEmpty()) {
+                return false; // User not found
+            }
+
+            String userId = userSnapshot.getDocuments().get(0).getId();
+
+            // 🔥 Check if song exists in liked songs
+            QuerySnapshot songSnapshot = Tasks.await(db.collection("SavedSongs")
+                    .whereEqualTo("USER_ID", userId)
+                    .whereEqualTo("TITLE", title)
+                    .get());
+
+            return !songSnapshot.isEmpty(); // ✅ Returns true if song is liked, false otherwise
+        } catch (Exception e) {
+            Log.e("Firestore", "Error checking liked song", e);
+            return false; // 🔥 Default to false on failure
+        }
+    }
+
 }

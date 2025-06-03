@@ -31,7 +31,7 @@ public class SongsFirestore {
     }
     //This function adds a new song to Songs collection
     public void add_new_song(String email, String title, String artist) {
-        db.collection("Users").whereEqualTo("EMAIL", email).get()
+        db.collection("Users").whereEqualTo("EMAIL", email).limit(1).get()
                 .addOnSuccessListener(querySnapshot -> {
                     if (!querySnapshot.isEmpty()) {
                         String user_id = querySnapshot.getDocuments().get(0).getId();
@@ -70,7 +70,7 @@ public class SongsFirestore {
     }
     //This function updates the number of times played in Songs collection
     public void updateTimesPlayed(String email, String title) {
-        db.collection("Users").whereEqualTo("EMAIL", email).get()
+        db.collection("Users").whereEqualTo("EMAIL", email).limit(1).get()
                 .addOnSuccessListener(userSnapshot -> {
                     if (!userSnapshot.isEmpty()) {
                         String userId = userSnapshot.getDocuments().get(0).getId();
