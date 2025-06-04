@@ -169,7 +169,7 @@ public class SearchFragment extends Fragment {
                 if (s.length() == 0) {
                     ;
                 } else {
-                    search_track(trackName);
+                    ;
                 }
             }
 
@@ -179,7 +179,6 @@ public class SearchFragment extends Fragment {
             }
         });
         View.setText("Search results:");
-        display_random();
         Button search_button = view.findViewById(R.id.search_button);
         search_button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -187,13 +186,10 @@ public class SearchFragment extends Fragment {
                 //Searching for random tracks based on the name input
                 String input = search.getText().toString();
                 if (input.equals("")) {
-                    display_random();
                     View.setText("Search results:");
                 } else {
                     //Displaying results
-                    search_track(input);
                     View.setText("Search results:");
-                    display_random();
                 }
             }
         });
@@ -207,9 +203,9 @@ public class SearchFragment extends Fragment {
                     String input = search.getText().toString();
                     //Displaying search results
                     if (input.equals("")) {
-                        display_random();
+                        ;
                     } else {
-                        search_track(input);
+                        ;
                     }
                     View.setText("Search results:");
                     return true; // Return true to indicate the event was handled

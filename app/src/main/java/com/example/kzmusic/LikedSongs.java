@@ -151,7 +151,6 @@ public class LikedSongs extends Fragment {
         });
         recyclerView1.setAdapter(musicAdapter1);
         //Setting up bottom playback navigator
-        set_up_spotify_play();
         set_up_play_bar();
         if (SongQueue.getInstance().get_size() > 0) {
             set_up_skipping();
@@ -179,7 +178,7 @@ public class LikedSongs extends Fragment {
                                             } else {
                                                 if (sessionManager.getSavedTracklist("TRACK_LIST_LIKED").size() == 0 || songSnapshot.getDocuments().size() !=
                                                         sessionManager.getSavedTracklist("TRACK_LIST_LIKED").size()) {
-                                                    get_liked_songs();
+                                                   ;
                                                 } else {
                                                     musicAdapter1.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_LIKED"));
                                                     sessionManager.save_Tracklist_liked(sessionManager.getSavedTracklist("TRACK_LIST_LIKED"));
@@ -190,7 +189,6 @@ public class LikedSongs extends Fragment {
                                 ;
                             }
                         });
-        set_up_playback_buttons();
         return view;
     }
     //This function sets up playback buttons at top

@@ -180,12 +180,7 @@ public class HomeFragment extends Fragment {
         button1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Fragment newFragment = new Radio();
-                FragmentManager fragmentManager = getParentFragmentManager();
-                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                fragmentTransaction.replace(R.id.fragment_container, newFragment);
-                fragmentTransaction.addToBackStack(null);  // Optional: adds the transaction to the back stack
-                fragmentTransaction.commit();
+                ;
             }
         });;
         button2.setOnClickListener(new View.OnClickListener() {
@@ -202,12 +197,7 @@ public class HomeFragment extends Fragment {
         button3.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Fragment newFragment = new UserMix();
-                FragmentManager fragmentManager = getParentFragmentManager();
-                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                fragmentTransaction.replace(R.id.fragment_container, newFragment);
-                fragmentTransaction.addToBackStack(null);  // Optional: adds the transaction to the back stack
-                fragmentTransaction.commit();
+                ;
             }
         });
     }

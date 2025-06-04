@@ -62,14 +62,14 @@ public class GetStarted extends AppCompatActivity {
             startActivity(intent);
             finish();
         } else {
-            set_up_spotify_auth();
         }
         //Get started button functionality
         Button btn = findViewById(R.id.get_started_btn);
+        navigate_to_activity(MainPage.class);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                set_up_spotify_auth();
+                navigate_to_activity(MainPage.class);;
             }
         });
     }
@@ -83,6 +83,11 @@ public class GetStarted extends AppCompatActivity {
 
         // Open the URL in a browser
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(authUrl));
+        startActivity(intent);
+    }
+    //This function navigates to a new activity given parameters
+    public void navigate_to_activity(Class <?> target) {
+        Intent intent = new Intent(GetStarted.this, target);
         startActivity(intent);
     }
     //This function performs this function once the activity is called and gets the auth code
