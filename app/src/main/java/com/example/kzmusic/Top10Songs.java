@@ -239,14 +239,6 @@ public class Top10Songs extends Fragment {
         // Convert the List to an array
         return trackNames;
     }
-    //This function sorts tracklist by descending order of most played
-    public void sort_track_list() {
-        OnlinePlayerManager.getInstance().setCurrent_context(getContext());
-        sorted_tracklist = tracklist.stream()
-                .sorted(Comparator.comparingInt(SearchResponse.Track::get_n_times).reversed())
-                .collect(Collectors.toList());
-        musicAdapter2.updateTracks(sorted_tracklist);
-    }
     //This function assigns data from playback overlay to bottom navigation
     public void set_up_play_bar() {
         if (SongQueue.getInstance().songs_played.size() == 0) {

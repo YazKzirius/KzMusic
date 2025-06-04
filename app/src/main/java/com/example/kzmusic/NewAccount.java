@@ -181,18 +181,6 @@ public class NewAccount extends AppCompatActivity {
             return "Valid";
         }
     }
-
-    //This function checks if a user details already exists in the database
-    public Boolean can_register() {
-        UsersTable table = new UsersTable(getApplicationContext());
-        table.open();
-        //If doesn't exists, adds data to Users table
-        if (!table.user_exists(Email)) {
-            return true;
-        } else {
-            return false;
-        }
-    }
     //This function manages google sign-in
     //Uses Google-API to sign-user into google account
     public void set_up_g_signin() {
