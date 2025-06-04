@@ -32,6 +32,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
 
@@ -39,6 +40,7 @@ import java.util.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import retrofit2.Call;
@@ -252,21 +254,28 @@ public class UserMix extends Fragment {
         });
     }
     //This function checks if all songs in view are liked
-    public Boolean all_liked() {
-        if (sessionManager.getSavedTracklist("TRACK_LIST_MIX").size() > 0) {
-            for (SearchResponse.Track track : sessionManager.getSavedTracklist("TRACK_LIST_MIX")) {
-                UsersTable table = new UsersTable(getContext());
-                table.open();
-                String email = sessionManager.getEmail();
-                String title = track.getName()+" by "+track.getArtists().get(0).getName();
-                if (table.song_liked(title, email) == false) {
-                    return false;
+    public void all_liked(OnSuccessListener<Boolean> callback) {
+        SavedSongsFirestore table = new SavedSongsFirestore(getContext());
+        String email = sessionManager.getEmail();
+        List<SearchResponse.Track> trackList = sessionManager.getSavedTracklist("TRACK_LIST_MIX");
+
+        if (trackList.isEmpty()) {
+            callback.onSuccess(false);
+            return;
+        }
+
+        AtomicInteger count = new AtomicInteger(0);
+        for (SearchResponse.Track track : trackList) {
+            String title = track.getName() + " by " + track.getArtists().get(0).getName();
+            table.is_saved(email, title, isLiked -> {
+                if (!isLiked) {
+                    callback.onSuccess(false);
+                } else {
+                    if (count.incrementAndGet() == trackList.size()) {
+                        callback.onSuccess(true); // ✅ All songs are liked
+                    }
                 }
-            }
-            return true;
-        } else {
-            //Setting up liked all button
-            return false;
+            });
         }
     }
     //This function sets up playback buttons at top
@@ -276,27 +285,25 @@ public class UserMix extends Fragment {
         //Setting up liked all button
         ImageButton btn1 = view.findViewById(R.id.like_all);
         btn1.setImageResource(R.drawable.ic_liked_off);
-        if (all_liked() == true) {
-            btn1.setImageResource(R.drawable.ic_liked);
-        }
+        all_liked(isLiked -> {
+            if (isLiked) {
+                btn1.setImageResource(R.drawable.ic_liked);
+            } else {
+                btn1.setImageResource(R.drawable.ic_liked_off); // You may want to add an "unliked" icon
+            }
+        });
         btn1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 liked_on = !liked_on;
+                SavedSongsFirestore table = new SavedSongsFirestore(getContext());
                 //If liked all button on, like all songs in recycler view and display liked icon
                 if (liked_on == true) {
                     btn1.setImageResource(R.drawable.ic_liked);
                     for (SearchResponse.Track track : sessionManager.getSavedTracklist("TRACK_LIST_MIX")) {
-                        UsersTable table = new UsersTable(getContext());
-                        table.open();
-                        String email = sessionManager.getEmail();
                         String title = track.getName()+" by "+track.getArtists().get(0).getName();
                         String url = track.getAlbum().getImages().get(0).getUrl();
-                        if (table.song_liked(title, email) == true) {
-                            ;
-                        } else {
-                            table.add_liked_song(email, title, url);
-                        }
+                        table.save_new_song(email, title, url);
                         musicAdapter.clear_tracks();
                         musicAdapter.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_MIX"));
 
@@ -305,11 +312,8 @@ public class UserMix extends Fragment {
                 } else {
                     btn1.setImageResource(R.drawable.ic_liked_off);
                     for (SearchResponse.Track track : sessionManager.getSavedTracklist("TRACK_LIST_MIX")) {
-                        UsersTable table = new UsersTable(getContext());
-                        table.open();
-                        String email = sessionManager.getEmail();
                         String title = track.getName()+" by "+track.getArtists().get(0).getName();
-                        table.remove_liked(email, title);
+                        table.remove_saved_song(email, title);
                         musicAdapter.clear_tracks();
                         musicAdapter.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_MIX"));
 

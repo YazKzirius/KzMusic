@@ -30,6 +30,7 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
 
@@ -40,6 +41,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
@@ -176,9 +178,13 @@ public class Radio extends Fragment {
         //Setting up liked all button
         ImageButton btn1 = view.findViewById(R.id.like_all);
         btn1.setImageResource(R.drawable.ic_liked_off);
-        if (all_liked() == true) {
-            btn1.setImageResource(R.drawable.ic_liked);
-        }
+        all_liked(isLiked -> {
+            if (isLiked) {
+                btn1.setImageResource(R.drawable.ic_liked);
+            } else {
+                btn1.setImageResource(R.drawable.ic_liked_off); // You may want to add an "unliked" icon
+            }
+        });
         btn1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -242,22 +248,28 @@ public class Radio extends Fragment {
         });
     }
     //This function checks if all songs in view are liked
-    public Boolean all_liked() {
+    public void all_liked(OnSuccessListener<Boolean> callback) {
         SavedSongsFirestore table = new SavedSongsFirestore(getContext());
         String email = sessionManager.getEmail();
         List<SearchResponse.Track> trackList = sessionManager.getSavedTracklist("TRACK_LIST_RADIO");
-        if (!trackList.isEmpty()) {
-            for (SearchResponse.Track track : trackList) {
-                String title = track.getName() + " by " + track.getArtists().get(0).getName();
-                if (table.is_saved(email, title)) {
-                    ;
+
+        if (trackList.isEmpty()) {
+            callback.onSuccess(false);
+            return;
+        }
+
+        AtomicInteger count = new AtomicInteger(0);
+        for (SearchResponse.Track track : trackList) {
+            String title = track.getName() + " by " + track.getArtists().get(0).getName();
+            table.is_saved(email, title, isLiked -> {
+                if (!isLiked) {
+                    callback.onSuccess(false);
                 } else {
-                    return false;
+                    if (count.incrementAndGet() == trackList.size()) {
+                        callback.onSuccess(true); // ✅ All songs are liked
+                    }
                 }
-            }
-            return true;
-        } else {
-            return false;
+            });
         }
     }
     //This function sets up media notification bar skip events

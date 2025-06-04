@@ -128,28 +128,7 @@ public class Top10Songs extends Fragment {
        username = sessionManager.getUsername();
        email = sessionManager.getEmail();
        //Getting data in view
-       get_top_5_songs();
-       //Getting top 5 videos
-        recyclerView2 = view.findViewById(R.id.recycler_view2);
-        recyclerView2.setLayoutManager(new LinearLayoutManager(getContext()));
-        musicAdapter2 = new MusicAdapter(sorted_tracklist, getContext(), new MusicAdapter.OnItemClickListener() {
-            @Override
-            public void onItemClick(SearchResponse.Track track) {
-                //Pausing current player, so no playback overlap
-                if (OfflinePlayerManager.getInstance().get_size() > 0) {
-                    OfflinePlayerManager.getInstance().current_player.pause();
-                    OnlinePlayerManager.getInstance().setCurrent_track(track);
-                    open_spotify_overlay();
-                    ;
-                } else {
-                    OnlinePlayerManager.getInstance().setCurrent_track(track);
-                    open_spotify_overlay();
-                    ;
-                }
-            }
-        });
-        recyclerView2.setAdapter(musicAdapter2);
-        get_song_vids();
+       get_top_10_songs();
         //Setting up bottom playback navigator
         set_up_spotify_play();
         set_up_play_bar();
@@ -161,32 +140,17 @@ public class Top10Songs extends Fragment {
        return view;
     }
     //This function gets the user's top 5 songs
-    public void get_top_5_songs() {
+    public void get_top_10_songs() {
         recyclerView1 = view.findViewById(R.id.recycler_view1);
         recyclerView1.setLayoutManager(new LinearLayoutManager(getContext()));
+
+        // 🔄 Ensure adapter is initialized
         musicAdapter1 = new MusicFileAdapter(getContext(), top_5_songs);
         recyclerView1.setAdapter(musicAdapter1);
-        loadMusicFiles();
-        if (musicFiles.size() > 0) {
-            SongQueue.getInstance().setCurrent_resource(R.layout.item_song2);
-            UsersTable table = new UsersTable(getContext());
-            table.open();
-            Cursor cursor = table.display_most_played(email);
-            int count = 0;
-            while (cursor.moveToNext() && count < 5) {
-                String title = cursor.getString(cursor.getColumnIndex("TITLE"));
-                if (title.contains("(Official Music Video)")) {
-                    ;
-                } else {
-                    top_5_songs.add(get_music_file(title));
-                    musicAdapter1.notifyDataSetChanged();
-                    count += 1;
-                }
-            }
-            SongQueue.getInstance().setSong_list(top_5_songs);
-        } else {
-            ;
-        }
+
+        loadMusicFiles(); // Ensure other music files are loaded
+        ;
+
     }
 
     //This function gets music files by specific name
@@ -251,59 +215,6 @@ public class Top10Songs extends Fragment {
             SongQueue.getInstance().setSong_list(musicFiles);
         }
     }
-    //This function makes an API call using previous access token to search for random music
-    //It does this based on the track_name entered
-    private void search_track(String track_name, String Artist) {
-        String accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
-        if (accesstoken == null)  {
-            TextView text1 = view.findViewById(R.id.x_top_vids);
-            text1.setText("No internet connection, please try again.");
-        } else {
-            String randomQuery = "track:" + track_name + " artist:" + Artist;
-            SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
-            Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
-            call.enqueue(new Callback<SearchResponse>() {
-                @Override
-                public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
-                    if (response.isSuccessful() && response.body() != null) {
-                        //Getting track data and formatting
-                        List<SearchResponse.Track> Tracks = response.body().getTracks().getItems();
-                        List<String> tracks = get_track_names(Tracks);
-                        //Getting indices of specified information
-                        int i = tracks.indexOf(track_name+" by "+Artist);
-                        //Checking if it doesn't exist and performs j-index dependent adding
-                        if (i == -1) {
-                            i = tracks.indexOf(track_name);
-                            ///Checking if both indices are equal
-                            if (i != -1) {
-                                tracklist.add(Tracks.get(i));
-                            } else {
-                                //Otherwise get first element of tracklist
-                                tracklist.add(Tracks.get(0));
-                            }
-                        } else {
-                            //Otherwise get first element of tracklist
-                            tracklist.add(Tracks.get(i));
-                        }
-                        if (tracklist.size() == 5) {
-                            sort_track_list();
-                        }
-                        //Checking for more than One of the same track
-                    } else if (response.code() == 401) { // Handle expired access token
-                        TokenManager.getInstance().refreshAccessToken(OnlinePlayerManager.getInstance().getRefresh_token());
-                    } else {
-                        ;
-                    }
-
-                }
-                @Override
-                public void onFailure(Call<SearchResponse> call, Throwable t) {
-                    TextView text1 = view.findViewById(R.id.x_top_vids);
-                    text1.setText("No internet connection, please try again.");
-                }
-            });
-        }
-    }
     //This function navigates to a new activity given parameters
     public void navigate_to_activity(Class <?> target) {
         Intent intent = new Intent(getContext(), target);
@@ -328,21 +239,6 @@ public class Top10Songs extends Fragment {
         // Convert the List to an array
         return trackNames;
     }
-    //This function gets the total number of music vids
-    public int getN_vids() {
-        int n_vids= 0;
-        UsersTable table = new UsersTable(getContext());
-        table.open();
-        Cursor cursor = table.display_most_played(email);
-        while (cursor.moveToNext()) {
-            String title = cursor.getString(cursor.getColumnIndex("TITLE"));
-            if (title.contains(" (Official Music Video")) {
-                n_vids += 1;
-            }
-        }
-        table.close();
-        return n_vids;
-    }
     //This function sorts tracklist by descending order of most played
     public void sort_track_list() {
         OnlinePlayerManager.getInstance().setCurrent_context(getContext());
@@ -350,37 +246,6 @@ public class Top10Songs extends Fragment {
                 .sorted(Comparator.comparingInt(SearchResponse.Track::get_n_times).reversed())
                 .collect(Collectors.toList());
         musicAdapter2.updateTracks(sorted_tracklist);
-    }
-    //This function gets your top 5 most played videos
-    public void get_song_vids() {
-        if (getN_vids() > 0) {
-            try {
-                UsersTable table = new UsersTable(getContext());
-                table.open();
-                Cursor cursor = table.display_most_played(email);
-                while (cursor.moveToNext()) {
-                    String title = cursor.getString(cursor.getColumnIndex("TITLE"));
-                    if (title.contains("(Official Music Video")) {
-                        title = title.replace(" (Official Music Video)", "");
-                        String track_name = "";
-                        String artist = "";
-                        if (title.split(" by ").length == 2) {
-                            track_name = title.split(" by ")[0];
-                            artist = title.split(" by ")[1];
-                            search_track(track_name, artist);
-                        }
-                    } else {
-                        ;
-                    }
-                }
-                table.close();
-            } catch (Exception e) {
-                ;
-            }
-        } else {
-            ;
-        }
-
     }
     //This function assigns data from playback overlay to bottom navigation
     public void set_up_play_bar() {

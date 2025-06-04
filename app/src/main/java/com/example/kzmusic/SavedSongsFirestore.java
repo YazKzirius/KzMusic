@@ -102,31 +102,31 @@ public class SavedSongsFirestore {
                 .addOnFailureListener(e -> Log.e("Firebase", "Error retrieving user", e));
     }
     //This function checks if a song is saved in firestore collection
-    public boolean is_saved(String email, String title) {
-        try {
-            // 🔍 Get user ID first
-            QuerySnapshot userSnapshot = Tasks.await(db.collection("Users")
-                    .whereEqualTo("EMAIL", email)
-                    .limit(1)
-                    .get());
-            Toast.makeText(context, "user", Toast.LENGTH_LONG).show();
-            if (userSnapshot.isEmpty()) {
-                return false; // User not found
-            }
+    public void is_saved(String email, String title, OnSuccessListener<Boolean> callback) {
+        db.collection("Users").whereEqualTo("EMAIL", email).limit(1).get()
+                .addOnSuccessListener(userSnapshot -> {
+                    if (!userSnapshot.isEmpty()) {
+                        String userId = userSnapshot.getDocuments().get(0).getId();
 
-            String userId = userSnapshot.getDocuments().get(0).getId();
-
-            // 🔥 Check if song exists in liked songs
-            QuerySnapshot songSnapshot = Tasks.await(db.collection("SavedSongs")
-                    .whereEqualTo("USER_ID", userId)
-                    .whereEqualTo("TITLE", title)
-                    .get());
-
-            return !songSnapshot.isEmpty(); // ✅ Returns true if song is liked, false otherwise
-        } catch (Exception e) {
-            Log.e("Firestore", "Error checking liked song", e);
-            return false; // 🔥 Default to false on failure
-        }
+                        // 🔍 Query Firestore asynchronously
+                        db.collection("SavedSongs")
+                                .whereEqualTo("USER_ID", userId)
+                                .whereEqualTo("TITLE", title)
+                                .limit(1)
+                                .get()
+                                .addOnSuccessListener(songSnapshot -> callback.onSuccess(!songSnapshot.isEmpty())) // ✅ Return result asynchronously
+                                .addOnFailureListener(e -> {
+                                    Log.e("Firestore", "Error checking saved song", e);
+                                    callback.onSuccess(false);
+                                });
+                    } else {
+                        callback.onSuccess(false);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("Firestore", "Error retrieving user", e);
+                    callback.onSuccess(false);
+                });
     }
 
 }

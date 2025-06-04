@@ -19,25 +19,12 @@
             android:id="@+id/x_most_played"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Your Top 5 Songs:"
+            android:text="Your Top 10 Songs:"
             android:textColor="@color/white"
             android:textSize="25sp"/>
         <androidx.recyclerview.widget.RecyclerView
             android:layout_marginTop="10dp"
             android:id="@+id/recycler_view1"
-            android:layout_width="match_parent"
-            android:layout_height="230dp" />
-        <TextView
-            android:id="@+id/x_top_vids"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:text="Your Top 5 Music Videos:"
-            android:textColor="@color/white"
-            android:textSize="25sp"/>
-        <androidx.recyclerview.widget.RecyclerView
-            android:layout_marginTop="10dp"
-            android:id="@+id/recycler_view2"
             android:layout_width="match_parent"
             android:layout_height="230dp" />
 

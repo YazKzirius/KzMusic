@@ -16,11 +16,15 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.SetOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.OnFailureListener;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SongsFirestore {
@@ -95,4 +99,36 @@ public class SongsFirestore {
                     }
                 });
     }
+    //This function gets the top 10 most played songs
+    public void get_top_played_songs(String email, OnSuccessListener<List<String>> callback) {
+        db.collection("Users").whereEqualTo("EMAIL", email).limit(1).get()
+                .addOnSuccessListener(userSnapshot -> {
+                    if (!userSnapshot.isEmpty()) {
+                        String userId = userSnapshot.getDocuments().get(0).getId();
+
+                        db.collection("Songs")
+                                .whereEqualTo("USER_ID", userId) // 🔥 Filter by specific user
+                                .orderBy("TIMES_PLAYED",  Query.Direction.DESCENDING)
+                                .get()
+                                .addOnSuccessListener(songSnapshot -> {
+                                    List<String> songNames = new ArrayList<>();
+                                    for (DocumentSnapshot document : songSnapshot.getDocuments()) {
+                                        songNames.add(document.getString("TITLE"));
+                                    }
+                                    callback.onSuccess(songNames);
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e("Firestore", "Error retrieving top songs", e);
+                                    callback.onSuccess(Collections.emptyList());
+                                });
+                    } else {
+                        callback.onSuccess(Collections.emptyList());
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("Firestore", "Error retrieving user", e);
+                    callback.onSuccess(Collections.emptyList());
+                });
+    }
+
 }

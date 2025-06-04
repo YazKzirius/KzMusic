@@ -109,17 +109,6 @@ public class SpotifyOverlay extends Fragment {
         youtubeWebView.setWebViewClient(new WebViewClient());
         connect();
         overlaySongTitle.setText("Now playing: "+ track.getName() + " by " + track.getArtists().get(0).getName());
-        //Adding song to database
-        UsersTable table = new UsersTable(getContext());
-        SessionManager sessionManager = new SessionManager(getContext());
-        String email = sessionManager.getEmail();
-        String title = track.getName() + " by " + track.getArtists().get(0).getName()+" (Official Music Video)";
-        table.open();
-        if (table.song_added(email, title) == true) {
-            table.update_song_times_played(email, title);
-        } else {
-            table.add_new_song(email, title);
-        }
         set_up_track_playing(track);
         current_position = System.currentTimeMillis();
         getVideoIdByName(track.getName()+" by "+track.getArtists().get(0).getName());
@@ -174,15 +163,6 @@ public class SpotifyOverlay extends Fragment {
             overlaySongTitle.setText("Now playing similar songs to: " + track.getName() + " by " + track.getArtists().get(0).getName());
         }
     }
-
-    //This function formats string is data and time format 0:00
-    private String formatTime(long timeMs) {
-        int totalSeconds = (int) (timeMs / 1000);
-        int minutes = totalSeconds / 60;
-        int seconds = totalSeconds % 60;
-        return String.format("%02d:%02d", minutes, seconds);
-    }
-
     //This function gets video id by song name
     public void getVideoIdByName(String songName) {
         Retrofit retrofit = new Retrofit.Builder()
@@ -221,23 +201,9 @@ public class SpotifyOverlay extends Fragment {
             }
         });
     }
-    //This function updates the total duration field in SQL database
-    public void update_total_duration() {
-        long duration = System.currentTimeMillis() - current_position;
-        String display_title =  track.getName() + " by " + track.getArtists().get(0).getName();
-        //Applying audio effects
-        //Updating song database
-        SessionManager sessionManager = new SessionManager(getContext());
-        String email = sessionManager.getEmail();
-        UsersTable table = new UsersTable(getContext());
-        table.open();
-        table.update_song_duration(email, display_title, (int) duration/1000);
-        table.close();
-    }
     @Override
     public void onDestroy() {
         super.onDestroy();
-        update_total_duration();
     }
 
 }
