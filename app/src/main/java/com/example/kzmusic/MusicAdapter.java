@@ -113,7 +113,7 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
                                                 table.save_new_song(email, title, url);
                                                 holder.liked.setImageResource(R.drawable.ic_liked);
                                             } else {
-                                                table.remove_saved_song(email, title);
+                                                table.remove_saved_song(email, title, url);
                                                 holder.liked.setImageResource(R.drawable.ic_liked_off);
                                             }
                                         })

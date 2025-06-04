@@ -213,12 +213,8 @@ public class LikedSongs extends Fragment {
                                                 .whereEqualTo("USER_ID", user_id) // Ensure user does not have this song already
                                                 .get()
                                                 .addOnSuccessListener(songSnapshot -> {
-                                                    if (songSnapshot.isEmpty()) {
-                                                        ;
-                                                    } else {
-                                                        for (DocumentSnapshot documentSnapshot : songSnapshot.getDocuments()) {
-                                                            table.remove_saved_song(email, documentSnapshot.getString("TITLE"));
-                                                        }
+                                                    for (DocumentSnapshot documentSnapshot : songSnapshot.getDocuments()) {
+                                                        table.remove_saved_song(email, documentSnapshot.getString("TITLE"), documentSnapshot.getString("ALBUM_URL"));
                                                     }
                                                 });
                                     } else {

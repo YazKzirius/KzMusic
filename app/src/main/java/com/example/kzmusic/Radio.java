@@ -207,7 +207,8 @@ public class Radio extends Fragment {
                     btn1.setImageResource(R.drawable.ic_liked_off);
                     for (SearchResponse.Track track : sessionManager.getSavedTracklist("TRACK_LIST_RADIO")) {
                         String title = track.getName()+" by "+track.getArtists().get(0).getName();
-                        table.remove_saved_song(email, title);
+                        String url = track.getAlbum().getImages().get(0).getUrl();
+                        table.remove_saved_song(email, title, url);
                         musicAdapter.clear_tracks();
                         musicAdapter.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_RADIO"));
 
