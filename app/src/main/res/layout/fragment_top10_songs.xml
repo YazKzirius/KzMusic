@@ -26,7 +26,7 @@
             android:layout_marginTop="10dp"
             android:id="@+id/top_songs_view"
             android:layout_width="match_parent"
-            android:layout_height="230dp" />
+            android:layout_height="500dp" />
     </LinearLayout>
     <RelativeLayout
         android:id="@+id/playback_bar"

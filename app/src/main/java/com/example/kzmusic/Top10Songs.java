@@ -1,15 +1,18 @@
 package com.example.kzmusic;
 
+import android.Manifest;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
@@ -36,6 +39,7 @@ import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -140,7 +144,57 @@ public class Top10Songs extends Fragment {
     }
     //This function gets the user's top 5 songs
     public void get_top_10_songs() {
-        ;
+        SongsFirestore table = new SongsFirestore(getContext());
+        //Setting item view type
+        SongQueue.getInstance().setCurrent_resource(R.layout.item_song2);
+        recyclerView = view.findViewById(R.id.top_songs_view);
+        musicAdapter = new MusicFileAdapter(getContext(), top_songs);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerView.setAdapter(musicAdapter);
+        //Checks for manifest external storage permissions
+        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_MEDIA_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.READ_MEDIA_AUDIO}, REQUEST_CODE);
+        } else {
+            //Loading music files into recycler view
+            loadMusicFiles();
+            table.db.collection("Users").whereEqualTo("EMAIL", email).limit(1).get()
+                    .addOnSuccessListener(userSnapshot -> {
+                        if (!userSnapshot.isEmpty()) {
+                            String userId = userSnapshot.getDocuments().get(0).getId();
+                            table.db.collection("Songs")
+                                    .whereEqualTo("USER_ID", userId) // 🔥 Filter by specific user
+                                    .orderBy("TIMES_PLAYED", Query.Direction.DESCENDING) // 🔄 Get most played
+                                    .get()
+                                    .addOnSuccessListener(songSnapshot -> {
+                                        if (songSnapshot.getDocuments().size() < 10) {
+                                            for (DocumentSnapshot document : songSnapshot.getDocuments()) {
+                                                top_songs.add(get_music_file(document.getString("TITLE")));
+                                            }
+                                        } else {
+                                            int count = 0;
+                                            for (DocumentSnapshot document : songSnapshot.getDocuments()) {
+                                                top_songs.add(get_music_file(document.getString("TITLE")));
+                                                count += 1;
+                                                if (count == 10) {
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        musicAdapter.notifyDataSetChanged();
+
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        Log.e("Firestore", "Error retrieving top songs", e);
+                                    });
+                        } else {
+                            ;
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e("Firestore", "Error retrieving user", e);
+                    });
+        }
     }
 
     //This function gets music files by specific name
@@ -187,7 +241,7 @@ public class Top10Songs extends Fragment {
             int artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST);
             int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA);
             int albumIdColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID);
-
+            int count = 1;
             while (cursor.moveToNext()) {
                 //Getting music information
                 long id = cursor.getLong(idColumn);

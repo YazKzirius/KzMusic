@@ -126,6 +126,7 @@ public class AccountSettingsFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 sessionManager.logoutUser();
+                OfflinePlayerManager.getInstance().stopAllPlayers();
                 navigate_to_activity(MainActivity.class);
             }
         });
