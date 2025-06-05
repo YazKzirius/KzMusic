@@ -30,12 +30,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.Query;
 import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import retrofit2.Call;
@@ -59,9 +62,7 @@ public class Top10Songs extends Fragment {
     private String mParam1;
     private String mParam2;
     List<MusicFile> musicFiles = new ArrayList<>();
-    List<MusicFile> top_5_songs = new ArrayList<>();
-    List<SearchResponse.Track> top_5_vids = new ArrayList<>();
-    String token;
+    List<MusicFile> top_songs = new ArrayList<>();
     String email;
     String username;
     ImageView art;
@@ -70,10 +71,8 @@ public class Top10Songs extends Fragment {
     ImageButton ic_down;
     RelativeLayout playback_bar;
     private SessionManager sessionManager;
-    private RecyclerView recyclerView1;
-    private MusicFileAdapter musicAdapter1;
-    private RecyclerView recyclerView2;
-    private MusicAdapter musicAdapter2;
+    private RecyclerView recyclerView;
+    private MusicFileAdapter musicAdapter;
     private long last_position;
     private ServiceConnection serviceConnection;
     private PlayerService playerService;
@@ -129,7 +128,7 @@ public class Top10Songs extends Fragment {
        email = sessionManager.getEmail();
        //Getting data in view
        get_top_10_songs();
-        //Setting up bottom playback navigator
+       //Setting up bottom playback navigator
         set_up_spotify_play();
         set_up_play_bar();
         if (SongQueue.getInstance().get_size() > 0) {
@@ -141,26 +140,21 @@ public class Top10Songs extends Fragment {
     }
     //This function gets the user's top 5 songs
     public void get_top_10_songs() {
-        recyclerView1 = view.findViewById(R.id.recycler_view1);
-        recyclerView1.setLayoutManager(new LinearLayoutManager(getContext()));
-
-        // 🔄 Ensure adapter is initialized
-        musicAdapter1 = new MusicFileAdapter(getContext(), top_5_songs);
-        recyclerView1.setAdapter(musicAdapter1);
-
-        loadMusicFiles(); // Ensure other music files are loaded
         ;
-
     }
 
     //This function gets music files by specific name
     public MusicFile get_music_file(String name) {
         List<String> track_names = musicFiles.stream().map(track -> {
-            String track_name = format_title(track.getName()) + " by "+track.getArtist().replaceAll("/", ", ");
+            String track_name = format_title(track.getName()) + " by "+track.getArtist();
             return track_name;
         }).collect(Collectors.toList());
         int index = track_names.indexOf(name);
-        return musicFiles.get(index);
+        if (index == -1) {
+            return new MusicFile(0, null, null, null, 0);
+        } else {
+            return musicFiles.get(index);
+        }
     }
     //This function loads User music audio files from personal directory
     private void loadMusicFiles() {
