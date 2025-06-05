@@ -34,6 +34,7 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
@@ -144,13 +145,13 @@ public class Top10Songs extends Fragment {
     }
     //This function gets the user's top 5 songs
     public void get_top_10_songs() {
-        SongsFirestore table = new SongsFirestore(getContext());
         //Setting item view type
         SongQueue.getInstance().setCurrent_resource(R.layout.item_song2);
         recyclerView = view.findViewById(R.id.top_songs_view);
         musicAdapter = new MusicFileAdapter(getContext(), top_songs);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setAdapter(musicAdapter);
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
         //Checks for manifest external storage permissions
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_MEDIA_AUDIO)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -158,11 +159,11 @@ public class Top10Songs extends Fragment {
         } else {
             //Loading music files into recycler view
             loadMusicFiles();
-            table.db.collection("Users").whereEqualTo("EMAIL", email).limit(1).get()
+            db.collection("Users").whereEqualTo("EMAIL", email).limit(1).get()
                     .addOnSuccessListener(userSnapshot -> {
                         if (!userSnapshot.isEmpty()) {
                             String userId = userSnapshot.getDocuments().get(0).getId();
-                            table.db.collection("Songs")
+                            db.collection("Songs")
                                     .whereEqualTo("USER_ID", userId) // 🔥 Filter by specific user
                                     .orderBy("TIMES_PLAYED", Query.Direction.DESCENDING) // 🔄 Get most played
                                     .get()
@@ -178,7 +179,11 @@ public class Top10Songs extends Fragment {
                                         } else {
                                             int count = 0;
                                             for (DocumentSnapshot document : songSnapshot.getDocuments()) {
-                                                top_songs.add(get_music_file(document.getString("TITLE")));
+                                                if (get_music_file(document.getString("TITLE")) != null) {
+                                                    top_songs.add(get_music_file(document.getString("TITLE")));
+                                                } else {
+                                                    ;
+                                                }
                                                 count += 1;
                                                 if (count == 10) {
                                                     break;
@@ -204,7 +209,7 @@ public class Top10Songs extends Fragment {
     //This function gets music files by specific name
     public MusicFile get_music_file(String name) {
         List<String> track_names = musicFiles.stream().map(track -> {
-            String track_name = format_title(track.getName()) + " by "+track.getArtist();
+            String track_name = format_title(track.getName()) + " by " + track.getArtist().replaceAll("/", ", ");
             return track_name;
         }).collect(Collectors.toList());
         int index = track_names.indexOf(name);
@@ -213,6 +218,14 @@ public class Top10Songs extends Fragment {
         } else {
             return musicFiles.get(index);
         }
+    }
+    public int check_music_file(String name) {
+        List<String> track_names = musicFiles.stream().map(track -> {
+            String track_name = format_title(track.getName()) + " by "+track.getArtist();
+            return track_name;
+        }).collect(Collectors.toList());
+        int index = track_names.indexOf(name);
+        return index;
     }
     //This function loads User music audio files from personal directory
     private void loadMusicFiles() {
