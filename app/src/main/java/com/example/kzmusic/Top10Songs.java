@@ -184,10 +184,10 @@ public class Top10Songs extends Fragment {
                                                 } else {
                                                     ;
                                                 }
-                                                count += 1;
                                                 if (count == 10) {
                                                     break;
                                                 }
+                                                count += 1;
                                             }
                                         }
                                         musicAdapter.notifyDataSetChanged();
