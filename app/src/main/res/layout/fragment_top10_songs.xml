@@ -19,7 +19,8 @@
             android:id="@+id/x_most_played"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Your Top 10 Songs:"
+            android:gravity="center"
+            android:text="Most Played Songs"
             android:textColor="@color/white"
             android:textSize="25sp"/>
         <androidx.recyclerview.widget.RecyclerView

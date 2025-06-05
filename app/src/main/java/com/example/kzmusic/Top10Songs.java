@@ -169,7 +169,11 @@ public class Top10Songs extends Fragment {
                                     .addOnSuccessListener(songSnapshot -> {
                                         if (songSnapshot.getDocuments().size() < 10) {
                                             for (DocumentSnapshot document : songSnapshot.getDocuments()) {
-                                                top_songs.add(get_music_file(document.getString("TITLE")));
+                                                if (get_music_file(document.getString("TITLE")) != null) {
+                                                    top_songs.add(get_music_file(document.getString("TITLE")));
+                                                } else {
+                                                    ;
+                                                }
                                             }
                                         } else {
                                             int count = 0;
@@ -204,8 +208,8 @@ public class Top10Songs extends Fragment {
             return track_name;
         }).collect(Collectors.toList());
         int index = track_names.indexOf(name);
-        if (index == -1) {
-            return new MusicFile(0, null, null, null, 0);
+        if (index == -1 || index >= musicFiles.size()) {
+            return null;
         } else {
             return musicFiles.get(index);
         }
@@ -361,6 +365,7 @@ public class Top10Songs extends Fragment {
                 Boolean shouldSkip = event.getContentIfNotHandled();
                 if (shouldSkip != null && shouldSkip) {
                     // Handle the skip event in the fragment
+                    get_top_10_songs();
                     set_up_play_bar();
                 }
             }

@@ -192,6 +192,7 @@ public class UserMusic extends Fragment {
                 Boolean shouldSkip = event.getContentIfNotHandled();
                 if (shouldSkip != null && shouldSkip) {
                     // Handle the skip event in the fragment
+                    loadMusicFiles();
                     set_up_play_bar();
                 }
             }

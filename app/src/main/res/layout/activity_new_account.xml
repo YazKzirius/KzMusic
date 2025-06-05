@@ -23,7 +23,7 @@
             android:id="@+id/textView"
             android:layout_width="250dp"
             android:layout_height="40dp"
-            android:text="Create new account:"
+            android:text="Register for Kzmusic"
             android:textColor="@color/white"
             android:textSize="25sp" />
 
@@ -32,7 +32,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:orientation="horizontal"
-            android:background="@color/white"
+            android:background="@drawable/rounded_background"
             android:gravity="center_vertical">
 
             <ImageView
@@ -56,8 +56,8 @@
             android:layout_width="330dp"
             android:layout_height="56dp"
             android:layout_marginTop="20dp"
-            android:background="@color/white"
-            android:hint="Username:"
+            android:background="@drawable/rounded_background"
+            android:hint="Username"
             android:textColorHint="@color/black"
             android:textSize="20sp"
             android:textColor="@color/black"/>
@@ -66,7 +66,7 @@
             android:id="@+id/Email"
             android:layout_width="330dp"
             android:layout_height="56dp"
-            android:background="@color/white"
+            android:background="@drawable/rounded_background"
             android:hint="Email address"
             android:textColorHint="@color/black"
             android:textSize="20sp"
@@ -77,7 +77,7 @@
             android:id="@+id/pass1"
             android:layout_width="330dp"
             android:layout_height="56dp"
-            android:background="@color/white"
+            android:background="@drawable/rounded_background"
             android:hint="Password:"
             android:textColorHint="@color/black"
             android:textSize="20sp"
@@ -89,7 +89,7 @@
             android:id="@+id/pass2"
             android:layout_width="330dp"
             android:layout_height="56dp"
-            android:background="@color/white"
+            android:background="@drawable/rounded_background"
             android:hint="Confirm Password:"
             android:textColorHint="@color/black"
             android:textSize="20sp"
