@@ -35,6 +35,9 @@ import com.google.android.exoplayer2.ExoPlayer;
 import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * A simple {@link Fragment} subclass.
  * Use the {@link AccountSettingsFragment#newInstance} factory method to
@@ -224,44 +227,137 @@ public class AccountSettingsFragment extends Fragment {
     //This function designs the bottom playback bar
     public void design_bar() {
         MusicFile song = SongQueue.getInstance().current_song;
+        String display_title = song.getName();
+        String artist = song.getArtist().replaceAll("/", ", ");
+        display_title = display_title.replaceAll("by "+artist, "").replaceAll(
+                "- "+artist, "");
+        if (isOnlyDigits(display_title)) {
+            display_title = display_title +" by "+ artist;
+        } else {
+            display_title = format_title(display_title) +" by "+ artist;
+        }
         Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
         Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(song.getAlbumId()));
         Glide.with(getContext()).asBitmap().load(album_uri).circleCrop().into(art);
-        title.setText("Now playing "+format_title(song.getName()));
+        title.setText("Now playing "+display_title);
         Artist.setText(song.getArtist().replaceAll("/", ", "));
     }
-    //This function checks if a string is only digits
-    public boolean isOnlyDigits(String str) {
-        str = str.replaceAll(" ", "");
+
+    // This function formats song title, removing unnecessary data and watermarks
+    public String format_title(String title) {
+        if (title == null || title.trim().isEmpty()) {
+            return "";
+        }
+
+        String originalTitleBeforeNumericCheck = title; // Store original for potential revert
+        String workingTitle = title;
+
+        // 1. More aggressive generic watermark removal
+        workingTitle = workingTitle.replaceAll("\\[[^\\]]*\\]", "");
+        workingTitle = workingTitle.replaceAll("\\((?i)(official|lyric|video|audio|hd|hq|explicit|remastered|live|original|mix|feat|ft\\.)[^)]*\\)", "");
+
+        // 2. Remove common file extensions
+        workingTitle = workingTitle.replaceAll("(?i)\\.(mp3|flac|wav|m4a|ogg|aac|wma)$", "");
+
+        // --- Store the state of workingTitle before attempting to strip leading numbers ---
+        // This is what we might revert to if stripping numbers leaves only other numbers.
+        String titleAfterWatermarksAndExtensions = workingTitle.trim();
+        workingTitle = titleAfterWatermarksAndExtensions;
+
+        // 4. Replace underscores and multiple spaces with a single space
+        workingTitle = workingTitle.replaceAll("[_]+", " ");
+        workingTitle = workingTitle.replaceAll("\\s+", " ");
+
+        // 5. Trim leading/trailing whitespace
+        workingTitle = workingTitle.trim();
+
+
+        // 6. FINAL CHECKS
+        // If the result of all cleaning is ONLY digits, and the original wasn't just those digits (meaning watermarks/extensions were removed)
+        // then it's likely the "title" part was just numbers. In this case, we prefer the version before number stripping,
+        // or even the original if the number-only version is too bare.
+        if (isOnlyDigits(workingTitle) && !workingTitle.isEmpty()) {
+            // If 'titleAfterLeadingNumberRemoval' (which is 'workingTitle' before this final digit check)
+            // is also all digits and is the same as the current 'workingTitle',
+            // it means the leading number removal didn't change anything, or it removed a prefix and left digits.
+            // Consider 'titleAfterWatermarksAndExtensions'. If it wasn't just digits, prefer that.
+            if (!isOnlyDigits(titleAfterWatermarksAndExtensions) && !titleAfterWatermarksAndExtensions.isEmpty()) {
+                // If the version before number stripping had letters, it was better.
+                return titleAfterWatermarksAndExtensions;
+            } else {
+                // If even after watermarks/extensions it was just numbers, or became just numbers,
+                // and the current workingTitle is also just numbers,
+                // it implies the original might have been "numbers.mp3" or "[watermark] numbers".
+                // In this specific case, returning the 'workingTitle' (which is just numbers) is acceptable
+                // as per the request "if a song name is just numbers after ... handling, return the string [of numbers]".
+                // However, if the original title had more context, we might prefer 'originalTitleBeforeNumericCheck'.
+                // This logic becomes a bit about preference. For now, let's stick to returning the numbers if that's what's left.
+            }
+        }
+
+
+        // If after all operations, the title becomes empty (e.g., it was just "[SPOTIFY-DOWNLOADER.COM].mp3")
+        // return the original title (or a placeholder) if the original had meaningful content.
+        if (workingTitle.isEmpty() && !originalTitleBeforeNumericCheck.trim().isEmpty()) {
+            // Check if the original, after basic cleaning (watermarks/extensions) was also empty or just noise
+            String tempCleanedOriginal = originalTitleBeforeNumericCheck.replaceAll("\\[[^\\]]*\\]", "")
+                    .replaceAll("\\((?i)(official|lyric|video|audio|hd|hq|explicit|remastered|live|original|mix|feat|ft\\.)[^)]*\\)", "")
+                    .replaceAll("(?i)\\.(mp3|flac|wav|m4a|ogg|aac|wma)$", "").trim();
+            if(tempCleanedOriginal.isEmpty() || tempCleanedOriginal.matches("^[\\s.-]*$") || isOnlyDigits(tempCleanedOriginal)) {
+                // If the original itself was essentially just a watermark/number/extension, returning an empty string might be fine
+                // or return the numeric part if that's all that's left of the original.
+                if(isOnlyDigits(tempCleanedOriginal) && !tempCleanedOriginal.isEmpty()) return tempCleanedOriginal;
+                // else if original was just noise, and working title is empty, original request for this state is not to return original title
+            } else {
+                return originalTitleBeforeNumericCheck; // Prefer fuller original if cleaning nuked a valid title
+            }
+        }
+        Pattern leadingNoisePattern = Pattern.compile("^[^a-zA-Z0-9]*\\d{1,4}[\\s.-]*");
+        Matcher noiseMatcher = leadingNoisePattern.matcher(workingTitle);
+        if (noiseMatcher.find()) {
+            String afterNoise = workingTitle.substring(noiseMatcher.end());
+            // Only remove if what follows isn't empty or just noise itself
+            if (!afterNoise.trim().isEmpty() && afterNoise.matches(".*[a-zA-Z].*")) { // Check if there's at least one letter after
+                workingTitle = afterNoise;
+            }
+        }
+
+        // 4. Replace underscores and multiple spaces with a single space
+        workingTitle = workingTitle.replaceAll("[_]+", " ");
+        workingTitle = workingTitle.replaceAll("\\s+", " ");
+
+        // 5. Trim leading/trailing whitespace that might have been introduced or was already there.
+        workingTitle = workingTitle.trim();
+
+        // 6. Handle cases where the title might become just a separator after cleaning
+        if (workingTitle.matches("^[\\s.-]*$")) { // If only spaces, dots, hyphens remain
+            return title; // Revert to original title if cleaning results in effectively nothing meaningful
+        }
+
+
+        // If after all operations, the title becomes empty (e.g., it was just "[SPOTIFY-DOWNLOADER.COM].mp3")
+        // return the original title or a placeholder, rather than an empty string if the original had content.
+        if (workingTitle.isEmpty() && !title.trim().isEmpty()) {
+            return title; // Or a specific placeholder like "Unknown Title"
+        }
+        return workingTitle;
+    }
+
+    // Helper function to check if a string contains only digits
+    private boolean isOnlyDigits(String str) {
         if (str == null || str.isEmpty()) {
             return false;
         }
-
-        for (int i = 0; i < str.length(); i++) {
-            if (!Character.isDigit(str.charAt(i))) {
+        String trimmedStr = str.trim(); // Trim spaces before checking
+        if (trimmedStr.isEmpty()) {
+            return false;
+        }
+        for (char c : trimmedStr.toCharArray()) {
+            if (!Character.isDigit(c)) {
                 return false;
             }
         }
         return true;
-    }
-    //This function formats song title, removing unnecessary data
-    public String format_title(String title) {
-        //Removing unnecessary data
-        title = title.replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", "").replaceAll("_", " ").replaceAll("  ", " ").replace(".flac", "").replace(".wav", "");
-        //Checking if prefix is a number
-        String prefix = title.charAt(0) + "" + title.charAt(1) + "" + title.charAt(2);
-        //Checking if title ends with empty space
-        if (title.endsWith(" ")) {
-            title = title.substring(0, title.lastIndexOf(" "));
-        }
-        //Checking if prefix is at the start and if it occurs again
-        if (isOnlyDigits(prefix) && title.indexOf(prefix) == 0 && title.indexOf(prefix, 2) == -1) {
-            //Removing prefix
-            title = title.replaceFirst(prefix, "");
-        } else {
-            ;
-        }
-        return title;
     }
     //This function opens a new song overlay
     public void open_new_overlay(MusicFile file, int position) {
