@@ -10,6 +10,7 @@ android {
     defaultConfig {
         applicationId = "com.example.kzmusic"
         minSdk = 34
+        //noinspection OldTargetApi
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -71,5 +72,6 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth)
     implementation(libs.play.services.auth)
+    implementation(libs.work.runtime.ktx)
 
 }

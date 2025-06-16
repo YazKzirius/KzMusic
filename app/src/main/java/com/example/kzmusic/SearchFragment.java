@@ -336,7 +336,7 @@ public class SearchFragment extends Fragment {
                         trackList.addAll(response.body().getTracks().getItems());
                         musicAdapter.notifyDataSetChanged();
                     } else if (response.code() == 401) { // Handle expired access token
-                        TokenManager.getInstance().refreshAccessToken(OnlinePlayerManager.getInstance().getRefresh_token());
+                        ;
                     } else {
                         Intent intent = new Intent(getContext(), GetStarted.class);
                         startActivity(intent);

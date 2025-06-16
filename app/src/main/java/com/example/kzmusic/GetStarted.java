@@ -1,8 +1,11 @@
 package com.example.kzmusic;
 //Imports
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
+import android.content.Context;
 import android.widget.Button;
 import android.widget.Toast;
 import android.content.Intent;
@@ -65,25 +68,40 @@ public class GetStarted extends AppCompatActivity {
         }
         //Get started button functionality
         Button btn = findViewById(R.id.get_started_btn);
-        navigate_to_activity(MainPage.class);
+        set_up_spotify_auth();
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                navigate_to_activity(MainPage.class);;
+                set_up_spotify_auth();
             }
         });
     }
     //These functions sets up the Spotify Sign-in/authorisation using spotify web API
     public void set_up_spotify_auth() {
-        // Spotify authorization URL
-        String authUrl = AUTH_URL + "?client_id=" + CLIENT_ID +
-                "&response_type=code" +
-                "&redirect_uri=" + Uri.encode(REDIRECT_URI) +
-                "&scope=user-read-private%20user-read-email%20streaming";
+        if (isNetworkAvailable()) {
+            // Spotify authorization URL
+            String authUrl = AUTH_URL + "?client_id=" + CLIENT_ID +
+                    "&response_type=code" +
+                    "&redirect_uri=" + Uri.encode(REDIRECT_URI) +
+                    "&scope=user-read-private%20user-read-email%20streaming";
 
-        // Open the URL in a browser
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(authUrl));
-        startActivity(intent);
+            // Open the URL in a browser
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(authUrl));
+            startActivity(intent);
+        } else {
+            // Optionally, inform the user that there is no internet connection
+            Toast.makeText(this, "No internet connection. Please check your network settings.", Toast.LENGTH_LONG).show();
+            navigate_to_activity(MainPage.class);
+        }
+    }
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (connectivityManager != null) {
+            NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+            return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+        }
+        return false;
     }
     //This function navigates to a new activity given parameters
     public void navigate_to_activity(Class <?> target) {
@@ -103,7 +121,8 @@ public class GetStarted extends AppCompatActivity {
                 exchangeAuthorizationCodeForToken(code);
             } else if (uri.getQueryParameter("error") != null) {
                 // Handle error from authorization
-                Toast.makeText(this, "Authorization failed", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Authorization failed, please try again later.", Toast.LENGTH_SHORT).show();
+                navigate_to_activity(MainPage.class);
             }
         }
     }
@@ -128,7 +147,8 @@ public class GetStarted extends AppCompatActivity {
             @Override
             public void onFailure(Call call, IOException e) {
                 e.printStackTrace();
-                runOnUiThread(() -> Toast.makeText(GetStarted.this, "Failed to exchange token", Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> Toast.makeText(GetStarted.this, "Failed to exchange token, please try again.", Toast.LENGTH_SHORT).show());
+                navigate_to_activity(MainPage.class);
             }
 
             @Override
@@ -144,12 +164,11 @@ public class GetStarted extends AppCompatActivity {
                         OnlinePlayerManager.getInstance().setRefresh_token(refresh);
                         OnlinePlayerManager.getInstance().setExpiration_time(expirationTime);
                         // Proceed to the next activity with the token
-                        Intent newIntent = new Intent(GetStarted.this, MainPage.class);
-                        startActivity(newIntent);
-                        finish();
+                        navigate_to_activity(MainPage.class);
 
                     } catch (JSONException e) {
                         e.printStackTrace();
+                        navigate_to_activity(MainPage.class);
                     }
                 }
             }

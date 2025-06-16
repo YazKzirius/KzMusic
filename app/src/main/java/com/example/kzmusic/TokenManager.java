@@ -1,6 +1,8 @@
 package com.example.kzmusic;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.work.Data;
@@ -28,6 +30,7 @@ public class TokenManager {
     String REDIRECT_URI = "kzmusic://callback";
     private static final String AUTH_URL = "https://accounts.spotify.com/authorize";
     private static final String TOKEN_URL = "https://accounts.spotify.com/api/token";
+    Context context;
     int REQUEST_CODE = 1337;
     public static synchronized TokenManager getInstance() {
         if (instance == null) {
@@ -38,7 +41,7 @@ public class TokenManager {
     private TokenManager() {
        ;
     }
-    public void refreshAccessToken(String refresh) {
+    public void refreshAccessToken(String refresh, TokenCallback callback) {
         if (refresh != null) {
             OkHttpClient client = new OkHttpClient();
 
@@ -70,7 +73,16 @@ public class TokenManager {
                             JSONObject json = new JSONObject(responseBody);
                             String newAccessToken = json.getString("access_token");
                             long newExpirationTime = json.getLong("expires_in");
+                            if (json.has("refresh_token")) {
+                                OnlinePlayerManager.getInstance().setRefresh_token(json.getString("refresh_token"));
+                            }
+
+                            new Handler(Looper.getMainLooper()).post(() ->
+                                    callback.onSuccess(newAccessToken)
+                            );
+
                             OnlinePlayerManager.getInstance().setAccess_token(newAccessToken);
+                            OnlinePlayerManager.getInstance().setRefresh_token(refresh);
                             OnlinePlayerManager.getInstance().setExpiration_time(newExpirationTime);
 
                         } catch (JSONException e) {
@@ -87,5 +99,12 @@ public class TokenManager {
         } else {
             // Handle null refresh token
         }
+    }
+    public void setContext(Context context) {
+        this.context = context;
+    }
+
+    public Context getContext() {
+        return context;
     }
 }

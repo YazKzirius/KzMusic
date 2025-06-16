@@ -27,6 +27,7 @@ firebaseFirestore = "25.1.4"
 recyclerview = "1.4.0"
 retrofit = "2.9.0"
 workRuntime = "2.10.1"
+workRuntimeKtx = "2.10.1"
 
 [libraries]
 auth = { module = "com.spotify.android:auth", version.ref = "auth" }
@@ -58,6 +59,7 @@ recyclerview = { module = "androidx.recyclerview:recyclerview", version.ref = "r
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit2-converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
 work-runtime = { module = "androidx.work:work-runtime", version.ref = "workRuntime" }
+work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

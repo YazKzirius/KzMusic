@@ -41,7 +41,6 @@ public class MainPage extends AppCompatActivity {
     String email;
     String username;
     SessionManager sessionManager;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,13 +50,49 @@ public class MainPage extends AppCompatActivity {
         sessionManager = new SessionManager(getApplicationContext());
         username = sessionManager.getUsername();
         email = sessionManager.getEmail();
-        Toast.makeText(this, "Welcome " + username+"!", Toast.LENGTH_SHORT).show();
-        //Default fragment
-        //Setting token refresh time 2 minutes before expiration
-        if (savedInstanceState == null) {
+
+        if (savedInstanceState == null) { // <--- ADD THIS CHECK
+            Toast.makeText(this, "Welcome " + username + "!", Toast.LENGTH_LONG).show();
             getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new HomeFragment()).commit();
+            if (OnlinePlayerManager.getInstance().getAccess_token() != null) {
+                schedule_refresh();
+            }
         }
+        // create_fragments() can usually stay outside this check,
+        // as you'd want to set up your fragments regardless.
         create_fragments();
+    }
+    //This function schedules access token refresh by expiration time
+    public void schedule_refresh() {
+        Handler handler = new Handler(Looper.getMainLooper());
+        Runnable[] refresher = new Runnable[1];
+
+        refresher[0] = () -> {
+            TokenManager.getInstance().refreshAccessToken(
+                    OnlinePlayerManager.getInstance().getRefresh_token(),
+                    new TokenCallback() {
+                        @Override
+                        public void onSuccess(String newAccessToken) {
+                            Toast.makeText(getApplicationContext(),
+                                    "New token: " + newAccessToken,
+                                    Toast.LENGTH_LONG).show();
+
+                            long nextInterval = (OnlinePlayerManager.getInstance().getExpiration_time() - 3595) * 1000L;
+                            handler.postDelayed(refresher[0], nextInterval);
+                        }
+
+                        @Override
+                        public void onError(Exception e) {
+                            Toast.makeText(getApplicationContext(),
+                                    "Token refresh failed: " + e.getMessage(),
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    }
+            );
+        };
+
+        long initial = (OnlinePlayerManager.getInstance().getExpiration_time() - 3595) * 1000L;
+        handler.postDelayed(refresher[0], initial);
     }
     //This function creates main page fragments
     public void create_fragments() {
@@ -80,40 +115,6 @@ public class MainPage extends AppCompatActivity {
             return true;
         });
     }
-    //This function checks if a string is only digits
-    public boolean isOnlyDigits(String str) {
-        str = str.replaceAll(" ", "");
-        if (str == null || str.isEmpty()) {
-            return false;
-        }
-
-        for (int i = 0; i < str.length(); i++) {
-            if (!Character.isDigit(str.charAt(i))) {
-                return false;
-            }
-        }
-        return true;
-    }
-    //This function formats song title, removing unnecessary data
-    public String format_title(String title) {
-        //Removing unnecessary data
-        title = title.replace("[SPOTIFY-DOWNLOADER.COM] ", "").replace(".mp3", "").replaceAll("_", " ").replaceAll("  ", " ").replace(".flac", "").replace(".wav", "");
-        //Checking if prefix is a number
-        String prefix = title.charAt(0) + "" + title.charAt(1) + "" + title.charAt(2);
-        //Checking if title ends with empty space
-        if (title.endsWith(" ")) {
-            title = title.substring(0, title.lastIndexOf(" "));
-        }
-        //Checking if prefix is at the start and if it occurs again
-        if (isOnlyDigits(prefix) && title.indexOf(prefix) == 0 && title.indexOf(prefix, 2) == -1) {
-            //Removing prefix
-            title = title.replaceFirst(prefix, "");
-        } else {
-            ;
-        }
-        return title;
-    }
-
     @Override
     public void onDestroy() {
         super.onDestroy();

@@ -325,8 +325,7 @@ public class LikedSongs extends Fragment {
                         musicAdapter1.notifyDataSetChanged();
                         //Checking for more than One of the same track
                     } else if (response.code() == 401) { // Handle expired access token
-                        String refresh = OnlinePlayerManager.getInstance().getRefresh_token();
-                        TokenManager.getInstance().refreshAccessToken(refresh);
+                        ;
                     } else {
                         ;
                     }
