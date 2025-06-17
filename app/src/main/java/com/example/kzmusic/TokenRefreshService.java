@@ -50,7 +50,7 @@ public class TokenRefreshService extends Service {
                             }
                         }
                 );
-                handler.postDelayed(this, (expiration-300)*1000); // 🔄 Refresh every 5 seconds
+                handler.postDelayed(this, 5000); // 🔄 Refresh every 5 seconds
             }
         };
 
