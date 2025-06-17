@@ -9,8 +9,12 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.work.Constraints;
 import androidx.work.Data;
 import androidx.work.ExistingPeriodicWorkPolicy;
+import androidx.work.ExistingWorkPolicy;
+import androidx.work.NetworkType;
+import androidx.work.OneTimeWorkRequest;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
@@ -54,46 +58,14 @@ public class MainPage extends AppCompatActivity {
         if (savedInstanceState == null) { // <--- ADD THIS CHECK
             Toast.makeText(this, "Welcome " + username + "!", Toast.LENGTH_LONG).show();
             getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new HomeFragment()).commit();
-            if (OnlinePlayerManager.getInstance().getAccess_token() != null) {
-                schedule_refresh();
-            }
+            Intent serviceIntent = new Intent(this, TokenRefreshService.class);
+            startService(serviceIntent);
         }
         // create_fragments() can usually stay outside this check,
         // as you'd want to set up your fragments regardless.
         create_fragments();
     }
     //This function schedules access token refresh by expiration time
-    public void schedule_refresh() {
-        Handler handler = new Handler(Looper.getMainLooper());
-        Runnable[] refresher = new Runnable[1];
-
-        refresher[0] = () -> {
-            TokenManager.getInstance().refreshAccessToken(
-                    OnlinePlayerManager.getInstance().getRefresh_token(),
-                    new TokenCallback() {
-                        @Override
-                        public void onSuccess(String newAccessToken) {
-                            Toast.makeText(getApplicationContext(),
-                                    "New token: " + newAccessToken,
-                                    Toast.LENGTH_LONG).show();
-
-                            long nextInterval = (OnlinePlayerManager.getInstance().getExpiration_time() - 3595) * 1000L;
-                            handler.postDelayed(refresher[0], nextInterval);
-                        }
-
-                        @Override
-                        public void onError(Exception e) {
-                            Toast.makeText(getApplicationContext(),
-                                    "Token refresh failed: " + e.getMessage(),
-                                    Toast.LENGTH_LONG).show();
-                        }
-                    }
-            );
-        };
-
-        long initial = (OnlinePlayerManager.getInstance().getExpiration_time() - 3595) * 1000L;
-        handler.postDelayed(refresher[0], initial);
-    }
     //This function creates main page fragments
     public void create_fragments() {
         //Fragment navigation menu

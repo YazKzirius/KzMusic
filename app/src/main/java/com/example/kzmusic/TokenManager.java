@@ -3,10 +3,13 @@ package com.example.kzmusic;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
+import androidx.work.Constraints;
 import androidx.work.Data;
 import androidx.work.ExistingPeriodicWorkPolicy;
+import androidx.work.NetworkType;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 import androidx.work.Worker;
@@ -32,15 +35,17 @@ public class TokenManager {
     private static final String TOKEN_URL = "https://accounts.spotify.com/api/token";
     Context context;
     int REQUEST_CODE = 1337;
-    public static synchronized TokenManager getInstance() {
+    private TokenManager(Context context) {
+        this.context = context.getApplicationContext(); // ✅ Store global context
+    }
+
+    public static synchronized TokenManager getInstance(Context context) {
         if (instance == null) {
-            instance = new TokenManager();
+            instance = new TokenManager(context);
         }
         return instance;
     }
-    private TokenManager() {
-       ;
-    }
+
     public void refreshAccessToken(String refresh, TokenCallback callback) {
         if (refresh != null) {
             OkHttpClient client = new OkHttpClient();
@@ -100,6 +105,7 @@ public class TokenManager {
             // Handle null refresh token
         }
     }
+
     public void setContext(Context context) {
         this.context = context;
     }

@@ -156,11 +156,13 @@ public class Radio extends Fragment {
         });
         sessionManager = new SessionManager(getContext());
         recyclerView.setAdapter(musicAdapter);
+        TextView text1 = view.findViewById(R.id.made_for_user);
         if (sessionManager.getSavedTracklist("TRACK_LIST_RADIO").size() == 0) {
             display_random_music();
         } else {
             musicAdapter.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_RADIO"));
         }
+        text1.setText(sessionManager.getUsername()+" radio");
         //Setting up bottom playback navigator
         set_up_spotify_play();
         set_up_play_bar();
@@ -331,8 +333,8 @@ public class Radio extends Fragment {
     //This function searches for random music using API queries and updates the current tracklist
     public void display_random_music() {
         accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
+        TextView text1 = view.findViewById(R.id.made_for_user);
         if (accesstoken == null) {
-            TextView text1 = view.findViewById(R.id.made_for_user);
             text1.setText("No internet connection, please try again.");
         } else {
             String[] randomQueries = {"happy", "sad", "party", "chill", "love", "workout"};
@@ -345,6 +347,7 @@ public class Radio extends Fragment {
                     if (response.isSuccessful() && response.body() != null) {
                         musicAdapter.updateTracks(response.body().getTracks().getItems());
                         sessionManager.save_Tracklist_radio(response.body().getTracks().getItems());
+                        text1.setText(sessionManager.getUsername()+" radio:");
                     } else if (response.code() == 401) { // Handle expired access token
                         ;
                     } else {
@@ -354,7 +357,7 @@ public class Radio extends Fragment {
                 @Override
                 public void onFailure(Call<SearchResponse> call, Throwable t) {
                     TextView text1 = view.findViewById(R.id.made_for_user);
-                    text1.setText("No internet connection, please try again.");
+                    text1.setText("Request failed, please try again.");
                 }
             });
         }

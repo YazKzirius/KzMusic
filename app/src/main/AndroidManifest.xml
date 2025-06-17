@@ -65,6 +65,10 @@
             android:name=".PlayerService"
             android:foregroundServiceType="mediaPlayback"
             android:exported="false" />
+        <service
+            android:name=".TokenRefreshService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="false" />/>
         <meta-data
             android:name="com.google.mlkit.vision.DEPENDENCIES"
             android:value="face" >
