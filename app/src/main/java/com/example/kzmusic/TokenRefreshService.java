@@ -4,6 +4,7 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.Build;
@@ -31,30 +32,26 @@ public class TokenRefreshService extends Service {
         startForeground(1, buildNotification());
 
         tokenRefreshRunnable = new Runnable() {
+            private boolean firstRun = true; // ✅ Track first execution
+
             @Override
             public void run() {
-                Log.d("TokenRefreshService", "🔄 Refreshing access token...");
-                long expiration = OnlinePlayerManager.getInstance().getExpiration_time();
-
-                TokenManager.getInstance(getApplicationContext()).refreshAccessToken(
-                        OnlinePlayerManager.getInstance().getRefresh_token(),
-                        new TokenCallback() {
-                            @Override
-                            public void onSuccess(String newAccessToken) {
-                                Log.d("TokenRefreshService", "✅ New Access Token: " + newAccessToken);
-                            }
-
-                            @Override
-                            public void onError(Exception e) {
-                                Log.e("TokenRefreshService", "❌ Token refresh failed: " + e.getMessage());
-                            }
-                        }
-                );
-                handler.postDelayed(this, 5000); // 🔄 Refresh every 5 seconds
+                Log.d("TokenRefreshService", "🔄 Checking token expiration...");
+                long expirationTime = OnlinePlayerManager.getInstance().getExpiration_time();
+                if (firstRun) {
+                    firstRun = false; // ✅ Mark first execution as completed
+                    Log.d("TokenRefreshService", "⚡ First execution—skipping session timeout check.");
+                } else {
+                    Log.d("TokenRefreshService", "🚨 Session Timed Out!");
+                    Intent intent = new Intent(getApplicationContext(), SessionTimeout.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent); // ✅ Show popup screen
+                }
+                Log.d("TokenRefreshService", "⏳ Next expiration check in 5 seconds.");
+                handler.postDelayed(this, (expirationTime-300)*1000); // ✅ Runs indefinitely every 5 seconds
             }
         };
-
-        handler.post(tokenRefreshRunnable); // Start refresh loop
+        handler.post(tokenRefreshRunnable); // ✅ Start refresh loop
     }
 
     @Override
@@ -79,6 +76,10 @@ public class TokenRefreshService extends Service {
         NotificationChannel channel = new NotificationChannel(
                 CHANNEL_ID, "Token Refresh Service", NotificationManager.IMPORTANCE_LOW);
         manager.createNotificationChannel(channel);
+    }
+    public static void stopTokenService(Context context) {
+        Intent stopIntent = new Intent(context, TokenRefreshService.class);
+        context.stopService(stopIntent); // ✅ Stops the service from anywhere
     }
 
     private Notification buildNotification() {

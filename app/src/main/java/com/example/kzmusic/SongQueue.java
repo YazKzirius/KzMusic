@@ -96,6 +96,9 @@ public class SongQueue {
         return songs_played.size();
     }
     public MusicFile get_specified(int index) {
+        if (index < 0 || index >= songs_played.size()) { // ✅ Prevents invalid index access
+            return null; // ✅ Handle gracefully instead of crashing
+        }
         return songs_played.get(index);
     }
     public void initialize_reverb(int sessionId) {

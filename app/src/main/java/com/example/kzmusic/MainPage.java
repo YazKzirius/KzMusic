@@ -90,12 +90,5 @@ public class MainPage extends AppCompatActivity {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        OnlinePlayerManager.getInstance().stopPlaybackAndDisconnect();
-        OfflinePlayerManager.getInstance().stopAllPlayers();
-        //Stopping all notification sessions for single session management
-        if (OfflinePlayerManager.getInstance().get_size() > 0) {
-            OfflinePlayerManager.getInstance().StopAllSessions();
-        }
-        SongQueue.getInstance().clear_songs();
     }
 }
