@@ -159,6 +159,8 @@ public class Top10Songs extends Fragment {
                 != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.READ_MEDIA_AUDIO}, REQUEST_CODE);
         } else {
+            TextView text1 = view.findViewById(R.id.x_most_played);
+            text1.setText(sessionManager.getUsername()+" Most Played Songs");
             //Loading music files into recycler view
             loadMusicFiles();
             db.collection("Users").whereEqualTo("EMAIL", email).limit(1).get()
@@ -409,7 +411,7 @@ public class Top10Songs extends Fragment {
         Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
         Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(song.getAlbumId()));
         Glide.with(getContext()).asBitmap().load(album_uri).circleCrop().into(art);
-        title.setText("Currently playing "+display_title);
+        title.setText("Now playing "+display_title);
         Artist.setText(song.getArtist().replaceAll("/", ", "));
     }
     // This function formats song title, removing unnecessary data and watermarks
@@ -559,14 +561,7 @@ public class Top10Songs extends Fragment {
         fragmentTransaction.replace(R.id.fragment_container, media_page);
         fragmentTransaction.commit();
     }
-    //This function opens Spotify player overlay
-    public void open_spotify_overlay() {
-        Fragment spotify_overlay = new SpotifyOverlay();
-        FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.replace(R.id.fragment_container, spotify_overlay);
-        fragmentTransaction.commit();
-    }
+
     private void stopPlayerService() {
         Intent intent = new Intent(requireContext(), PlayerService.class);
         requireContext().stopService(intent);

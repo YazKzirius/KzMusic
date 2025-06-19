@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -7,34 +6,51 @@
     android:layout_height="match_parent"
     android:background="#090909"
     tools:context=".MainActivity">
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center">
-        <!-- Kzmusic Logo -->
-        <ImageView
-            android:id="@+id/imageView2"
-            android:layout_width="400dp"
-            android:layout_height="400dp"
-            app:srcCompat="@drawable/logo"
-            tools:layout_editor_absoluteX="55dp"
-            tools:layout_editor_absoluteY="3dp" />
-        <Button
-            android:id="@+id/Login_btn"
-            android:layout_width="388dp"
-            android:layout_height="84dp"
-            android:text="Login"
-            android:textSize="30sp"
-            android:layout_marginTop="50dp" />
-        <Button
-            android:id="@+id/create"
-            android:layout_width="388dp"
-            android:layout_height="84dp"
-            android:text="Create account"
-            android:textSize="30sp"
-            android:layout_marginTop="30dp" />
-    </LinearLayout>
 
+    <!-- Kzmusic Logo -->
+    <ImageView
+        android:id="@+id/imageView2"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_marginTop="64dp"
+        android:scaleType="centerInside"
+        app:srcCompat="@drawable/logo"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Login Button -->
+    <Button
+        android:id="@+id/Login_btn"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="48dp"
+        android:layout_marginHorizontal="32dp"
+        android:paddingVertical="16dp"
+        android:text="Login"
+        android:textAllCaps="false"
+        android:textSize="20sp"
+        android:backgroundTint="#1DB954"
+        android:textColor="@android:color/white"
+        app:layout_constraintTop_toBottomOf="@+id/imageView2"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Create Account Button -->
+    <Button
+        android:id="@+id/create"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginHorizontal="32dp"
+        android:paddingVertical="16dp"
+        android:text="Create Account"
+        android:textAllCaps="false"
+        android:textSize="20sp"
+        android:backgroundTint="#333333"
+        android:textColor="@android:color/white"
+        app:layout_constraintTop_toBottomOf="@+id/Login_btn"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -7,92 +6,105 @@
     android:layout_height="match_parent"
     android:background="#090909"
     tools:context=".SignIn">
-    <LinearLayout
+
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center">
-        <!-- Kzmusic Logo -->
-        <ImageView
-            android:id="@+id/imageView2"
-            android:layout_width="200dp"
-            android:layout_height="200dp"
-            app:srcCompat="@drawable/logo"
-            tools:layout_editor_absoluteX="55dp"
-            tools:layout_editor_absoluteY="3dp" />
-
-        <TextView
-            android:id="@+id/textView"
-            android:layout_width="250dp"
-            android:layout_height="40dp"
-            android:gravity="center"
-            android:text="Log in to Kzmusic"
-            android:textColor="@color/white"
-            android:textSize="25sp" />
-        <EditText
-            android:id="@+id/TextEmailAddress"
-            android:layout_width="330dp"
-            android:layout_height="56dp"
-            android:layout_marginTop="20dp"
-            android:background="@drawable/rounded_background"
-            android:hint="Email address"
-            android:textColorHint="@color/black"
-            android:textSize="20sp"
-            android:textColor="@color/black"/>
-
-
-        <EditText
-            android:id="@+id/TextPassword"
-            android:layout_width="330dp"
-            android:layout_height="56dp"
-            android:background="@drawable/rounded_background"
-            android:backgroundTint="@color/white"
-            android:hint="Password"
-            android:textColorHint="@color/black"
-            android:textSize="20sp"
-            android:layout_marginTop="30dp"
-            android:textColor="@color/black"
-            android:inputType="textPassword"/>
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:padding="20dp">
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="30dp"
-            android:orientation="horizontal"
-            android:background="@drawable/rounded_background"
-            android:gravity="center_vertical">
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
 
+            <!-- Logo -->
             <ImageView
-                android:id="@+id/google_icon2"
-                android:layout_width="60dp"
-                android:layout_height="56dp"
-                android:src="@drawable/ic_google"/>
+                android:id="@+id/imageView2"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_marginTop="32dp"
+                android:scaleType="centerInside"
+                app:srcCompat="@drawable/logo" />
 
+            <!-- Title -->
+            <TextView
+                android:id="@+id/textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Log in to Kzmusic"
+                android:textColor="@color/white"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <!-- Email -->
+            <EditText
+                android:id="@+id/TextEmailAddress"
+                style="@style/AuthFieldStyle"
+                android:hint="Email address"
+                android:layout_marginTop="24dp" />
+
+            <!-- Password -->
+            <EditText
+                android:id="@+id/TextPassword"
+                style="@style/AuthFieldStyle"
+                android:hint="Password"
+                android:inputType="textPassword"
+                android:layout_marginTop="20dp" />
+
+            <!-- Google Sign-In -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/rounded_background"
+                android:paddingHorizontal="12dp">
+
+                <ImageView
+                    android:id="@+id/google_icon2"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/ic_google" />
+
+                <Button
+                    android:id="@+id/Gsignin_btn"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:text="Sign in with Google"
+                    android:backgroundTint="@color/white"
+                    android:textColor="@android:color/black"
+                    android:textSize="16sp" />
+            </LinearLayout>
+
+            <!-- Sign in -->
             <Button
-                android:id="@+id/Gsignin_btn"
-                android:layout_width="270dp"
+                android:id="@+id/signin_btn"
+                android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:text="Sign in with Google"
-                android:backgroundTint="@color/white"
-                android:textColor="@android:color/black"
-                android:textSize="18sp"/>
+                android:layout_marginTop="30dp"
+                android:text="Sign In"
+                android:textSize="18sp"
+                android:backgroundTint="#1DB954"
+                android:textColor="@android:color/white"
+                android:textAllCaps="false" />
+
+            <!-- Back -->
+            <Button
+                android:id="@+id/Back_btn"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="16dp"
+                android:text="Back"
+                android:textSize="18sp"
+                android:backgroundTint="#333333"
+                android:textColor="@android:color/white"
+                android:textAllCaps="false" />
         </LinearLayout>
-        <Button
-            android:layout_marginTop="20dp"
-            android:layout_width="330dp"
-            android:layout_height="56dp"
-            android:text="Sign in"
-            android:textSize="20sp"
-            android:id="@+id/signin_btn"/>
-        <Button
-            android:layout_marginTop="20dp"
-            android:layout_width="330dp"
-            android:layout_height="56dp"
-            android:text="Back"
-            android:textSize="20sp"
-            android:id="@+id/Back_btn"/>
-    </LinearLayout>
-
-
-
+    </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

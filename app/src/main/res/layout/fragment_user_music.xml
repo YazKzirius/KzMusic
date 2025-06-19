@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -6,93 +5,119 @@
     android:background="#090909"
     tools:context=".UserMusic">
 
-    <!-- TODO: Update blank fragment layout -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:orientation="vertical"
-        android:gravity="center">
+        android:padding="20dp"
+        android:layout_marginBottom="80dp"
+        android:gravity="center_horizontal">
 
+        <!-- Logo -->
         <ImageView
             android:id="@+id/imageView"
-            android:layout_width="match_parent"
-            android:layout_height="143dp"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_gravity="center"
+            android:scaleType="centerInside"
             android:src="@drawable/logo" />
 
+        <!-- Title -->
         <TextView
             android:id="@+id/x_music"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Your music:"
-            android:gravity="center"
+            android:text="Your Music"
             android:textColor="@color/white"
-            android:textSize="25sp"/>
+            android:textStyle="bold"
+            android:textSize="22sp"
+            android:layout_marginTop="16dp" />
+
+        <!-- Dual RecyclerViews -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:layout_marginTop="16dp"
+            android:weightSum="1"
+            android:paddingEnd="10dp">
 
             <androidx.recyclerview.widget.RecyclerView
-                android:layout_marginTop="10dp"
                 android:id="@+id/recycler_view2"
-                android:layout_width="200dp"
-                android:layout_height="500dp" />
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="0.5"
+                android:layout_marginEnd="4dp" />
 
             <androidx.recyclerview.widget.RecyclerView
-                android:layout_marginTop="10dp"
                 android:id="@+id/recycler_view3"
-                android:layout_width="match_parent"
-                android:layout_height="500dp" />
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="0.5"
+                android:layout_marginStart="4dp" />
 
         </LinearLayout>
     </LinearLayout>
+
+    <!-- Playback Bar -->
     <RelativeLayout
         android:id="@+id/playback_bar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="70dp"
         android:layout_gravity="bottom"
-        android:padding="10dp"
-        android:background="@color/black">
+        android:padding="12dp"
+        android:background="#111"
+        android:elevation="6dp">
 
         <ImageView
             android:id="@+id/current_song_art"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:src="@drawable/ic_library"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:scaleType="centerCrop"
             android:layout_alignParentStart="true"
             android:layout_centerVertical="true"
-            android:layout_marginEnd="10dp"/>
+            android:src="@drawable/ic_library" />
 
-        <TextView
-            android:id="@+id/current_song_title"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Untitled"
-            android:textColor="@color/white"
-            android:textSize="18sp"
             android:layout_toEndOf="@id/current_song_art"
-            android:layout_alignParentTop="true"/>
+            android:layout_toStartOf="@id/up_button"
+            android:layout_marginStart="10dp"
+            android:orientation="vertical"
+            android:layout_centerVertical="true">
 
-        <TextView
-            android:id="@+id/current_song_artist"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Untitled"
-            android:textColor="@color/white"
-            android:textSize="14sp"
-            android:layout_toEndOf="@id/current_song_art"
-            android:layout_below="@id/current_song_title"/>
+            <TextView
+                android:id="@+id/current_song_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Untitled"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/current_song_artist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Unknown Artist"
+                android:textColor="#CCCCCC"
+                android:textSize="14sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
 
         <ImageButton
             android:id="@+id/up_button"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:src="@drawable/ic_up"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:layout_marginStart="10dp"
-            android:background="?attr/selectableItemBackground"/>
-
+            android:src="@drawable/ic_up"
+            android:tint="@color/white"
+            android:background="?attr/selectableItemBackgroundBorderless" />
     </RelativeLayout>
-
 </FrameLayout>

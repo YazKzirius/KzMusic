@@ -155,6 +155,7 @@ public class SearchFragment extends Fragment {
             }
         });
         recyclerView.setAdapter(musicAdapter);
+        display_random();
         TextView View = view.findViewById(R.id.results);
         EditText search = view.findViewById(R.id.search_input);
         //Edit text live functionality
@@ -171,7 +172,7 @@ public class SearchFragment extends Fragment {
                 if (s.length() == 0) {
                     ;
                 } else {
-                    ;
+                    search_track(trackName);
                 }
             }
 
@@ -188,9 +189,11 @@ public class SearchFragment extends Fragment {
                 //Searching for random tracks based on the name input
                 String input = search.getText().toString();
                 if (input.equals("")) {
+                    display_random();
                     View.setText("Search results:");
                 } else {
                     //Displaying results
+                    search_track(input);
                     View.setText("Search results:");
                 }
             }
@@ -205,9 +208,9 @@ public class SearchFragment extends Fragment {
                     String input = search.getText().toString();
                     //Displaying search results
                     if (input.equals("")) {
-                        ;
+                        display_random();
                     } else {
-                        ;
+                        search_track(input);
                     }
                     View.setText("Search results:");
                     return true; // Return true to indicate the event was handled
@@ -295,12 +298,13 @@ public class SearchFragment extends Fragment {
                         trackList.addAll(response.body().getTracks().getItems());
                         musicAdapter.notifyDataSetChanged();
                     } else if (response.code() == 401) { // Handle expired access token
-                        OnlinePlayerManager.getInstance().setAccess_token(null);
-                        OnlinePlayerManager.getInstance().setRefresh_token(null);
-                        navigate_to_activity(GetStarted.class);
+                        Intent intent = new Intent(getContext(), SessionTimeout.class);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent); // ✅ Show popup screen
                     } else {
-                        Intent intent = new Intent(getContext(), GetStarted.class);
-                        startActivity(intent);
+                        Intent intent = new Intent(getContext(), SessionTimeout.class);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent); // ✅ Show popup screen
                     }
                 }
                 @Override
@@ -336,10 +340,13 @@ public class SearchFragment extends Fragment {
                         trackList.addAll(response.body().getTracks().getItems());
                         musicAdapter.notifyDataSetChanged();
                     } else if (response.code() == 401) { // Handle expired access token
-                        ;
+                        Intent intent = new Intent(getContext(), SessionTimeout.class);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent); // ✅ Show popup screen
                     } else {
-                        Intent intent = new Intent(getContext(), GetStarted.class);
-                        startActivity(intent);
+                        Intent intent = new Intent(getContext(), SessionTimeout.class);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent); // ✅ Show popup screen
                     }
                 }
                 @Override

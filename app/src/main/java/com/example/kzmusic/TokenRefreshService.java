@@ -48,7 +48,7 @@ public class TokenRefreshService extends Service {
                     startActivity(intent); // ✅ Show popup screen
                 }
                 Log.d("TokenRefreshService", "⏳ Next expiration check in 5 seconds.");
-                handler.postDelayed(this, (expirationTime-300)*1000); // ✅ Runs indefinitely every 5 seconds
+                handler.postDelayed(this, (55*60)*1000); // ✅ Runs indefinitely every 5 seconds
             }
         };
         handler.post(tokenRefreshRunnable); // ✅ Start refresh loop

@@ -28,6 +28,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
@@ -35,6 +36,7 @@ import com.spotify.protocol.types.PlayerState;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -178,20 +180,52 @@ public class LikedSongs extends Fragment {
                                             if (songSnapshot.isEmpty()) {
                                                 ;
                                             } else {
-                                                if (sessionManager.getSavedTracklist("TRACK_LIST_LIKED").size() == 0 || songSnapshot.getDocuments().size() !=
-                                                        sessionManager.getSavedTracklist("TRACK_LIST_LIKED").size()) {
-                                                   ;
-                                                } else {
-                                                    musicAdapter1.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_LIKED"));
-                                                    sessionManager.save_Tracklist_liked(sessionManager.getSavedTracklist("TRACK_LIST_LIKED"));
-                                                }
+                                                all_liked(isLiked -> {
+                                                    if (isLiked) {
+                                                        if (sessionManager.getSavedTracklist("TRACK_LIST_LIKED").size() == 0 || songSnapshot.getDocuments().size() !=
+                                                                sessionManager.getSavedTracklist("TRACK_LIST_LIKED").size()) {
+                                                            get_liked_songs();
+                                                        } else {
+                                                            musicAdapter1.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_LIKED"));
+                                                            sessionManager.save_Tracklist_liked(sessionManager.getSavedTracklist("TRACK_LIST_LIKED"));
+                                                        }
+                                                    } else {
+                                                        get_liked_songs();
+                                                    }
+                                                });
                                             }
                                         });
                             } else {
                                 ;
                             }
                         });
+        set_up_playback_buttons();
         return view;
+    }
+    //This function checks if all songs in view are liked
+    public void all_liked(OnSuccessListener<Boolean> callback) {
+        SavedSongsFirestore table = new SavedSongsFirestore(getContext());
+        String email = sessionManager.getEmail();
+        List<SearchResponse.Track> trackList = sessionManager.getSavedTracklist("TRACK_LIST_LIKED");
+
+        if (trackList.isEmpty()) {
+            callback.onSuccess(false);
+            return;
+        }
+
+        AtomicInteger count = new AtomicInteger(0);
+        for (SearchResponse.Track track : trackList) {
+            String title = track.getName() + " by " + track.getArtists().get(0).getName();
+            table.is_saved(email, title, isLiked -> {
+                if (!isLiked) {
+                    callback.onSuccess(false);
+                } else {
+                    if (count.incrementAndGet() == trackList.size()) {
+                        callback.onSuccess(true); // ✅ All songs are liked
+                    }
+                }
+            });
+        }
     }
     //This function sets up playback buttons at top
     public void set_up_playback_buttons() {

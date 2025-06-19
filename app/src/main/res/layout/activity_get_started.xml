@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -7,30 +6,34 @@
     android:layout_height="match_parent"
     android:background="#090909"
     tools:context=".GetStarted">
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center">
 
-        <ImageView
-            android:id="@+id/imageView3"
-            android:layout_width="298dp"
-            android:layout_height="329dp"
-            app:srcCompat="@drawable/logo"
-            tools:layout_editor_absoluteX="105dp"
-            tools:layout_editor_absoluteY="1dp" />
-        <Button
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_marginTop="100dp"
-            android:text="Get Started"
-            android:textSize="20sp"
-            android:layout_gravity="center"
-            android:id="@+id/get_started_btn"/>
+    <!-- App Logo -->
+    <ImageView
+        android:id="@+id/imageView3"
+        android:layout_width="180dp"
+        android:layout_height="180dp"
+        android:layout_marginTop="64dp"
+        android:scaleType="centerInside"
+        app:srcCompat="@drawable/logo"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    </LinearLayout>
-
-
+    <!-- Get Started Button -->
+    <Button
+        android:id="@+id/get_started_btn"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:layout_marginTop="48dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:text="Get Started"
+        android:textSize="18sp"
+        android:textAllCaps="false"
+        android:backgroundTint="#1DB954"
+        android:textColor="@android:color/white"
+        app:layout_constraintTop_toBottomOf="@+id/imageView3"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

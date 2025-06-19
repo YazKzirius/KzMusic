@@ -90,6 +90,8 @@ public class MainPage extends AppCompatActivity {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        OfflinePlayerManager.getInstance().current_player.pause();
+        if (OfflinePlayerManager.getInstance().current_player != null) {
+          OfflinePlayerManager.getInstance().current_player.pause();
+        }
     }
 }

@@ -1,201 +1,200 @@
-<?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MediaOverlay"
-    android:background = "#090909">
-    <LinearLayout
+    android:background="#090909"
+    tools:context=".MediaOverlay">
+
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:padding="16dp"
-        android:background="#090909">
-        <ImageView
-            android:id="@+id/imageView"
-            android:layout_width="match_parent"
-            android:layout_height="143dp"
-            android:src="@drawable/logo" />
+        android:layout_height="match_parent">
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="horizontal">
-            <ImageButton
-                android:id="@+id/down_btn"
-                android:layout_width="64dp"
-                android:layout_height="wrap_content"
-                android:layout_gravity="left"
-                android:layout_marginLeft="10dp"
-                android:background="#090909"
-                android:src="@drawable/ic_down"
-                android:tint="@color/white" />
-            <TextView
-                android:layout_width="250dp"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:layout_centerHorizontal="true"
-                android:text="Now playing"
-                android:textColor="@color/white"
-                android:textSize="20sp" />
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:gravity="center_horizontal">
 
-            <ImageButton
-                android:id="@+id/menu_btn2"
-                android:layout_width="64dp"
-                android:layout_height="wrap_content"
-                android:layout_gravity="right"
-                android:layout_marginLeft="10dp"
-                android:background="#090909"
-                android:src="@drawable/ic_colon"
-                android:tint="@color/white" />
-        </LinearLayout>
-        <FrameLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp">
-
+            <!-- Logo -->
             <ImageView
-                android:id="@+id/musicImage"
-                android:layout_width="150dp"
-                android:layout_height="150dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_library" />
+                android:id="@+id/imageView"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:src="@drawable/logo"
+                android:layout_gravity="center" />
 
-            <ImageView
-                android:layout_width="220dp"
-                android:layout_height="220dp"
-                android:id="@+id/song_playing_gif"
-                android:layout_gravity="center"/>
+            <!-- Header with down/menu buttons -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
-        </FrameLayout>
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
+                <ImageButton
+                    android:id="@+id/down_btn"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_down"
+                    android:tint="@color/white" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="Now Playing"
+                    android:textColor="@color/white"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <ImageButton
+                    android:id="@+id/menu_btn2"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_colon"
+                    android:tint="@color/white" />
+            </LinearLayout>
+
+            <!-- Album art + Playing GIF -->
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp">
+
+                <ImageView
+                    android:id="@+id/song_playing_gif"
+                    android:layout_width="220dp"
+                    android:layout_height="220dp"
+                    android:layout_gravity="center" />
+
+                <ImageView
+                    android:id="@+id/musicImage"
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
+                    android:layout_gravity="center"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_library" />
+            </FrameLayout>
+
+            <!-- Song Title -->
             <TextView
                 android:id="@+id/songTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginTop="16dp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <!-- Progress bar -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_centerHorizontal="true"
-                android:textColor="@color/white"
-                android:textSize="15sp" />
-        </LinearLayout>
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:background="#090909"
-            android:orientation="horizontal">
+                android:layout_marginTop="16dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
-            <TextView
-                android:id="@+id/textCurrentTime"
-                android:layout_width="60dp"
-                android:layout_height="50dp"
-                android:layout_marginTop="10dp"
-                android:text="0:00"
-                android:textColor="@android:color/white"
-                android:textSize="20sp" />
+                <TextView
+                    android:id="@+id/textCurrentTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0:00"
+                    android:textColor="@color/white"
+                    android:textSize="14sp" />
 
-            <SeekBar
-                android:id="@+id/seekBar"
+                <SeekBar
+                    android:id="@+id/seekBar"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:id="@+id/textTotalDuration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0:00"
+                    android:textColor="@color/white"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <!-- Playback Controls -->
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_weight="1" />
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:weightSum="5">
+
+                <ImageButton
+                    android:id="@+id/btnLoop"
+                    style="@style/OverlayControlButton"
+                    android:src="@drawable/ic_loop" />
+
+                <ImageButton
+                    android:id="@+id/btnSkipLeft"
+                    style="@style/OverlayControlButton"
+                    android:src="@drawable/ic_skipleft" />
+
+                <ImageButton
+                    android:id="@+id/btnPlayPause"
+                    style="@style/OverlayControlButton"
+                    android:src="@drawable/ic_pause" />
+
+                <ImageButton
+                    android:id="@+id/btnSkipRight"
+                    style="@style/OverlayControlButton"
+                    android:src="@drawable/ic_skipright" />
+
+                <ImageButton
+                    android:id="@+id/btnShuffle"
+                    style="@style/OverlayControlButton"
+                    android:src="@drawable/ic_shuffle" />
+            </LinearLayout>
+
+            <!-- Speed Slider -->
+            <SeekBar
+                android:id="@+id/seekBarSpeed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="200"
+                android:progress="100"
+                android:layout_marginTop="16dp" />
 
             <TextView
-                android:id="@+id/textTotalDuration"
-                android:layout_width="60dp"
-                android:layout_height="50dp"
-                android:layout_alignParentEnd="true"
-                android:layout_marginTop="10dp"
-                android:text="0:00"
-                android:textSize="20sp"
-                android:textColor="@android:color/white" />
+                android:id="@+id/speed_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1.0x"
+                android:textColor="@color/white"
+                android:textSize="14sp"
+                android:layout_marginTop="4dp" />
+
+            <!-- Reverb Slider -->
+            <SeekBar
+                android:id="@+id/seekBarReverb"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="1000"
+                android:progress="100"
+                android:layout_marginTop="24dp" />
+
+            <TextView
+                android:id="@+id/reverb_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Reverberation: 0%"
+                android:textColor="@color/white"
+                android:textSize="14sp"
+                android:layout_marginTop="4dp" />
         </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#090909"
-            android:orientation="horizontal"
-            android:layout_marginLeft="6dp">
-
-            <ImageButton
-                android:id="@+id/btnLoop"
-                android:layout_width="70dp"
-                android:layout_height="70dp"
-                android:layout_marginRight="2dp"
-                android:background="?attr/selectableItemBackground"
-                android:src="@drawable/ic_loop" />
-
-            <ImageButton
-                android:id="@+id/btnSkipLeft"
-                android:layout_width="70dp"
-                android:layout_height="70dp"
-                android:layout_marginRight="2dp"
-                android:src="@drawable/ic_skipleft"
-                android:background="?attr/selectableItemBackground" />
-
-            <ImageButton
-                android:id="@+id/btnPlayPause"
-                android:layout_width="70dp"
-                android:layout_height="70dp"
-                android:layout_marginRight="2dp"
-                android:src="@drawable/ic_pause"
-                android:background="?attr/selectableItemBackground"/>
-
-            <ImageButton
-                android:id="@+id/btnSkipRight"
-                android:layout_width="70dp"
-                android:layout_height="70dp"
-                android:layout_marginRight="2dp"
-                android:src="@drawable/ic_skipright"
-                android:background="?attr/selectableItemBackground" />
-
-            <ImageButton
-                android:id="@+id/btnShuffle"
-                android:layout_width="70dp"
-                android:layout_height="70dp"
-                android:layout_marginRight="2dp"
-                android:src="@drawable/ic_shuffle"
-                android:background="?attr/selectableItemBackground" />
-
-        </LinearLayout>
-        <SeekBar
-            android:id="@+id/seekBarSpeed"
-            android:layout_width="match_parent"
-            android:layout_height="20dp"
-            android:max="200"
-            android:progress="100"
-            android:paddingEnd="8dp"
-            android:layout_marginTop="10dp"/>
-        <TextView
-            android:id="@+id/speed_text"
-            android:layout_width="wrap_content"
-            android:layout_height="20dp"
-            android:text="1.0x"
-            android:textSize="15sp"
-            android:textColor="@color/white"/>
-
-        <SeekBar
-            android:id="@+id/seekBarReverb"
-            android:layout_width="match_parent"
-            android:layout_height="20dp"
-            android:max="200"
-            android:progress="100"
-            android:paddingEnd="8dp"
-            android:layout_marginTop="35dp"/>
-        <TextView
-            android:id="@+id/reverb_text"
-            android:layout_width="wrap_content"
-            android:layout_height="20dp"
-            android:text="Reverberbation: 0%"
-            android:textSize="15sp"
-            android:textColor="@color/white"
-            android:max="1000"
-            android:min="-1000"/>
-    </LinearLayout>
-
+    </ScrollView>
 </FrameLayout>
