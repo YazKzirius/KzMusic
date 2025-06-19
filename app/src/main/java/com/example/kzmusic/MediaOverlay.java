@@ -27,6 +27,8 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.SeekBar;
@@ -150,6 +152,8 @@ public class MediaOverlay extends Fragment {
         //Implementing player functionality
         view = inflater.inflate(R.layout.fragment_media_overlay, container, false);
         overlaySongTitle = view.findViewById(R.id.songTitle);
+        Animation scrollAnim = AnimationUtils.loadAnimation(getContext(), R.anim.scroll_horizontal);
+        overlaySongTitle.startAnimation(scrollAnim);
         album_cover = view.findViewById(R.id.musicImage);
         song_gif = view.findViewById(R.id.song_playing_gif);
         btnPlayPause = view.findViewById(R.id.btnPlayPause);
