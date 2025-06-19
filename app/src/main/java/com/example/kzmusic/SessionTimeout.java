@@ -60,6 +60,11 @@ public class SessionTimeout extends AppCompatActivity {
                 .setCancelable(false)
                 .show();
     }
+    //This function navigates to a new activity given parameters
+    public void navigate_to_activity(Class <?> target) {
+        Intent intent = new Intent(getApplicationContext(), target);
+        startActivity(intent);
+    }
     //These functions sets up the Spotify Sign-in/authorisation using spotify web API
     public void set_up_spotify_auth() {
         if (isNetworkAvailable()) {
@@ -140,6 +145,7 @@ public class SessionTimeout extends AppCompatActivity {
                         OnlinePlayerManager.getInstance().setAccess_token(accessToken);
                         OnlinePlayerManager.getInstance().setRefresh_token(refresh);
                         OnlinePlayerManager.getInstance().setExpiration_time(expirationTime);
+                        navigate_to_activity(MainPage.class);
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }

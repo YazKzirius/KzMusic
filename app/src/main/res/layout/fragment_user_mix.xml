@@ -91,26 +91,28 @@
         android:layout_height="70dp"
         android:layout_gravity="bottom"
         android:background="#111"
-        android:padding="12dp"
-        android:elevation="8dp">
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:elevation="6dp">
 
         <ImageView
             android:id="@+id/current_song_art"
             android:layout_width="52dp"
             android:layout_height="52dp"
-            android:scaleType="centerCrop"
-            android:layout_alignParentStart="true"
             android:layout_centerVertical="true"
-            android:src="@drawable/ic_library" />
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_library"
+            android:layout_alignParentStart="true" />
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:id="@+id/song_info"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_toEndOf="@id/current_song_art"
             android:layout_toStartOf="@id/up_button"
-            android:layout_marginStart="10dp"
+            android:layout_centerVertical="true"
             android:orientation="vertical"
-            android:layout_centerVertical="true">
+            android:paddingStart="12dp">
 
             <TextView
                 android:id="@+id/current_song_title"
@@ -118,10 +120,10 @@
                 android:layout_height="wrap_content"
                 android:text="Untitled"
                 android:textColor="@color/white"
+                android:textSize="16sp"
                 android:textStyle="bold"
                 android:maxLines="1"
-                android:ellipsize="end"
-                android:textSize="16sp" />
+                android:ellipsize="end" />
 
             <TextView
                 android:id="@+id/current_song_artist"
@@ -129,9 +131,9 @@
                 android:layout_height="wrap_content"
                 android:text="Unknown Artist"
                 android:textColor="#CCCCCC"
+                android:textSize="14sp"
                 android:maxLines="1"
-                android:ellipsize="end"
-                android:textSize="14sp" />
+                android:ellipsize="end" />
         </LinearLayout>
 
         <ImageButton

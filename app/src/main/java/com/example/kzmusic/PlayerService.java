@@ -85,6 +85,9 @@ public class PlayerService extends Service {
     }
     //This function plays the specified music file
     public void playMusic(MusicFile musicFile) {
+        if (musicFile == null) {
+            ;
+        }
         //Playing resuming song at previous duration if the same song as last
         if (SongQueue.getInstance().get_size() > 1) {
             int index = SongQueue.getInstance().pointer - 1;

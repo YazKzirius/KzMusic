@@ -195,6 +195,7 @@ public class Top10Songs extends Fragment {
                                             }
                                         }
                                         musicAdapter.notifyDataSetChanged();
+                                        SongQueue.getInstance().setSong_list(top_songs);
 
                                     })
                                     .addOnFailureListener(e -> {

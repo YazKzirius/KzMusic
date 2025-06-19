@@ -67,14 +67,14 @@
 
                 <ImageView
                     android:id="@+id/song_playing_gif"
-                    android:layout_width="220dp"
-                    android:layout_height="220dp"
+                    android:layout_width="200dp"
+                    android:layout_height="200dp"
                     android:layout_gravity="center" />
 
                 <ImageView
                     android:id="@+id/musicImage"
-                    android:layout_width="150dp"
-                    android:layout_height="150dp"
+                    android:layout_width="130dp"
+                    android:layout_height="130dp"
                     android:layout_gravity="center"
                     android:scaleType="centerCrop"
                     android:src="@drawable/ic_library" />
