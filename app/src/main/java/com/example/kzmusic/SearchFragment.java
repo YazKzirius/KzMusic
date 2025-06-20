@@ -144,7 +144,7 @@ public class SearchFragment extends Fragment {
             @Override
             public void onItemClick(SearchResponse.Track track) {
                 //Pausing current player, so no playback overlap
-                if (OfflinePlayerManager.getInstance().get_size() > 0) {
+                if (OfflinePlayerManager.getInstance().get_size() > 0 && SongQueue.getInstance().current_song != null) {
                     OfflinePlayerManager.getInstance().current_player.pause();
                     OnlinePlayerManager.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
@@ -221,7 +221,7 @@ public class SearchFragment extends Fragment {
         //Setting up bottom playback navigator
         set_up_spotify_play();
         set_up_play_bar();
-        if (SongQueue.getInstance().get_size() > 0) {
+        if (SongQueue.getInstance().get_size() > 0 && SongQueue.getInstance().current_song != null) {
             set_up_skipping();
             last_position = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
             SongQueue.getInstance().setLast_postion(last_position);
@@ -359,7 +359,7 @@ public class SearchFragment extends Fragment {
     }
     //This function assigns data from playback overlay to bottom navigation
     public void set_up_play_bar() {
-        if (SongQueue.getInstance().songs_played.size() == 0) {
+        if (SongQueue.getInstance().songs_played.size() == 0 || SongQueue.getInstance().current_song == null) {
             ;
         } else {
             MusicFile song = SongQueue.getInstance().current_song;
@@ -402,20 +402,24 @@ public class SearchFragment extends Fragment {
     //This function designs the bottom playback bar
     public void design_bar() {
         MusicFile song = SongQueue.getInstance().current_song;
-        String display_title = song.getName();
-        String artist = song.getArtist().replaceAll("/", ", ");
-        display_title = display_title.replaceAll("by "+artist, "").replaceAll(
-                "- "+artist, "");
-        if (isOnlyDigits(display_title)) {
-            display_title = display_title +" by "+ artist;
+        if (song != null) {
+            String display_title = song.getName();
+            String artist = song.getArtist().replaceAll("/", ", ");
+            display_title = display_title.replaceAll("by "+artist, "").replaceAll(
+                    "- "+artist, "");
+            if (isOnlyDigits(display_title)) {
+                display_title = display_title +" by "+ artist;
+            } else {
+                display_title = format_title(display_title) +" by "+ artist;
+            }
+            Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
+            Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(song.getAlbumId()));
+            Glide.with(getContext()).asBitmap().load(album_uri).circleCrop().into(art);
+            title.setText("Now playing "+display_title);
+            Artist.setText(song.getArtist().replaceAll("/", ", "));
         } else {
-            display_title = format_title(display_title) +" by "+ artist;
+            ;
         }
-        Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
-        Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(song.getAlbumId()));
-        Glide.with(getContext()).asBitmap().load(album_uri).circleCrop().into(art);
-        title.setText("Now playing "+display_title);
-        Artist.setText(song.getArtist().replaceAll("/", ", "));
     }
 
     // This function formats song title, removing unnecessary data and watermarks
@@ -536,15 +540,19 @@ public class SearchFragment extends Fragment {
     }
     //This function opens a new song overlay
     public void open_new_overlay(MusicFile file, int position) {
-        //Adding song to queue
-        stopPlayerService();
-        SongQueue.getInstance().addSong(file);
-        SongQueue.getInstance().setPosition(position);
-        Fragment media_page = new MediaOverlay();
-        FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.replace(R.id.fragment_container, media_page);
-        fragmentTransaction.commit();
+        if (file == null) {
+            ;
+        } else {
+            //Adding song to queue
+            stopPlayerService();
+            SongQueue.getInstance().addSong(file);
+            SongQueue.getInstance().setPosition(position);
+            Fragment media_page = new MediaOverlay();
+            FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
+            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+            fragmentTransaction.replace(R.id.fragment_container, media_page);
+            fragmentTransaction.commit();
+        }
     }
     //This function handles Spotify overlay play/pause
     public void set_up_spotify_play() {

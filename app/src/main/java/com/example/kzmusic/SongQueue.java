@@ -43,6 +43,9 @@ public class SongQueue {
         this.current_song = song;
         this.pointer += 1;
     }
+    public void setCurrent_song (MusicFile song) {
+        this.current_song = song;
+    }
     public void clear_songs() {
         this.songs_played.clear();
     }
@@ -55,6 +58,9 @@ public class SongQueue {
     }
     public void setSpeed(Float speed) {
         this.speed = speed;
+    }
+    public void setPointer(int pointer) {
+        ;
     }
 
     public void setPitch(Float pitch) {

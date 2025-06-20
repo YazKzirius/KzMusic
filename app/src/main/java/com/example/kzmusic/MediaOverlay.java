@@ -173,22 +173,26 @@ public class MediaOverlay extends Fragment {
         position = SongQueue.getInstance().current_position;
         is_looping = SongQueue.getInstance().is_looping;
         shuffle_on = SongQueue.getInstance().shuffle_on;
-        //Setting up notification
-        startPlayerService();
-        //Setting up skipping;
-        set_up_skipping();
-        //Playing music
-        set_up_view(musicFile);
-        //Loading previous music files
-        loadMusicFiles();
-        //Setting up media buttons
-        set_up_media_buttons();
-        //Setting up speed+pitch seekbar functionality
-        set_up_speed_and_pitch();
-        //Setting up reverberation seekbar functionality
-        set_up_reverb();
-        //Setting up menu
-        set_up_pop_menu();
+        if (musicFile == null) {
+            ;
+        } else {
+            //Setting up notification
+            startPlayerService();
+            //Setting up skipping;
+            set_up_skipping();
+            //Playing music
+            set_up_view(musicFile);
+            //Loading previous music files
+            loadMusicFiles();
+            //Setting up media buttons
+            set_up_media_buttons();
+            //Setting up speed+pitch seekbar functionality
+            set_up_speed_and_pitch();
+            //Setting up reverberation seekbar functionality
+            set_up_reverb();
+            //Setting up menu
+            set_up_pop_menu();
+        }
         return view;
     }
     //This button sets up pop up menu display

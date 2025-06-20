@@ -138,7 +138,7 @@ public class Top10Songs extends Fragment {
        //Setting up bottom playback navigator
         set_up_spotify_play();
         set_up_play_bar();
-        if (SongQueue.getInstance().get_size() > 0) {
+        if (SongQueue.getInstance().get_size() > 0 && SongQueue.getInstance().current_song != null) {
             set_up_skipping();
             last_position = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
             SongQueue.getInstance().setLast_postion(last_position);
@@ -232,14 +232,6 @@ public class Top10Songs extends Fragment {
             return musicFiles.get(index);
         }
     }
-    public int check_music_file(String name) {
-        List<String> track_names = musicFiles.stream().map(track -> {
-            String track_name = format_title(track.getName()) + " by "+track.getArtist();
-            return track_name;
-        }).collect(Collectors.toList());
-        int index = track_names.indexOf(name);
-        return index;
-    }
     //This function loads User music audio files from personal directory
     private void loadMusicFiles() {
         Uri collection;
@@ -293,33 +285,9 @@ public class Top10Songs extends Fragment {
             SongQueue.getInstance().setSong_list(musicFiles);
         }
     }
-    //This function navigates to a new activity given parameters
-    public void navigate_to_activity(Class <?> target) {
-        Intent intent = new Intent(getContext(), target);
-        startActivity(intent);
-    }
-    //This function replaces a tracklist with a list of track names
-    public List<String> get_track_names(List<SearchResponse.Track> trackList) {
-        // Use streams to map each Track object conditionally based on the presence of "(feat. "
-        List<String> trackNames = trackList.stream()
-                .map(track -> {
-                    String name = track.getName();
-                    if (name.contains("(feat. ")) {
-                        // Perform some operation (e.g., returning the name or modify it)
-                        return name; // You can modify this to your needs, such as processing the string
-                    } else {
-                        // Return something else if "(feat. " is not present
-                        return name + " by "+track.getArtists().get(0).getName();
-                    }
-                })
-                .collect(Collectors.toList());
-
-        // Convert the List to an array
-        return trackNames;
-    }
     //This function assigns data from playback overlay to bottom navigation
     public void set_up_play_bar() {
-        if (SongQueue.getInstance().songs_played.size() == 0) {
+        if (SongQueue.getInstance().songs_played.size() == 0 || SongQueue.getInstance().current_song == null) {
             ;
         } else {
             MusicFile song = SongQueue.getInstance().current_song;
@@ -400,20 +368,24 @@ public class Top10Songs extends Fragment {
     //This function designs the bottom playback bar
     public void design_bar() {
         MusicFile song = SongQueue.getInstance().current_song;
-        String display_title = song.getName();
-        String artist = song.getArtist().replaceAll("/", ", ");
-        display_title = display_title.replaceAll("by "+artist, "").replaceAll(
-                "- "+artist, "");
-        if (isOnlyDigits(display_title)) {
-            display_title = display_title +" by "+ artist;
+        if (song != null) {
+            String display_title = song.getName();
+            String artist = song.getArtist().replaceAll("/", ", ");
+            display_title = display_title.replaceAll("by "+artist, "").replaceAll(
+                    "- "+artist, "");
+            if (isOnlyDigits(display_title)) {
+                display_title = display_title +" by "+ artist;
+            } else {
+                display_title = format_title(display_title) +" by "+ artist;
+            }
+            Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
+            Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(song.getAlbumId()));
+            Glide.with(getContext()).asBitmap().load(album_uri).circleCrop().into(art);
+            title.setText("Now playing "+display_title);
+            Artist.setText(song.getArtist().replaceAll("/", ", "));
         } else {
-            display_title = format_title(display_title) +" by "+ artist;
+            ;
         }
-        Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
-        Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(song.getAlbumId()));
-        Glide.with(getContext()).asBitmap().load(album_uri).circleCrop().into(art);
-        title.setText("Now playing "+display_title);
-        Artist.setText(song.getArtist().replaceAll("/", ", "));
     }
     // This function formats song title, removing unnecessary data and watermarks
     public String format_title(String title) {
@@ -552,15 +524,19 @@ public class Top10Songs extends Fragment {
     }
     //This function opens a new song overlay
     public void open_new_overlay(MusicFile file, int position) {
-        //Adding song to queue
-        stopPlayerService();
-        SongQueue.getInstance().addSong(file);
-        SongQueue.getInstance().setPosition(position);
-        Fragment media_page = new MediaOverlay();
-        FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.replace(R.id.fragment_container, media_page);
-        fragmentTransaction.commit();
+        if (file == null) {
+            ;
+        } else {
+            //Adding song to queue
+            stopPlayerService();
+            SongQueue.getInstance().addSong(file);
+            SongQueue.getInstance().setPosition(position);
+            Fragment media_page = new MediaOverlay();
+            FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
+            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+            fragmentTransaction.replace(R.id.fragment_container, media_page);
+            fragmentTransaction.commit();
+        }
     }
 
     private void stopPlayerService() {

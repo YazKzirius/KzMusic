@@ -87,82 +87,115 @@ public class PlayerService extends Service {
     public void playMusic(MusicFile musicFile) {
         if (musicFile == null) {
             ;
-        }
-        //Playing resuming song at previous duration if the same song as last
-        if (SongQueue.getInstance().get_size() > 1) {
-            int index = SongQueue.getInstance().pointer - 1;
-            //Getting current and previous song names
-            String s1 = SongQueue.getInstance().get_specified(index).getName();
-            String s2 = SongQueue.getInstance().get_specified(index - 1).getName();
-            if (s1.equals(s2)) {
-                //Resuming at left point
-                //Use previous player
-                player = OfflinePlayerManager.getInstance().current_player;
+        } else {
+            //Playing resuming song at previous duration if the same song as last
+            if (SongQueue.getInstance().get_size() > 1) {
+                int index = SongQueue.getInstance().pointer - 1;
+                MusicFile song1 =  SongQueue.getInstance().get_specified(index);
+                MusicFile song2 = SongQueue.getInstance().get_specified(index - 1);
+                if (song1 == null || song2 == null) {
+                    Toast.makeText(getApplicationContext(), ""+SongQueue.getInstance().songs_played, Toast.LENGTH_SHORT).show();
+                    OfflinePlayerManager.getInstance().stopAllPlayers();
+                    player = new ExoPlayer.Builder(getApplicationContext()).build();
+                    Uri uri = Uri.fromFile(new File(musicFile.getPath()));
+                    MediaItem mediaItem = MediaItem.fromUri(uri);
+                    player.setMediaItem(mediaItem);
+                    add_song(musicFile);
+                } else {
+                    String s1 = song1.getName();
+                    String s2 = song2.getName();
+                    if (s1 != null && s1.equals(s2)) {
+                        // Resume with previous player
+                        player = OfflinePlayerManager.getInstance().current_player;
+                    } else {
+                        OfflinePlayerManager.getInstance().stopAllPlayers();
+                        player = new ExoPlayer.Builder(getApplicationContext()).build();
+                        Uri uri = Uri.fromFile(new File(musicFile.getPath()));
+                        MediaItem mediaItem = MediaItem.fromUri(uri);
+                        player.setMediaItem(mediaItem);
+                        add_song(musicFile);
+                    }
+                }
             } else {
-                OfflinePlayerManager.getInstance().stopAllPlayers();
                 player = new ExoPlayer.Builder(getApplicationContext()).build();
                 Uri uri = Uri.fromFile(new File(musicFile.getPath()));
                 MediaItem mediaItem = MediaItem.fromUri(uri);
                 player.setMediaItem(mediaItem);
                 add_song(musicFile);
-
             }
-        } else {
-            player = new ExoPlayer.Builder(getApplicationContext()).build();
-            Uri uri = Uri.fromFile(new File(musicFile.getPath()));
-            MediaItem mediaItem = MediaItem.fromUri(uri);
-            player.setMediaItem(mediaItem);
-            add_song(musicFile);
+            //Initializing song properties
+            session_id = player.getAudioSessionId();
+            //Adds player to Player session manager
+            OfflinePlayerManager.getInstance().addPlayer(player);
+            OfflinePlayerManager.getInstance().setCurrent_player(player);
+            SongQueue.getInstance().setAudio_session_id(session_id);
+            enable_endless_stream();
+            //Applying audio effects
+            apply_audio_effect();
+            player.prepare();
+            player.play();
         }
-        //Initializing song properties
-        session_id = player.getAudioSessionId();
-        //Adds player to Player session manager
-        OfflinePlayerManager.getInstance().addPlayer(player);
-        OfflinePlayerManager.getInstance().setCurrent_player(player);
-        SongQueue.getInstance().setAudio_session_id(session_id);
-        enable_endless_stream();
-        //Applying audio effects
-        apply_audio_effect();
-        player.prepare();
-        player.play();
-
     }
     //This function adds new song to firestore collection
     public void add_song(MusicFile musicFile) {
-        String current_display_title = musicFile.getName();
-        String artist = musicFile.getArtist().replaceAll("/", ", ");
-        current_display_title = current_display_title.replaceAll("by "+artist, "").replaceAll(
-                "- "+artist, "");
-        if (isOnlyDigits(current_display_title)) {
-            current_display_title = current_display_title +" by "+ artist;
+        if (musicFile != null && musicFile.getName() != null && musicFile.getArtist() != null) {
+            String current_display_title = musicFile.getName();
+            String artist = musicFile.getArtist().replaceAll("/", ", ");
+
+            // Remove redundant artist mentions from title
+            current_display_title = current_display_title
+                    .replaceAll("by " + Pattern.quote(artist), "")
+                    .replaceAll("- " + Pattern.quote(artist), "")
+                    .trim();
+
+            // Format title
+            if (isOnlyDigits(current_display_title)) {
+                current_display_title = current_display_title + " by " + artist;
+            } else {
+                current_display_title = format_title(current_display_title) + " by " + artist;
+            }
+
+            final String finalDisplayTitleForLambda = current_display_title;
+
+            // Proceed to update Firestore
+            SessionManager sessionManager = new SessionManager(getApplicationContext());
+            String email = sessionManager.getEmail();
+
+            if (email != null && !email.isEmpty()) {
+                SongsFirestore table = new SongsFirestore(getApplicationContext());
+
+                table.db.collection("Users")
+                        .whereEqualTo("EMAIL", email)
+                        .get()
+                        .addOnSuccessListener(userSnapshot -> {
+                            if (!userSnapshot.isEmpty()) {
+                                String user_id = userSnapshot.getDocuments().get(0).getId();
+
+                                table.db.collection("Songs")
+                                        .whereEqualTo("TITLE", finalDisplayTitleForLambda)
+                                        .whereEqualTo("USER_ID", user_id)
+                                        .get()
+                                        .addOnSuccessListener(songSnapshot -> {
+                                            if (songSnapshot.isEmpty()) {
+                                                table.add_new_song(email, finalDisplayTitleForLambda, musicFile.getArtist());
+                                            } else {
+                                                table.updateTimesPlayed(email, finalDisplayTitleForLambda);
+                                            }
+                                        })
+                                        .addOnFailureListener(e ->
+                                                Log.e("Firestore", "Song query failed: " + e.getMessage(), e));
+                            } else {
+                                Log.w("Firestore", "User not found with email: " + email);
+                            }
+                        })
+                        .addOnFailureListener(e ->
+                                Log.e("Firestore", "User lookup failed: " + e.getMessage(), e));
+            } else {
+                Log.e("Session", "Email not found in session manager");
+            }
         } else {
-            current_display_title = format_title(current_display_title) +" by "+ artist;
+            Log.e("MediaInfo", "musicFile, name, or artist is null");
         }
-
-        final String finalDisplayTitleForLambda = current_display_title; // This is effectively final
-
-        //Adding song to database
-        SessionManager sessionManager = new SessionManager(getApplicationContext());
-        String email = sessionManager.getEmail();
-        SongsFirestore table = new SongsFirestore(getApplicationContext());
-        table.db.collection("Users").whereEqualTo("EMAIL", email).get()
-                .addOnSuccessListener(querySnapshot -> {
-                    if (!querySnapshot.isEmpty()) {
-                        String user_id = querySnapshot.getDocuments().get(0).getId();
-                        // 🔥 Check if the same song exists for the user
-                        table.db.collection("Songs")
-                                .whereEqualTo("TITLE", finalDisplayTitleForLambda)
-                                .whereEqualTo("USER_ID", user_id) // Ensure user does not have this song already
-                                .get()
-                                .addOnSuccessListener(songSnapshot -> {
-                                    if (songSnapshot.isEmpty()) {
-                                        table.add_new_song(email, finalDisplayTitleForLambda, musicFile.getArtist());
-                                    } else {
-                                        table.updateTimesPlayed(email, finalDisplayTitleForLambda);
-                                    }
-                                });
-                    }
-                });
     }
     //This function assigns audio effects to the exoplayer like speed/reverb
     public void apply_audio_effect() {
@@ -170,22 +203,35 @@ public class PlayerService extends Service {
         SongQueue.getInstance().initialize_reverb(session_id);
         reverb = SongQueue.getInstance().reverb;
         //Setting playback speed properties
-        player.setPlaybackParameters(new PlaybackParameters(SongQueue.getInstance().speed, SongQueue.getInstance().pitch));
-        //Setting reverberation properties
-        setReverbPreset(SongQueue.getInstance().reverb_level);
+        if (player == null) {
+            ;
+        } else {
+            player.setPlaybackParameters(new PlaybackParameters(SongQueue.getInstance().speed, SongQueue.getInstance().pitch));
+        }
+        // Apply reverb properties safely
+        if (reverb != null) {
+            setReverbPreset(SongQueue.getInstance().reverb_level);
+        } else {
+            Toast.makeText(getApplicationContext(), "Reverb is not available", Toast.LENGTH_SHORT).show();
+        }
     }
-    //This function sets reverb level based on seekbar progress level
+
     public void setReverbPreset(int progress) {
-        //Computing reverberation parameters based of reverb level data proportionality
         try {
-            int room_level = -2000 + (progress + 1000);
-            double decay_level = 10000;
-            reverb.setReverbLevel((short) progress);
-            reverb.setDecayTime((int) decay_level);
-            reverb.setRoomLevel((short) room_level);
+            // Clamp values safely within supported EnvironmentalReverb range
+            int clampedProgress = Math.max(-9000, Math.min(progress, 2000));
+            int roomLevel = Math.max(-9000, Math.min(-2000 + (clampedProgress + 1000), 0));  // roomLevel: -9000 to 0
+            int decayTime = 1000 + (clampedProgress + 1000); // e.g. ~2000–3000ms range depending on level
+
+            reverb.setRoomLevel((short) roomLevel);
+            reverb.setReverbLevel((short) clampedProgress);
+            reverb.setDecayTime(decayTime);
+            reverb.setDiffusion((short) 1000);
+            reverb.setDensity((short) 1000);
             reverb.setEnabled(true);
         } catch (Exception e) {
             Toast.makeText(getApplicationContext(), "Something went wrong with audio effects", Toast.LENGTH_SHORT).show();
+            Log.e("AudioEffect", "Error applying reverb: ", e);
         }
     }
     public void handleSkip() {
@@ -225,7 +271,9 @@ public class PlayerService extends Service {
         }
     }
     public void setViewModel(SharedViewModel viewModel) {
-        this.sharedViewModel = viewModel;
+        if (viewModel != null) {
+            this.sharedViewModel = viewModel;
+        }
     }
 
     @Override
@@ -453,115 +501,112 @@ public class PlayerService extends Service {
     }
 
     public void showNotification(PlaybackStateCompat state) {
-        String display_title = SongQueue.getInstance().current_song.getName();
-        String artist = SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
-        display_title = display_title.replaceAll("by "+artist, "").replaceAll(
-                "- "+artist, "");
-        if (isOnlyDigits(display_title)) {
-            display_title = display_title +" by "+ artist;
-        } else {
-            display_title = format_title(display_title) +" by "+ artist;
-        }
-        // Load album image
-        Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
-        Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(SongQueue.getInstance().current_song.getAlbumId()));
+        MusicFile currentSong = SongQueue.getInstance().current_song;
+        if (currentSong == null) return;
+
+        String artist = currentSong.getArtist().replaceAll("/", ", ");
+        String title = currentSong.getName()
+                .replaceAll("by " + Pattern.quote(artist), "")
+                .replaceAll("- " + Pattern.quote(artist), "")
+                .trim();
+
+        String displayTitle = isOnlyDigits(title)
+                ? title + " by " + artist
+                : format_title(title) + " by " + artist;
+
+        Uri albumArtUri = Uri.withAppendedPath(
+                Uri.parse("content://media/external/audio/albumart"),
+                String.valueOf(currentSong.getAlbumId())
+        );
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.library)
-                .setContentTitle(display_title)
-                .setContentText(SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", "))
+                .setContentTitle(displayTitle)
+                .setContentText(artist)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setOnlyAlertOnce(true)
                 .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
                         .setMediaSession(mediaSession.getSessionToken())
                         .setShowActionsInCompactView(0));
-        Glide.with(this).asBitmap().load(album_uri).into(new CustomTarget<Bitmap>() {
-            @Override
-            public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
-                builder.setLargeIcon(resource);
-                if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
-                    builder.addAction(new NotificationCompat.Action(
-                            R.drawable.ic_pause, "Pause", MediaButtonReceiver.buildMediaButtonPendingIntent(
-                            getApplicationContext(), PlaybackStateCompat.ACTION_PAUSE)));
-                } else {
-                    builder.addAction(new NotificationCompat.Action(
-                            R.drawable.ic_play, "Play", MediaButtonReceiver.buildMediaButtonPendingIntent(
-                            getApplicationContext(), PlaybackStateCompat.ACTION_PLAY)));
-                }
 
-                NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                startForeground(NOTIFICATION_ID, builder.build());
-            }
-
-            @Override
-            public void onLoadCleared(@Nullable Drawable placeholder) {
-                ;
-            }
-            @Override
-            public void onLoadFailed(@Nullable Drawable errorDrawable) {
-                builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.logo));
-                if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
-                    builder.addAction(new NotificationCompat.Action(
-                            R.drawable.ic_pause, "Pause", MediaButtonReceiver.buildMediaButtonPendingIntent(
-                            getApplicationContext(), PlaybackStateCompat.ACTION_PAUSE)));
-                } else {
-                    builder.addAction(new NotificationCompat.Action(
-                            R.drawable.ic_play, "Play", MediaButtonReceiver.buildMediaButtonPendingIntent(
-                            getApplicationContext(), PlaybackStateCompat.ACTION_PLAY)));
-                }
-
-                NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                startForeground(NOTIFICATION_ID, builder.build());
-            }
-        });
+        loadNotificationImage(builder, albumArtUri, state);
     }
-    //This function updates the current notification view holder when a song is skipped
+
     public void updateNotification(MusicFile musicFile) {
-        String display_title = musicFile.getName();
+        if (musicFile == null) return;
+
         String artist = musicFile.getArtist().replaceAll("/", ", ");
-        display_title = display_title.replaceAll("by "+artist, "").replaceAll(
-                "- "+artist, "");
-        if (isOnlyDigits(display_title)) {
-            display_title = display_title +" by "+ artist;
-        } else {
-            display_title = format_title(display_title) +" by "+ artist;
-        }
-        // Load album image
-        Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
-        Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(musicFile.getAlbumId()));
-        //Updating current notification with new details and meta data
+        String title = musicFile.getName()
+                .replaceAll("by " + Pattern.quote(artist), "")
+                .replaceAll("- " + Pattern.quote(artist), "")
+                .trim();
+
+        String displayTitle = isOnlyDigits(title)
+                ? title + " by " + artist
+                : format_title(title) + " by " + artist;
+
+        Uri albumArtUri = Uri.withAppendedPath(
+                Uri.parse("content://media/external/audio/albumart"),
+                String.valueOf(musicFile.getAlbumId())
+        );
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.library)
-                .setContentTitle(display_title)
-                .setContentText(musicFile.getArtist().replaceAll("/", ", "))
+                .setContentTitle(displayTitle)
+                .setContentText(artist)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setOnlyAlertOnce(true)
                 .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
                         .setMediaSession(mediaSession.getSessionToken())
                         .setShowActionsInCompactView(0));
-        Glide.with(this).asBitmap().load(album_uri).into(new CustomTarget<Bitmap>() {
-            @Override
-            public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
-                builder.setLargeIcon(resource);
-                NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                notificationManager.notify(NOTIFICATION_ID, builder.build());
-                startForeground(NOTIFICATION_ID, builder.build());
-            }
 
-            @Override
-            public void onLoadCleared(@Nullable Drawable placeholder) {
+        loadNotificationImage(builder, albumArtUri, null);
+    }
+    private void loadNotificationImage(NotificationCompat.Builder builder, Uri albumUri, @Nullable PlaybackStateCompat state) {
+        Glide.with(this)
+                .asBitmap()
+                .load(albumUri)
+                .into(new CustomTarget<Bitmap>() {
+                    @Override
+                    public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                        builder.setLargeIcon(resource);
+                        addPlayPauseAction(builder, state);
+                        pushNotification(builder);
+                    }
 
-            }
-            @Override
-            public void onLoadFailed(@Nullable Drawable errorDrawable) {
-                builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.logo));
-                NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                notificationManager.notify(NOTIFICATION_ID, builder.build());
-                startForeground(NOTIFICATION_ID, builder.build());
-            }
-        });
+                    @Override
+                    public void onLoadCleared(@Nullable Drawable placeholder) {}
+
+                    @Override
+                    public void onLoadFailed(@Nullable Drawable errorDrawable) {
+                        builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.logo));
+                        addPlayPauseAction(builder, state);
+                        pushNotification(builder);
+                    }
+                });
+    }
+    private void addPlayPauseAction(NotificationCompat.Builder builder, @Nullable PlaybackStateCompat state) {
+        if (state == null) return; // Skip on update-only mode
+        long action = (state.getState() == PlaybackStateCompat.STATE_PLAYING)
+                ? PlaybackStateCompat.ACTION_PAUSE
+                : PlaybackStateCompat.ACTION_PLAY;
+
+        int icon = (action == PlaybackStateCompat.ACTION_PAUSE) ? R.drawable.ic_pause : R.drawable.ic_play;
+        String label = (action == PlaybackStateCompat.ACTION_PAUSE) ? "Pause" : "Play";
+
+        builder.addAction(new NotificationCompat.Action(
+                icon,
+                label,
+                MediaButtonReceiver.buildMediaButtonPendingIntent(getApplicationContext(), action)
+        ));
+    }
+
+    private void pushNotification(NotificationCompat.Builder builder) {
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        startForeground(NOTIFICATION_ID, builder.build());
+        notificationManager.notify(NOTIFICATION_ID, builder.build());
     }
     //This function simulates end of song
     public void simulateEndOfSong() {
@@ -603,26 +648,30 @@ public class PlayerService extends Service {
                         }
                         //Checking if next song is the same song and handling exception accordingly
                         song = SongQueue.getInstance().song_list.get(pos);
-                        if (song.getName().equals(SongQueue.getInstance().current_song.getName())) {
-                            if (SongQueue.getInstance().shuffle_on != true) {
-                                pos += 1;
-                                song = SongQueue.getInstance().song_list.get(pos);
-                            } else {
-                                while (song == SongQueue.getInstance().current_song) {
-                                    pos = rand.nextInt(SongQueue.getInstance().song_list.size());
-                                    song = SongQueue.getInstance().song_list.get(pos);
-                                }
-                            }
-                        } else {
+                        if (song == null) {
                             ;
+                        } else {
+                            if (song.getName().equals(SongQueue.getInstance().current_song.getName())) {
+                                if (SongQueue.getInstance().shuffle_on != true) {
+                                    pos += 1;
+                                    song = SongQueue.getInstance().song_list.get(pos);
+                                } else {
+                                    while (song == SongQueue.getInstance().current_song) {
+                                        pos = rand.nextInt(SongQueue.getInstance().song_list.size());
+                                        song = SongQueue.getInstance().song_list.get(pos);
+                                    }
+                                }
+                            } else {
+                                ;
+                            }
+                            //Skipping song
+                            SongQueue.getInstance().addSong(song);
+                            SongQueue.getInstance().setPosition(pos);
+                            updateNotification(song);
+                            playMusic(song);
+                            handleEnd();
                         }
                     }
-                    //Skipping song
-                    SongQueue.getInstance().addSong(song);
-                    SongQueue.getInstance().setPosition(pos);
-                    updateNotification(song);
-                    playMusic(song);
-                    handleEnd();
                 }  else {
                     ;
                 }

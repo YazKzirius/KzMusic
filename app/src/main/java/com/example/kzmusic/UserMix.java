@@ -176,7 +176,7 @@ public class UserMix extends Fragment {
         set_up_spotify_play();
         set_up_play_bar();
         set_up_refresh();
-        if (SongQueue.getInstance().get_size() > 0) {
+        if (SongQueue.getInstance().get_size() > 0 && SongQueue.getInstance().current_song != null) {
             set_up_skipping();
             last_position = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
             SongQueue.getInstance().setLast_postion(last_position);
@@ -438,36 +438,40 @@ public class UserMix extends Fragment {
     //This function gets the User's top 10 artists and using and algorithm
     //It then generates music based on that information
     public String[] generate_top_artists(List<MusicFile> tracklist) {
-        String[] top_artists = new String[10];
-        //Mapping get artist function to each track in list
-        List<String> Artists = tracklist.stream().map(MusicFile::getArtist).collect(Collectors.toList());
-        //Fixing Artist formatting, so there is a full list of artists
-        List<String> New_artists = new ArrayList<>();
-        //Checking for multiple artists
-        for (String artist : Artists) {
-            if (artist.contains(", ") == true) {
-                String[] list = artist.split(", ");
-                for (String element : list) {
-                    New_artists.add(element);
+        if (tracklist.size() == 0) {
+            return new String[0];
+        } else {
+            String[] top_artists = new String[10];
+            //Mapping get artist function to each track in list
+            List<String> Artists = tracklist.stream().map(MusicFile::getArtist).collect(Collectors.toList());
+            //Fixing Artist formatting, so there is a full list of artists
+            List<String> New_artists = new ArrayList<>();
+            //Checking for multiple artists
+            for (String artist : Artists) {
+                if (artist.contains(", ") == true) {
+                    String[] list = artist.split(", ");
+                    for (String element : list) {
+                        New_artists.add(element);
+                    }
+                } else {
+                    New_artists.add(artist);
                 }
-            } else {
-                New_artists.add(artist);
             }
+            Set<String> Artist_set = new HashSet<>(New_artists);
+            List<String> Artist_list = new ArrayList<>(Artist_set);
+            //Frequency dict hashmap
+            Map<String, Integer> frequency_dict = new HashMap<>();
+            for (String artist : Artist_list) {
+                frequency_dict.put(artist, count(New_artists, artist));
+            }
+            //Creating string occurrence comparator
+            Comparator<String> occurrenceComparator = (s1, s2) -> Integer.compare(frequency_dict.get(s2), frequency_dict.get(s1));
+            Artist_list.sort(occurrenceComparator);
+            for (int i = 0; i < 10; i++) {
+                top_artists[i] = Artist_list.get(i);
+            }
+            return top_artists;
         }
-        Set<String> Artist_set = new HashSet<>(New_artists);
-        List<String> Artist_list = new ArrayList<>(Artist_set);
-        //Frequency dict hashmap
-        Map<String, Integer> frequency_dict = new HashMap<>();
-        for (String artist : Artist_list) {
-            frequency_dict.put(artist, count(New_artists, artist));
-        }
-        //Creating string occurrence comparator
-        Comparator<String> occurrenceComparator = (s1, s2) -> Integer.compare(frequency_dict.get(s2), frequency_dict.get(s1));
-        Artist_list.sort(occurrenceComparator);
-        for (int i = 0; i < 10; i++) {
-            top_artists[i] = Artist_list.get(i);
-        }
-        return top_artists;
     }
     //This function counts the number of an element of a list
     public int count(List<String> list, String element) {
@@ -510,7 +514,7 @@ public class UserMix extends Fragment {
     }
     //This function assigns data from playback overlay to bottom navigation
     public void set_up_play_bar() {
-        if (SongQueue.getInstance().songs_played.size() == 0) {
+        if (SongQueue.getInstance().songs_played.size() == 0 || SongQueue.getInstance().current_song == null) {
             ;
         } else {
             MusicFile song = SongQueue.getInstance().current_song;
@@ -553,20 +557,24 @@ public class UserMix extends Fragment {
     //This function designs the bottom playback bar
     public void design_bar() {
         MusicFile song = SongQueue.getInstance().current_song;
-        String display_title = song.getName();
-        String artist = song.getArtist().replaceAll("/", ", ");
-        display_title = display_title.replaceAll("by "+artist, "").replaceAll(
-                "- "+artist, "");
-        if (isOnlyDigits(display_title)) {
-            display_title = display_title +" by "+ artist;
+        if (song != null) {
+            String display_title = song.getName();
+            String artist = song.getArtist().replaceAll("/", ", ");
+            display_title = display_title.replaceAll("by "+artist, "").replaceAll(
+                    "- "+artist, "");
+            if (isOnlyDigits(display_title)) {
+                display_title = display_title +" by "+ artist;
+            } else {
+                display_title = format_title(display_title) +" by "+ artist;
+            }
+            Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
+            Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(song.getAlbumId()));
+            Glide.with(getContext()).asBitmap().load(album_uri).circleCrop().into(art);
+            title.setText("Now playing "+display_title);
+            Artist.setText(song.getArtist().replaceAll("/", ", "));
         } else {
-            display_title = format_title(display_title) +" by "+ artist;
+            ;
         }
-        Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
-        Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(song.getAlbumId()));
-        Glide.with(getContext()).asBitmap().load(album_uri).circleCrop().into(art);
-        title.setText("Now playing "+display_title);
-        Artist.setText(song.getArtist().replaceAll("/", ", "));
     }
 
     // This function formats song title, removing unnecessary data and watermarks
@@ -687,15 +695,19 @@ public class UserMix extends Fragment {
     }
     //This function opens a new song overlay
     public void open_new_overlay(MusicFile file, int position) {
-        //Adding song to queue
-        stopPlayerService();
-        SongQueue.getInstance().addSong(file);
-        SongQueue.getInstance().setPosition(position);
-        Fragment media_page = new MediaOverlay();
-        FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.replace(R.id.fragment_container, media_page);
-        fragmentTransaction.commit();
+        if (file == null) {
+            ;
+        } else {
+            //Adding song to queue
+            stopPlayerService();
+            SongQueue.getInstance().addSong(file);
+            SongQueue.getInstance().setPosition(position);
+            Fragment media_page = new MediaOverlay();
+            FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
+            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+            fragmentTransaction.replace(R.id.fragment_container, media_page);
+            fragmentTransaction.commit();
+        }
     }
     private void stopPlayerService() {
         Intent intent = new Intent(requireContext(), PlayerService.class);

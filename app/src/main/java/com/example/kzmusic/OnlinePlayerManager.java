@@ -12,7 +12,7 @@ public class OnlinePlayerManager {
     private static OnlinePlayerManager instance;
     String access_token;
     String refresh_token;
-    long expiration_time;
+    long expiration_time = 0;
     public static synchronized OnlinePlayerManager getInstance() {
         if (instance == null) {
             instance = new OnlinePlayerManager();
