@@ -47,8 +47,12 @@ public class OfflinePlayerManager {
     }
 
     public void stopAllPlayers() {
-        for (ExoPlayer player : playerList) {
-            player.stop();
+        if (!playerList.isEmpty()) {
+            List<ExoPlayer> playersCopy = new ArrayList<>(playerList);
+            for (ExoPlayer player : playersCopy) {
+                player.stop();
+                playerList.remove(player); // or use removePlayer(player);
+            }
         }
     }
     public void StopAllSessions() {
@@ -63,6 +67,30 @@ public class OfflinePlayerManager {
 
     public void setCurrent_player(ExoPlayer current_player) {
         this.current_player = current_player;
+    }
+    public void resetToDefaults() {
+        // Stop and release all players
+        if (!playerList.isEmpty()) {
+            for (ExoPlayer player : new ArrayList<>(playerList)) {
+                player.stop();
+                player.release();
+            }
+            playerList.clear();
+        }
+
+        // Stop and release all media sessions
+        if (sessions != null && !sessions.isEmpty()) {
+            for (MediaSessionCompat session : sessions) {
+                session.getController().getTransportControls().stop();
+                session.release();
+            }
+            sessions.clear();
+        }
+
+        // Reset references and flags
+        current_player = null;
+        current_builder = null;
+        spotify_playing = false;
     }
 
 }

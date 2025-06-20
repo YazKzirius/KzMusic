@@ -89,7 +89,7 @@ public class PlayerService extends Service {
             ;
         } else {
             //Playing resuming song at previous duration if the same song as last
-            if (SongQueue.getInstance().get_size() > 1) {
+            if (SongQueue.getInstance().get_size() >= 1 && SongQueue.getInstance().current_song != null) {
                 int index = SongQueue.getInstance().pointer - 1;
                 MusicFile song1 =  SongQueue.getInstance().get_specified(index);
                 MusicFile song2 = SongQueue.getInstance().get_specified(index - 1);
@@ -99,7 +99,6 @@ public class PlayerService extends Service {
                     Uri uri = Uri.fromFile(new File(musicFile.getPath()));
                     MediaItem mediaItem = MediaItem.fromUri(uri);
                     player.setMediaItem(mediaItem);
-                    add_song(musicFile);
                 } else {
                     String s1 = song1.getName();
                     String s2 = song2.getName();
@@ -514,114 +513,116 @@ public class PlayerService extends Service {
             notificationManager.createNotificationChannel(channel);
         }
     }
-
     public void showNotification(PlaybackStateCompat state) {
-        MusicFile currentSong = SongQueue.getInstance().current_song;
-        if (currentSong == null) return;
-
-        String artist = currentSong.getArtist().replaceAll("/", ", ");
-        String title = currentSong.getName()
-                .replaceAll("by " + Pattern.quote(artist), "")
-                .replaceAll("- " + Pattern.quote(artist), "")
-                .trim();
-
-        String displayTitle = isOnlyDigits(title)
-                ? title + " by " + artist
-                : format_title(title) + " by " + artist;
-
-        Uri albumArtUri = Uri.withAppendedPath(
-                Uri.parse("content://media/external/audio/albumart"),
-                String.valueOf(currentSong.getAlbumId())
-        );
+        String display_title = SongQueue.getInstance().current_song.getName();
+        String artist = SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
+        display_title = display_title.replaceAll("by "+artist, "").replaceAll(
+                "- "+artist, "");
+        if (isOnlyDigits(display_title)) {
+            display_title = display_title +" by "+ artist;
+        } else {
+            display_title = format_title(display_title) +" by "+ artist;
+        }
+        // Load album image
+        Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
+        Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(SongQueue.getInstance().current_song.getAlbumId()));
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.library)
-                .setContentTitle(displayTitle)
-                .setContentText(artist)
+                .setContentTitle(display_title)
+                .setContentText(SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", "))
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setOnlyAlertOnce(true)
                 .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
                         .setMediaSession(mediaSession.getSessionToken())
                         .setShowActionsInCompactView(0));
+        Glide.with(this).asBitmap().load(album_uri).into(new CustomTarget<Bitmap>() {
+            @Override
+            public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                builder.setLargeIcon(resource);
+                if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
+                    builder.addAction(new NotificationCompat.Action(
+                            R.drawable.ic_pause, "Pause", MediaButtonReceiver.buildMediaButtonPendingIntent(
+                            getApplicationContext(), PlaybackStateCompat.ACTION_PAUSE)));
+                } else {
+                    builder.addAction(new NotificationCompat.Action(
+                            R.drawable.ic_play, "Play", MediaButtonReceiver.buildMediaButtonPendingIntent(
+                            getApplicationContext(), PlaybackStateCompat.ACTION_PLAY)));
+                }
 
-        loadNotificationImage(builder, albumArtUri, state);
+                NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                startForeground(NOTIFICATION_ID, builder.build());
+            }
+
+            @Override
+            public void onLoadCleared(@Nullable Drawable placeholder) {
+                ;
+            }
+            @Override
+            public void onLoadFailed(@Nullable Drawable errorDrawable) {
+                builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.logo));
+                if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
+                    builder.addAction(new NotificationCompat.Action(
+                            R.drawable.ic_pause, "Pause", MediaButtonReceiver.buildMediaButtonPendingIntent(
+                            getApplicationContext(), PlaybackStateCompat.ACTION_PAUSE)));
+                } else {
+                    builder.addAction(new NotificationCompat.Action(
+                            R.drawable.ic_play, "Play", MediaButtonReceiver.buildMediaButtonPendingIntent(
+                            getApplicationContext(), PlaybackStateCompat.ACTION_PLAY)));
+                }
+
+                NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                startForeground(NOTIFICATION_ID, builder.build());
+            }
+        });
     }
-
+    //This function updates the current notification view holder when a song is skipped
     public void updateNotification(MusicFile musicFile) {
-        if (musicFile == null) return;
-
+        String display_title = musicFile.getName();
         String artist = musicFile.getArtist().replaceAll("/", ", ");
-        String title = musicFile.getName()
-                .replaceAll("by " + Pattern.quote(artist), "")
-                .replaceAll("- " + Pattern.quote(artist), "")
-                .trim();
-
-        String displayTitle = isOnlyDigits(title)
-                ? title + " by " + artist
-                : format_title(title) + " by " + artist;
-
-        Uri albumArtUri = Uri.withAppendedPath(
-                Uri.parse("content://media/external/audio/albumart"),
-                String.valueOf(musicFile.getAlbumId())
-        );
-
+        display_title = display_title.replaceAll("by "+artist, "").replaceAll(
+                "- "+artist, "");
+        if (isOnlyDigits(display_title)) {
+            display_title = display_title +" by "+ artist;
+        } else {
+            display_title = format_title(display_title) +" by "+ artist;
+        }
+        // Load album image
+        Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
+        Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(musicFile.getAlbumId()));
+        //Updating current notification with new details and meta data
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.library)
-                .setContentTitle(displayTitle)
-                .setContentText(artist)
+                .setContentTitle(display_title)
+                .setContentText(musicFile.getArtist().replaceAll("/", ", "))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setOnlyAlertOnce(true)
                 .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
                         .setMediaSession(mediaSession.getSessionToken())
                         .setShowActionsInCompactView(0));
+        Glide.with(this).asBitmap().load(album_uri).into(new CustomTarget<Bitmap>() {
+            @Override
+            public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                builder.setLargeIcon(resource);
+                NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                notificationManager.notify(NOTIFICATION_ID, builder.build());
+                startForeground(NOTIFICATION_ID, builder.build());
+            }
 
-        loadNotificationImage(builder, albumArtUri, null);
-    }
-    private void loadNotificationImage(NotificationCompat.Builder builder, Uri albumUri, @Nullable PlaybackStateCompat state) {
-        Glide.with(this)
-                .asBitmap()
-                .load(albumUri)
-                .into(new CustomTarget<Bitmap>() {
-                    @Override
-                    public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
-                        builder.setLargeIcon(resource);
-                        addPlayPauseAction(builder, state);
-                        pushNotification(builder);
-                    }
+            @Override
+            public void onLoadCleared(@Nullable Drawable placeholder) {
 
-                    @Override
-                    public void onLoadCleared(@Nullable Drawable placeholder) {}
-
-                    @Override
-                    public void onLoadFailed(@Nullable Drawable errorDrawable) {
-                        builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.logo));
-                        addPlayPauseAction(builder, state);
-                        pushNotification(builder);
-                    }
-                });
-    }
-    private void addPlayPauseAction(NotificationCompat.Builder builder, @Nullable PlaybackStateCompat state) {
-        if (state == null) return; // Skip on update-only mode
-        long action = (state.getState() == PlaybackStateCompat.STATE_PLAYING)
-                ? PlaybackStateCompat.ACTION_PAUSE
-                : PlaybackStateCompat.ACTION_PLAY;
-
-        int icon = (action == PlaybackStateCompat.ACTION_PAUSE) ? R.drawable.ic_pause : R.drawable.ic_play;
-        String label = (action == PlaybackStateCompat.ACTION_PAUSE) ? "Pause" : "Play";
-
-        builder.addAction(new NotificationCompat.Action(
-                icon,
-                label,
-                MediaButtonReceiver.buildMediaButtonPendingIntent(getApplicationContext(), action)
-        ));
-    }
-
-    private void pushNotification(NotificationCompat.Builder builder) {
-        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        startForeground(NOTIFICATION_ID, builder.build());
-        notificationManager.notify(NOTIFICATION_ID, builder.build());
+            }
+            @Override
+            public void onLoadFailed(@Nullable Drawable errorDrawable) {
+                builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.logo));
+                NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                notificationManager.notify(NOTIFICATION_ID, builder.build());
+                startForeground(NOTIFICATION_ID, builder.build());
+            }
+        });
     }
     //This function simulates end of song
     public void simulateEndOfSong() {
@@ -661,30 +662,34 @@ public class PlayerService extends Service {
                         } else {
                             pos = rand.nextInt(SongQueue.getInstance().song_list.size());
                         }
-                        //Checking if next song is the same song and handling exception accordingly
-                        song = SongQueue.getInstance().song_list.get(pos);
-                        if (song == null) {
+                        if (pos >= SongQueue.getInstance().song_list.size() || pos < 0) {
                             ;
                         } else {
-                            if (song.getName().equals(SongQueue.getInstance().current_song.getName())) {
-                                if (SongQueue.getInstance().shuffle_on != true) {
-                                    pos += 1;
-                                    song = SongQueue.getInstance().song_list.get(pos);
-                                } else {
-                                    while (song == SongQueue.getInstance().current_song) {
-                                        pos = rand.nextInt(SongQueue.getInstance().song_list.size());
-                                        song = SongQueue.getInstance().song_list.get(pos);
-                                    }
-                                }
-                            } else {
+                            //Checking if next song is the same song and handling exception accordingly
+                            song = SongQueue.getInstance().song_list.get(pos);
+                            if (song == null) {
                                 ;
+                            } else {
+                                if (song.getName().equals(SongQueue.getInstance().current_song.getName())) {
+                                    if (SongQueue.getInstance().shuffle_on != true) {
+                                        pos += 1;
+                                        song = SongQueue.getInstance().song_list.get(pos);
+                                    } else {
+                                        while (song == SongQueue.getInstance().current_song) {
+                                            pos = rand.nextInt(SongQueue.getInstance().song_list.size());
+                                            song = SongQueue.getInstance().song_list.get(pos);
+                                        }
+                                    }
+                                } else {
+                                    ;
+                                }
+                                //Skipping song
+                                SongQueue.getInstance().addSong(song);
+                                SongQueue.getInstance().setPosition(pos);
+                                updateNotification(song);
+                                playMusic(song);
+                                handleEnd();
                             }
-                            //Skipping song
-                            SongQueue.getInstance().addSong(song);
-                            SongQueue.getInstance().setPosition(pos);
-                            updateNotification(song);
-                            playMusic(song);
-                            handleEnd();
                         }
                     }
                 }  else {

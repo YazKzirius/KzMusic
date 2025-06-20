@@ -39,9 +39,11 @@ public class SongQueue {
         return instance;
     }
     public void addSong(MusicFile song) {
-        songs_played.add(song);
-        this.current_song = song;
-        this.pointer += 1;
+        if (song != null) {
+            songs_played.add(song);
+            this.current_song = song;
+            this.pointer += 1;
+        }
     }
     public void setCurrent_song (MusicFile song) {
         this.current_song = song;
@@ -117,6 +119,29 @@ public class SongQueue {
     public void update_id() {
         NOTIFICATION_ID += 1;
         CHANNEL_ID += ""+NOTIFICATION_ID;
+    }
+    public void resetToDefaults() {
+        if (reverb != null) {
+            reverb.release();
+            reverb = null;
+        }
+
+        song_list = null;
+        songs_played.clear();
+        current_song = null;
+        CHANNEL_ID = "media_playback_channel";
+        NOTIFICATION_ID = 1;
+        current_position = -1;
+        speed = 1.0f;
+        pitch = 1.0f;
+        reverb_level = -1000;
+        is_looping = false;
+        shuffle_on = false;
+        current_time = 0;
+        last_postion = 0;
+        pointer = 0;
+        current_resource = 0;
+        audio_session_id = 0;
     }
     //This function checks if a string is only digits
     public boolean isOnlyDigits(String str) {

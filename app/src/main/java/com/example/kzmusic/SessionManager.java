@@ -43,30 +43,30 @@ public class SessionManager {
     }
 
     //This function saves generated tracklist for radio page
-    public void save_Tracklist_radio(List<SearchResponse.Track> tracklist) {
+    public void save_Tracklist_radio(List<SearchResponse.Track> tracklist, String email) {
         // Convert list to JSON
         Gson gson = new Gson();
         String jsonTrackList = gson.toJson(tracklist);
         // Save in SharedPreferences
-        editor2.putString("TRACK_LIST_RADIO", jsonTrackList);
+        editor2.putString(email+"TRACK_LIST_RADIO", jsonTrackList);
         editor2.commit();
     }
     //This function saves generated tracklist for mix page
-    public void save_Tracklist_mix(List<SearchResponse.Track> tracklist) {
+    public void save_Tracklist_mix(List<SearchResponse.Track> tracklist, String email) {
         // Convert list to JSON
         Gson gson = new Gson();
         String jsonTrackList = gson.toJson(tracklist);
         // Save in SharedPreferences
-        editor2.putString("TRACK_LIST_MIX", jsonTrackList);
+        editor2.putString(email+"TRACK_LIST_MIX", jsonTrackList);
         editor2.commit();
     }
     //This function saves generated tracklist for liked songs page
-    public void save_Tracklist_liked(List<SearchResponse.Track> tracklist) {
+    public void save_Tracklist_liked(List<SearchResponse.Track> tracklist, String email) {
         // Convert list to JSON
         Gson gson = new Gson();
         String jsonTrackList = gson.toJson(tracklist);
         // Save in SharedPreferences
-        editor2.putString("TRACK_LIST_LIKED", jsonTrackList);
+        editor2.putString(email+"TRACK_LIST_LIKED", jsonTrackList);
         editor2.commit();
     }
     //This function gets the tracklist for a specific name
@@ -80,7 +80,7 @@ public class SessionManager {
         return new ArrayList<>();  // Return an empty list if nothing is saved
     }
     //This function clears saved tracklist
-    public void clear_tracklist() {
+    public void clear_tracklist(String email) {
         editor2.remove("TRACK_LIST_RADIO");
         editor2.remove("TRACK_LIST_MIX");
         editor2.clear();

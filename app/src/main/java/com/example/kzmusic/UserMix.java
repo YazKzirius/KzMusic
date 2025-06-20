@@ -158,7 +158,7 @@ public class UserMix extends Fragment {
         TextView text = view.findViewById(R.id.made_for_user);
         text.setText("Suggestsed mix for "+username);
         //If saved list is empty, display new tracks
-        if (sessionManager.getSavedTracklist("TRACK_LIST_MIX").size() == 0) {
+        if (sessionManager.getSavedTracklist(email+"TRACK_LIST_MIX").size() == 0) {
             try {
                 String[] randomQueries = generate_top_artists(musicFiles);
                 for (String query : randomQueries) {
@@ -171,7 +171,7 @@ public class UserMix extends Fragment {
             ImageButton btn1 = view.findViewById(R.id.like_all);
             btn1.setImageResource(R.drawable.ic_liked_off);
         } else {
-            musicAdapter.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_MIX"));
+            musicAdapter.updateTracks(sessionManager.getSavedTracklist(email+"TRACK_LIST_MIX"));
         }
         set_up_spotify_play();
         set_up_play_bar();
@@ -259,7 +259,7 @@ public class UserMix extends Fragment {
     public void all_liked(OnSuccessListener<Boolean> callback) {
         SavedSongsFirestore table = new SavedSongsFirestore(getContext());
         String email = sessionManager.getEmail();
-        List<SearchResponse.Track> trackList = sessionManager.getSavedTracklist("TRACK_LIST_MIX");
+        List<SearchResponse.Track> trackList = sessionManager.getSavedTracklist(email+"TRACK_LIST_MIX");
 
         if (trackList.isEmpty()) {
             callback.onSuccess(false);
@@ -302,23 +302,23 @@ public class UserMix extends Fragment {
                 //If liked all button on, like all songs in recycler view and display liked icon
                 if (liked_on == true) {
                     btn1.setImageResource(R.drawable.ic_liked);
-                    for (SearchResponse.Track track : sessionManager.getSavedTracklist("TRACK_LIST_MIX")) {
+                    for (SearchResponse.Track track : sessionManager.getSavedTracklist(email+"TRACK_LIST_MIX")) {
                         String title = track.getName()+" by "+track.getArtists().get(0).getName();
                         String url = track.getAlbum().getImages().get(0).getUrl();
                         table.save_new_song(email, title, url);
                         musicAdapter.clear_tracks();
-                        musicAdapter.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_MIX"));
+                        musicAdapter.updateTracks(sessionManager.getSavedTracklist(email+"TRACK_LIST_MIX"));
 
                     }
                     //Otherwise, unlike all songs and display unliked icon
                 } else {
                     btn1.setImageResource(R.drawable.ic_liked_off);
-                    for (SearchResponse.Track track : sessionManager.getSavedTracklist("TRACK_LIST_MIX")) {
+                    for (SearchResponse.Track track : sessionManager.getSavedTracklist(email+"TRACK_LIST_MIX")) {
                         String title = track.getName()+" by "+track.getArtists().get(0).getName();
                         String url = track.getAlbum().getImages().get(0).getUrl();
                         table.remove_saved_song(email, title, url);
                         musicAdapter.clear_tracks();
-                        musicAdapter.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_MIX"));
+                        musicAdapter.updateTracks(sessionManager.getSavedTracklist(email+"TRACK_LIST_MIX"));
 
                     }
                 }
@@ -330,13 +330,13 @@ public class UserMix extends Fragment {
             @Override
             public void onClick(View v) {
                 if (shuffle_on == false) {
-                    SearchResponse.Track track = sessionManager.getSavedTracklist("TRACK_LIST_MIX").get(0);
+                    SearchResponse.Track track = sessionManager.getSavedTracklist(email+"TRACK_LIST_MIX").get(0);
                     OnlinePlayerManager.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                 } else {
                     Random rand = new Random();
-                    int index = rand.nextInt(sessionManager.getSavedTracklist("TRACK_LIST_MIX").size());
-                    SearchResponse.Track track = sessionManager.getSavedTracklist("TRACK_LIST_MIX").get(index);
+                    int index = rand.nextInt(sessionManager.getSavedTracklist(email+"TRACK_LIST_MIX").size());
+                    SearchResponse.Track track = sessionManager.getSavedTracklist(email+"TRACK_LIST_MIX").get(index);
                     OnlinePlayerManager.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                 }
@@ -410,7 +410,7 @@ public class UserMix extends Fragment {
                         musicAdapter.updateTracks(response.body().getTracks().getItems().subList(0, 4));
                         tracklist.addAll(response.body().getTracks().getItems().subList(0, 4));
                         if (tracklist.size() == 40) {
-                            sessionManager.save_Tracklist_mix(tracklist);
+                            sessionManager.save_Tracklist_mix(tracklist, sessionManager.getEmail());
                         }
                     } else if (response.code() == 401) { // Handle expired access token
                         Intent intent = new Intent(getContext(), SessionTimeout.class);

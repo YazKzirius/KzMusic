@@ -129,14 +129,15 @@ public class AccountSettingsFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 sessionManager.logoutUser();
-                OnlinePlayerManager.getInstance().stopPlaybackAndDisconnect();
-                OfflinePlayerManager.getInstance().stopAllPlayers();
                 //Stopping all notification sessions for single session management
                 if (OfflinePlayerManager.getInstance().get_size() > 0) {
-                    OfflinePlayerManager.getInstance().StopAllSessions();
+                    OfflinePlayerManager.getInstance().resetToDefaults();
+                    SongQueue.getInstance().resetToDefaults();
+                } else {
+                    ;
                 }
-                TokenRefreshService.stopTokenService(getContext());
                 navigate_to_activity(MainActivity.class);
+
             }
         });
         if (SongQueue.getInstance().get_size() > 0 && SongQueue.getInstance().current_song != null) {

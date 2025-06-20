@@ -94,6 +94,7 @@ public class Radio extends Fragment {
     private static final String AUTH_URL = "https://accounts.spotify.com/authorize";
     private static final String TOKEN_URL = "https://accounts.spotify.com/api/token";
     int REQUEST_CODE = 1337;
+    private String email;
 
     public Radio() {
         // Required empty public constructor
@@ -155,12 +156,13 @@ public class Radio extends Fragment {
             }
         });
         sessionManager = new SessionManager(getContext());
+        email = sessionManager.getEmail();
         recyclerView.setAdapter(musicAdapter);
         TextView text1 = view.findViewById(R.id.made_for_user);
-        if (sessionManager.getSavedTracklist("TRACK_LIST_RADIO").size() == 0) {
+        if (sessionManager.getSavedTracklist(email+"TRACK_LIST_RADIO").size() == 0) {
             display_random_music();
         } else {
-            musicAdapter.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_RADIO"));
+            musicAdapter.updateTracks(sessionManager.getSavedTracklist(email+"TRACK_LIST_RADIO"));
         }
         text1.setText(sessionManager.getUsername()+" radio");
         //Setting up bottom playback navigator
@@ -198,23 +200,23 @@ public class Radio extends Fragment {
                 String email = sessionManager.getEmail();
                 if (liked_on == true) {
                     btn1.setImageResource(R.drawable.ic_liked);
-                    for (SearchResponse.Track track : sessionManager.getSavedTracklist("TRACK_LIST_RADIO")) {
+                    for (SearchResponse.Track track : sessionManager.getSavedTracklist(email+"TRACK_LIST_RADIO")) {
                         String title = track.getName()+" by "+track.getArtists().get(0).getName();
                         String url = track.getAlbum().getImages().get(0).getUrl();
                         table.save_new_song(email, title, url);
                         musicAdapter.clear_tracks();
-                        musicAdapter.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_RADIO"));
+                        musicAdapter.updateTracks(sessionManager.getSavedTracklist(email+"TRACK_LIST_RADIO"));
 
                     }
                 //Otherwise, unlike all songs and display unliked icon
                 } else {
                     btn1.setImageResource(R.drawable.ic_liked_off);
-                    for (SearchResponse.Track track : sessionManager.getSavedTracklist("TRACK_LIST_RADIO")) {
+                    for (SearchResponse.Track track : sessionManager.getSavedTracklist(email+"TRACK_LIST_RADIO")) {
                         String title = track.getName()+" by "+track.getArtists().get(0).getName();
                         String url = track.getAlbum().getImages().get(0).getUrl();
                         table.remove_saved_song(email, title, url);
                         musicAdapter.clear_tracks();
-                        musicAdapter.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_RADIO"));
+                        musicAdapter.updateTracks(sessionManager.getSavedTracklist(email+"TRACK_LIST_RADIO"));
 
                     }
                 }
@@ -226,13 +228,13 @@ public class Radio extends Fragment {
             @Override
             public void onClick(View v) {
                 if (shuffle_on == false) {
-                    SearchResponse.Track track = sessionManager.getSavedTracklist("TRACK_LIST_RADIO").get(0);
+                    SearchResponse.Track track = sessionManager.getSavedTracklist(email+"TRACK_LIST_RADIO").get(0);
                     OnlinePlayerManager.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                 } else {
                     Random rand = new Random();
-                    int index = rand.nextInt(sessionManager.getSavedTracklist("TRACK_LIST_RADIO").size());
-                    SearchResponse.Track track = sessionManager.getSavedTracklist("TRACK_LIST_RADIO").get(index);
+                    int index = rand.nextInt(sessionManager.getSavedTracklist(email+"TRACK_LIST_RADIO").size());
+                    SearchResponse.Track track = sessionManager.getSavedTracklist(email+"TRACK_LIST_RADIO").get(index);
                     OnlinePlayerManager.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                 }
@@ -256,7 +258,7 @@ public class Radio extends Fragment {
     public void all_liked(OnSuccessListener<Boolean> callback) {
         SavedSongsFirestore table = new SavedSongsFirestore(getContext());
         String email = sessionManager.getEmail();
-        List<SearchResponse.Track> trackList = sessionManager.getSavedTracklist("TRACK_LIST_RADIO");
+        List<SearchResponse.Track> trackList = sessionManager.getSavedTracklist(email+"TRACK_LIST_RADIO");
 
         if (trackList.isEmpty()) {
             callback.onSuccess(false);
@@ -347,7 +349,7 @@ public class Radio extends Fragment {
                 public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
                     if (response.isSuccessful() && response.body() != null) {
                         musicAdapter.updateTracks(response.body().getTracks().getItems());
-                        sessionManager.save_Tracklist_radio(response.body().getTracks().getItems());
+                        sessionManager.save_Tracklist_radio(response.body().getTracks().getItems(), sessionManager.getEmail());
                         text1.setText(sessionManager.getUsername()+" radio:");
                     } else if (response.code() == 401) { // Handle expired access token
                         Intent intent = new Intent(getContext(), SessionTimeout.class);

@@ -182,12 +182,12 @@ public class LikedSongs extends Fragment {
                                             } else {
                                                 all_liked(isLiked -> {
                                                     if (isLiked) {
-                                                        if (sessionManager.getSavedTracklist("TRACK_LIST_LIKED").size() == 0 || songSnapshot.getDocuments().size() !=
-                                                                sessionManager.getSavedTracklist("TRACK_LIST_LIKED").size()) {
+                                                        if (sessionManager.getSavedTracklist(email+"TRACK_LIST_LIKED").size() == 0 || songSnapshot.getDocuments().size() !=
+                                                                sessionManager.getSavedTracklist(email+"TRACK_LIST_LIKED").size()) {
                                                             get_liked_songs();
                                                         } else {
-                                                            musicAdapter1.updateTracks(sessionManager.getSavedTracklist("TRACK_LIST_LIKED"));
-                                                            sessionManager.save_Tracklist_liked(sessionManager.getSavedTracklist("TRACK_LIST_LIKED"));
+                                                            musicAdapter1.updateTracks(sessionManager.getSavedTracklist(email+"TRACK_LIST_LIKED"));
+                                                            sessionManager.save_Tracklist_liked(sessionManager.getSavedTracklist("TRACK_LIST_LIKED"), email);
                                                         }
                                                     } else {
                                                         get_liked_songs();
@@ -206,7 +206,7 @@ public class LikedSongs extends Fragment {
     public void all_liked(OnSuccessListener<Boolean> callback) {
         SavedSongsFirestore table = new SavedSongsFirestore(getContext());
         String email = sessionManager.getEmail();
-        List<SearchResponse.Track> trackList = sessionManager.getSavedTracklist("TRACK_LIST_LIKED");
+        List<SearchResponse.Track> trackList = sessionManager.getSavedTracklist(email+"TRACK_LIST_LIKED");
 
         if (trackList.isEmpty()) {
             callback.onSuccess(false);
@@ -263,13 +263,13 @@ public class LikedSongs extends Fragment {
             @Override
             public void onClick(View v) {
                 if (shuffle_on == false) {
-                    SearchResponse.Track track = sessionManager.getSavedTracklist("TRACK_LIST_LIKED").get(0);
+                    SearchResponse.Track track = sessionManager.getSavedTracklist(email+"TRACK_LIST_LIKED").get(0);
                     OnlinePlayerManager.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                 } else {
                     Random rand = new Random();
-                    int index = rand.nextInt(sessionManager.getSavedTracklist("TRACK_LIST_LIKED").size());
-                    SearchResponse.Track track = sessionManager.getSavedTracklist("TRACK_LIST_LIKED").get(index);
+                    int index = rand.nextInt(sessionManager.getSavedTracklist(email+"TRACK_LIST_LIKED").size());
+                    SearchResponse.Track track = sessionManager.getSavedTracklist(email+"TRACK_LIST_LIKED").get(index);
                     OnlinePlayerManager.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                 }
@@ -355,7 +355,7 @@ public class LikedSongs extends Fragment {
                                 tracklist.add(Tracks.get(j));
                             }
                         }
-                        sessionManager.save_Tracklist_liked(tracklist);
+                        sessionManager.save_Tracklist_liked(tracklist, email);
                         musicAdapter1.notifyDataSetChanged();
                         //Checking for more than One of the same track
                     } else if (response.code() == 401) { // Handle expired access token
