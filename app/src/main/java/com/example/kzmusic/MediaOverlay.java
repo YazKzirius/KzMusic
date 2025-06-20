@@ -177,13 +177,13 @@ public class MediaOverlay extends Fragment {
         textCurrentTime = view.findViewById(R.id.textCurrentTime);
         textTotalDuration = view.findViewById(R.id.textTotalDuration);
         //Retrieving data from song queue
-        musicFile = SongQueue.getInstance().current_song;
-        position = SongQueue.getInstance().current_position;
-        is_looping = SongQueue.getInstance().is_looping;
-        shuffle_on = SongQueue.getInstance().shuffle_on;
-        if (musicFile == null) {
+        if (SongQueue.getInstance().current_song == null) {
             ;
         } else {
+            musicFile = SongQueue.getInstance().current_song;
+            position = SongQueue.getInstance().current_position;
+            is_looping = SongQueue.getInstance().is_looping;
+            shuffle_on = SongQueue.getInstance().shuffle_on;
             //Setting up notification
             startPlayerService();
             //Setting up skipping;
@@ -205,6 +205,7 @@ public class MediaOverlay extends Fragment {
         }
         return view;
     }
+
     //This function adds animation to UI
     public void add_animation() {
         LinearLayout header = view.findViewById(R.id.down_btn).getRootView().findViewById(R.id.down_btn).getParent() instanceof LinearLayout
@@ -227,6 +228,7 @@ public class MediaOverlay extends Fragment {
         scaleUpX.start();
         scaleUpY.start();
     }
+
     //This function adds background animation
     public void add_background_animation() {
 
@@ -269,6 +271,7 @@ public class MediaOverlay extends Fragment {
 // Start the animation
         animator.start();
     }
+
     //This button sets up pop up menu display
     public void set_up_pop_menu() {
         ImageButton menu = view.findViewById(R.id.menu_btn2);
@@ -279,6 +282,7 @@ public class MediaOverlay extends Fragment {
             }
         });
     }
+
     //This function sets up music image view
     public void set_up_circular_view(MusicFile file) {
         // Load album image
@@ -313,6 +317,7 @@ public class MediaOverlay extends Fragment {
                 });
         Glide.with(getContext()).asGif().load(R.drawable.media_playing).circleCrop().into(song_gif);
     }
+
     //This function sets up media notification bar skip events
     public void set_up_skipping() {
         //Connecting to service
@@ -348,53 +353,66 @@ public class MediaOverlay extends Fragment {
             if (event != null) {
                 Boolean shouldSkip = event.getContentIfNotHandled();
                 if (shouldSkip != null && shouldSkip) {
-                    // Handle the skip event in the fragment
-                    musicFile = SongQueue.getInstance().current_song;
-                    player = OfflinePlayerManager.getInstance().current_player;
-                    //Initializing reverb from Song manager class
-                    String display_title = musicFile.getName();
-                    String artist = musicFile.getArtist().replaceAll("/", ", ");
-                    display_title = display_title.replaceAll("by "+artist, "").replaceAll(
-                            "- "+artist, "");
-                    if (isOnlyDigits(display_title)) {
-                        display_title = display_title +" by "+ artist;
+                    if (SongQueue.getInstance().current_song == null) {
+                        ;
                     } else {
-                        display_title = format_title(display_title) +" by "+ artist;
+                        // Handle the skip event in the fragment
+                        musicFile = SongQueue.getInstance().current_song;
+                        player = OfflinePlayerManager.getInstance().current_player;
+                        //Initializing reverb from Song manager class
+                        String display_title = musicFile.getName();
+                        String artist = musicFile.getArtist().replaceAll("/", ", ");
+                        display_title = display_title.replaceAll("by " + artist, "").replaceAll(
+                                "- " + artist, "");
+                        if (isOnlyDigits(display_title)) {
+                            display_title = display_title + " by " + artist;
+                        } else {
+                            display_title = format_title(display_title) + " by " + artist;
+                        }
+                        overlaySongTitle.setText(display_title);
+                        //Displaying circular view
+                        set_up_circular_view(musicFile);
+                        //Setting up seekbar
+                        set_up_bar();
                     }
-                    overlaySongTitle.setText(display_title);
-                    //Displaying circular view
-                    set_up_circular_view(musicFile);
-                    //Setting up seekbar
-                    set_up_bar();
                 } else {
                     ;
                 }
             }
         });
         //Setting up for Pause events
-        sharedViewModel.getPauseEvent().observe(getViewLifecycleOwner(), event ->  {
-            if (event != null)  {
+        sharedViewModel.getPauseEvent().observe(getViewLifecycleOwner(), event -> {
+            if (event != null) {
                 Boolean shouldPlayPause = event.getContentIfNotHandled();
                 if (shouldPlayPause != null && shouldPlayPause) {
-                    player = OfflinePlayerManager.getInstance().current_player;
-                    // Stop the GIF by clearing the ImageView
-                    Glide.with(getContext()).clear(song_gif);
-                    song_gif.setImageDrawable(null);
-                    btnPlayPause.setImageResource(R.drawable.ic_play);
+                    if (OfflinePlayerManager.getInstance().current_player == null) {
+                        ;
+                    } else {
+                        player = OfflinePlayerManager.getInstance().current_player;
+                        // Stop the GIF by clearing the ImageView
+                        Glide.with(getContext()).clear(song_gif);
+                        song_gif.setImageDrawable(null);
+                        btnPlayPause.setImageResource(R.drawable.ic_play);
+                    }
                 } else {
                     ;
                 }
             }
         });
         //Setting up for Play events
-        sharedViewModel.getPlayEvent().observe(getViewLifecycleOwner(), event ->  {
-            if (event != null)  {
+        sharedViewModel.getPlayEvent().observe(getViewLifecycleOwner(), event -> {
+            if (event != null) {
                 Boolean shouldPlayPause = event.getContentIfNotHandled();
                 if (shouldPlayPause != null && shouldPlayPause) {
-                    player = OfflinePlayerManager.getInstance().current_player;
-                    //Update duration in database
-                    btnPlayPause.setImageResource(R.drawable.ic_pause);
-                    set_up_circular_view(SongQueue.getInstance().current_song);
+                    if (OfflinePlayerManager.getInstance().current_player == null) {
+                        ;
+                    } else {
+                        player = OfflinePlayerManager.getInstance().current_player;
+                        // Stop the GIF by clearing the ImageView
+                        Glide.with(getContext()).clear(song_gif);
+                        song_gif.setImageDrawable(null);
+                        btnPlayPause.setImageResource(R.drawable.ic_pause);
+                    }
                 } else {
                     ;
                 }
@@ -405,19 +423,22 @@ public class MediaOverlay extends Fragment {
             if (event != null) {
                 Boolean End = event.getContentIfNotHandled();
                 if (End != null && End) {
-                    musicFile = SongQueue.getInstance().current_song;
+                    if (SongQueue.getInstance().current_song == null) {
+                        ;
+                    } else {
+                        musicFile = SongQueue.getInstance().current_song;
+                    }
                 }
             }
         });
         //Setting up for seekbar events
         sharedViewModel.getUpdateEvent().observe(getViewLifecycleOwner(), event -> {
             if (event != null) {
-               set_up_bar();
+                set_up_bar();
             }
         });
-
-
     }
+
     //This function sets up and implements button functionality
     public void set_up_media_buttons() {
         Random rand = new Random();
@@ -425,37 +446,52 @@ public class MediaOverlay extends Fragment {
             v.animate().scaleX(0.85f).scaleY(0.85f).setDuration(100).withEndAction(() ->
                     v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
             ).start();
-            if (player.isPlaying()) {
-                player.pause();
-                //Update duration in database
-                // Stop the GIF by clearing the ImageView
-                Glide.with(getContext()).clear(song_gif);
-                song_gif.setImageDrawable(null);
-                //Updating service state
-                playerService.updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
-                playerService.showNotification(playerService.stateBuilder.build());
-                btnPlayPause.setImageResource(R.drawable.ic_play);
+            if (player == null) {
+                ;
             } else {
-                player.play();
-                //Updating service state
-                playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
-                playerService.showNotification(playerService.stateBuilder.build());
-                btnPlayPause.setImageResource(R.drawable.ic_pause);
-                set_up_circular_view(musicFile);
+                if (player.isPlaying()) {
+                    player.pause();
+                    //Update duration in database
+                    // Stop the GIF by clearing the ImageView
+                    Glide.with(getContext()).clear(song_gif);
+                    song_gif.setImageDrawable(null);
+                    //Updating service state
+                    if (playerService != null) {
+                        playerService.updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
+                        playerService.showNotification(playerService.stateBuilder.build());
+                    }
+                    btnPlayPause.setImageResource(R.drawable.ic_play);
+                } else {
+                    player.play();
+                    //Updating service state
+                    if (playerService != null) {
+                        playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
+                        playerService.showNotification(playerService.stateBuilder.build());
+                    }
+                    btnPlayPause.setImageResource(R.drawable.ic_pause);
+                    set_up_circular_view(musicFile);
+                }
+
             }
         });
         //Loop functionality
         //If loop was on previously, keep loop on otherwise, continue
-        if (is_looping == true) {
-            //Setting repeat mode on and replacing icon
-            SongQueue.getInstance().setIs_looping(true);
-            playerService.updatePlaybackState(PlaybackStateCompat.REPEAT_MODE_ONE);
-            playerService.updateNotification(musicFile);
-            btnLoop.setImageResource(R.drawable.ic_loop_on);
+        if (playerService != null) {
+            if (is_looping) {
+                SongQueue.getInstance().setIs_looping(true);
+                playerService.updatePlaybackState(PlaybackStateCompat.REPEAT_MODE_ONE);
+                playerService.updateNotification(musicFile);
+                btnLoop.setImageResource(R.drawable.ic_loop_on);
+            } else {
+                SongQueue.getInstance().setIs_looping(false);
+                playerService.updatePlaybackState(PlaybackStateCompat.REPEAT_MODE_NONE);
+                playerService.updateNotification(musicFile);
+                btnLoop.setImageResource(R.drawable.ic_loop);
+            }
         } else {
-            //Setting repeat mode off and replacing icon
-            SongQueue.getInstance().setIs_looping(false);
-            btnLoop.setImageResource(R.drawable.ic_loop);
+            // Still update local UI and state safely
+            SongQueue.getInstance().setIs_looping(is_looping);
+            btnLoop.setImageResource(is_looping ? R.drawable.ic_loop_on : R.drawable.ic_loop);
         }
         btnLoop.setOnClickListener(v -> {
             v.animate().scaleX(0.85f).scaleY(0.85f).setDuration(100).withEndAction(() ->
@@ -465,16 +501,22 @@ public class MediaOverlay extends Fragment {
             //Loop functionality
             is_looping = !is_looping;
             //If loop was on previously, keep loop on otherwise, continue
-            if (is_looping == true) {
-                //Setting repeat mode on and replacing icon
-                playerService.updatePlaybackState(PlaybackStateCompat.REPEAT_MODE_ONE);
-                playerService.updateNotification(musicFile);
-                SongQueue.getInstance().setIs_looping(true);
-                btnLoop.setImageResource(R.drawable.ic_loop_on);
+            if (playerService != null) {
+                if (is_looping) {
+                    SongQueue.getInstance().setIs_looping(true);
+                    playerService.updatePlaybackState(PlaybackStateCompat.REPEAT_MODE_ONE);
+                    playerService.updateNotification(musicFile);
+                    btnLoop.setImageResource(R.drawable.ic_loop_on);
+                } else {
+                    SongQueue.getInstance().setIs_looping(false);
+                    playerService.updatePlaybackState(PlaybackStateCompat.REPEAT_MODE_NONE);
+                    playerService.updateNotification(musicFile);
+                    btnLoop.setImageResource(R.drawable.ic_loop);
+                }
             } else {
-                //Setting repeat mode off and replacing icon
-                SongQueue.getInstance().setIs_looping(false);
-                btnLoop.setImageResource(R.drawable.ic_loop);
+                // Still update local UI and state safely
+                SongQueue.getInstance().setIs_looping(is_looping);
+                btnLoop.setImageResource(is_looping ? R.drawable.ic_loop_on : R.drawable.ic_loop);
             }
 
         });
@@ -483,26 +525,38 @@ public class MediaOverlay extends Fragment {
                     v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
             ).start();
             // toggle playback...
-            player.pause();
-            //Updating total song duration in database
-            //Moving to next song in recycler view if shuffle is off
-            if (shuffle_on == false) {
-                //Handling the event that current song is top of recycler view
-                if (position == 0) {
-                    position = musicFiles.size() - 1;
-                } else {
-                    position -= 1;
-                }
+            if (player == null) {
+                ;
             } else {
-                position = rand.nextInt(musicFiles.size());
+               player.pause();
+                //Updating total song duration in database
+                //Moving to next song in recycler view if shuffle is off
+                if (shuffle_on == false) {
+                    //Handling the event that current song is top of recycler view
+                    if (position == 0) {
+                        position = musicFiles.size() - 1;
+                    } else {
+                        position -= 1;
+                    }
+                } else {
+                    position = rand.nextInt(musicFiles.size());
+                }
+                if (position < 0 || position >= musicFiles.size()) {
+                    ;
+                } else {
+                    musicFile = musicFiles.get(position);
+                    //Adding new song to queue
+                    SongQueue.getInstance().addSong(musicFile);
+                    SongQueue.getInstance().setPosition(position);
+                    if (playerService != null) {
+                        playerService.updateNotification(musicFile);
+                        playerService.playMusic(musicFile);
+                    }
+                    if (musicFile != null) {
+                        set_up_view(musicFile);
+                    }
+                }
             }
-            musicFile = musicFiles.get(position);
-            //Adding new song to queue
-            SongQueue.getInstance().addSong(musicFile);
-            SongQueue.getInstance().setPosition(position);
-            playerService.updateNotification(musicFile);
-            playerService.playMusic(musicFile);
-            set_up_view(musicFile);
 
         });
         btnSkip_right.setOnClickListener(v -> {
@@ -510,26 +564,38 @@ public class MediaOverlay extends Fragment {
                     v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
             ).start();
             // toggle playback...
-            player.pause();
-            //Moving to next song in recycler view if shuffle is off
-            if (shuffle_on == false) {
-                //Handling the event that it's the last song in the recycler view
-                if (position == musicFiles.size() - 1) {
-                    position = 0;
-                } else {
-                    position += 1;
-                }
+            if (player == null) {
+                ;
             } else {
-                position = rand.nextInt(musicFiles.size());
+                player.pause();
+                //Updating total song duration in database
+                //Moving to next song in recycler view if shuffle is off
+                if (shuffle_on == false) {
+                    //Handling the event that current song is top of recycler view
+                    if (position == 0) {
+                        position = musicFiles.size() - 1;
+                    } else {
+                        position += 1;
+                    }
+                } else {
+                    position = rand.nextInt(musicFiles.size());
+                }
+                if (position < 0 || position >= musicFiles.size()) {
+                    ;
+                } else {
+                    musicFile = musicFiles.get(position);
+                    //Adding new song to queue
+                    SongQueue.getInstance().addSong(musicFile);
+                    SongQueue.getInstance().setPosition(position);
+                    if (playerService != null) {
+                        playerService.updateNotification(musicFile);
+                        playerService.playMusic(musicFile);
+                    }
+                    if (musicFile != null) {
+                        set_up_view(musicFile);
+                    }
+                }
             }
-            musicFile = musicFiles.get(position);
-            //Updating total song duration in database
-            //Adding new song to queue
-            SongQueue.getInstance().addSong(musicFile);
-            SongQueue.getInstance().setPosition(position);
-            playerService.updateNotification(musicFile);
-            playerService.playMusic(musicFile);
-            set_up_view(musicFile);
         });
         //Implementing shuffle button functionality
         //If loop was on previously, keep loop on otherwise, continue
@@ -562,56 +628,97 @@ public class MediaOverlay extends Fragment {
 
     //This function sets up and implements a live rewind seekbar
     public void set_up_bar() {
-        startSeekBarUpdate();
-        //If player is already ready then, initialize differently for bottom navigation bar opening
-        if (player.getPlaybackState() == Player.STATE_READY) {
-            long duration = player.getDuration();
-            if (formatTime(duration) == textTotalDuration.getText()) {
-                ;
-            } else {
-                textTotalDuration.setText(formatTime(duration));
-            }
-            seekBar.setMax((int) duration);
+        if (player == null) {
+            ;
         } else {
-            // Handle unknown duration case, possibly set to live stream duration handling
-            textTotalDuration.setText("0:00");
+            startSeekBarUpdate();
+            //If player is already ready then, initialize differently for bottom navigation bar opening
+            if (player.getPlaybackState() == Player.STATE_READY) {
+                long duration = player.getDuration();
+                if (formatTime(duration) == textTotalDuration.getText()) {
+                    ;
+                } else {
+                    textTotalDuration.setText(formatTime(duration));
+                }
+                seekBar.setMax((int) duration);
+            } else {
+                // Handle unknown duration case, possibly set to live stream duration handling
+                textTotalDuration.setText("0:00");
+            }
+            seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    if (fromUser) {
+                        player.seekTo(progress);
+                        SongQueue.getInstance().setCurrent_time(player.getCurrentPosition());
+                        last_position = player.getCurrentPosition();
+                    }
+                }
+
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
+                    stopSeekBarUpdate();
+                }
+
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+                    startSeekBarUpdate();
+                }
+            });
         }
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+    }
+    //This function updates the seekbar based on the duration of song
+    private void startSeekBarUpdate() {
+        handler = new Handler(Looper.getMainLooper());
+        runnable = new Runnable() {
             @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser) {
-                    player.seekTo(progress);
-                    SongQueue.getInstance().setCurrent_time(player.getCurrentPosition());
-                    last_position = player.getCurrentPosition();
+            public void run() {
+                try {
+                    if (player != null && player.isPlaying()) {
+                        seekBar.setProgress((int) player.getCurrentPosition());
+                        textCurrentTime.setText(formatTime(player.getCurrentPosition()));
+                        SongQueue.getInstance().setCurrent_time(player.getCurrentPosition());
+                        //Handling song finished functionality
+                        handler.postDelayed(this, 1000);
+                    }
+                } catch (Exception e) {
+                    ;
                 }
             }
+        };
+        handler.post(runnable);
+    }
 
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                stopSeekBarUpdate();
-            }
+    //This function stops updating seekbar
+    private void stopSeekBarUpdate() {
+        if (handler != null) {
+            handler.removeCallbacks(runnable);
+        }
+    }
 
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                startSeekBarUpdate();
-            }
-        });
+    //This function formats string is data and time format 0:00
+    private String formatTime(long timeMs) {
+        int totalSeconds = (int) (timeMs / 1000);
+        int minutes = totalSeconds / 60;
+        int seconds = totalSeconds % 60;
+        return String.format("%02d:%02d", minutes, seconds);
     }
 
     //This function plays the specified music file
-    private void set_up_view(MusicFile musicFile) {;
+    private void set_up_view(MusicFile musicFile) {
+
         player = OfflinePlayerManager.getInstance().current_player;
         //Initializing song properties
         session_id = SongQueue.getInstance().getAudio_session_id();
         //Initializing reverb from Song manager class
         String display_title = musicFile.getName();
         String artist = musicFile.getArtist().replaceAll("/", ", ");
-        display_title = display_title.replaceAll("by "+artist, "").replaceAll(
-                "- "+artist, "");
+        display_title = display_title.replaceAll("by " + artist, "").replaceAll(
+                "- " + artist, "");
         if (isOnlyDigits(display_title)) {
-            display_title = display_title +" by "+ artist;
+            display_title = display_title + " by " + artist;
         } else {
-            display_title = format_title(display_title) +" by "+ artist;
+            display_title = format_title(display_title) + " by " + artist;
         }
         //Applying audio effects
         apply_audio_effect();
@@ -619,6 +726,7 @@ public class MediaOverlay extends Fragment {
         //Displaying circular view
         set_up_circular_view(musicFile);
     }
+
     // This function formats song title, removing unnecessary data and watermarks
     public String format_title(String title) {
         if (title == null || title.trim().isEmpty()) {
@@ -679,10 +787,11 @@ public class MediaOverlay extends Fragment {
             String tempCleanedOriginal = originalTitleBeforeNumericCheck.replaceAll("\\[[^\\]]*\\]", "")
                     .replaceAll("\\((?i)(official|lyric|video|audio|hd|hq|explicit|remastered|live|original|mix|feat|ft\\.)[^)]*\\)", "")
                     .replaceAll("(?i)\\.(mp3|flac|wav|m4a|ogg|aac|wma)$", "").trim();
-            if(tempCleanedOriginal.isEmpty() || tempCleanedOriginal.matches("^[\\s.-]*$") || isOnlyDigits(tempCleanedOriginal)) {
+            if (tempCleanedOriginal.isEmpty() || tempCleanedOriginal.matches("^[\\s.-]*$") || isOnlyDigits(tempCleanedOriginal)) {
                 // If the original itself was essentially just a watermark/number/extension, returning an empty string might be fine
                 // or return the numeric part if that's all that's left of the original.
-                if(isOnlyDigits(tempCleanedOriginal) && !tempCleanedOriginal.isEmpty()) return tempCleanedOriginal;
+                if (isOnlyDigits(tempCleanedOriginal) && !tempCleanedOriginal.isEmpty())
+                    return tempCleanedOriginal;
                 // else if original was just noise, and working title is empty, original request for this state is not to return original title
             } else {
                 return originalTitleBeforeNumericCheck; // Prefer fuller original if cleaning nuked a valid title
@@ -750,47 +859,12 @@ public class MediaOverlay extends Fragment {
         seekBarSpeed.setProgress((int) (song_speed * 100));
         speed_text.setText(String.format("%.1fx", song_speed));
         //Setting reverb bar to lowest
-        seekBarReverb.setMax(1000);
-        seekBarReverb.setMin(-1000);
+        seekBarReverb.setMax(2000);
+        seekBarReverb.setMin(0);
         seekBarReverb.setProgress(reverb_level);
         setReverbPreset(reverb_level);
     }
 
-    //This function updates the seekbar based on the duration of song
-    private void startSeekBarUpdate() {
-        handler = new Handler(Looper.getMainLooper());
-        runnable = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    if (player != null && player.isPlaying()) {
-                        seekBar.setProgress((int) player.getCurrentPosition());
-                        textCurrentTime.setText(formatTime(player.getCurrentPosition()));
-                        SongQueue.getInstance().setCurrent_time(player.getCurrentPosition());
-                        //Handling song finished functionality
-                        handler.postDelayed(this, 1000);
-                    }
-                } catch (Exception e) {
-                    ;
-                }
-            }
-        };
-        handler.post(runnable);
-    }
-    //This function stops updating seekbar
-    private void stopSeekBarUpdate() {
-        if (handler != null) {
-            handler.removeCallbacks(runnable);
-        }
-    }
-
-    //This function formats string is data and time format 0:00
-    private String formatTime(long timeMs) {
-        int totalSeconds = (int) (timeMs / 1000);
-        int minutes = totalSeconds / 60;
-        int seconds = totalSeconds % 60;
-        return String.format("%02d:%02d", minutes, seconds);
-    }
 
     //This function loads User music audio files from personal directory
     //This function loads User music audio files from personal directory
@@ -851,17 +925,6 @@ public class MediaOverlay extends Fragment {
         }
 
     }
-
-    //This function opens a new overlay
-    //This function opens the playback handling overlay
-    public void open_new_overlay() {
-        Fragment media_page = new MediaOverlay();
-        FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.replace(R.id.fragment_container, media_page);
-        fragmentTransaction.commit();
-    }
-
     //This function sets up speed manager seek bar
     public void set_up_speed_and_pitch() {
         // SeekBar for Speed
@@ -873,7 +936,9 @@ public class MediaOverlay extends Fragment {
                 song_pitch = speed;
                 song_speed = speed;
                 speed_text.setText(String.format("%.1fx", speed)); // Update the speed text
-                player.setPlaybackParameters(new PlaybackParameters(song_speed, song_pitch));
+                if (player != null) {
+                    player.setPlaybackParameters(new PlaybackParameters(song_speed, song_pitch));
+                }
                 seekBarSpeed.setProgress(progress);
                 SongQueue.getInstance().setSpeed(song_speed);
                 SongQueue.getInstance().setPitch(song_pitch);
@@ -913,9 +978,11 @@ public class MediaOverlay extends Fragment {
         //Computing reverberation parameters based of reverb level data proportionality
         try {
             //Estimating percentage of seekbar complete
-            double percentage = ((double) (progress + 1000) / 2000) * 100;
             reverb_level = progress;
-            reverb_text.setText("Reverberation: " + (int) percentage / 2 + "%");
+            if (progress <= -1000) {
+                progress = 0;
+            }
+            reverb_text.setText("Reverberation: " + (progress-1000) + "db");
             seekBar.setProgress(progress);
             SongQueue.getInstance().setReverb_level(reverb_level);
             if (playerService != null) {
@@ -927,6 +994,7 @@ public class MediaOverlay extends Fragment {
             Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -936,6 +1004,7 @@ public class MediaOverlay extends Fragment {
         }
 
     }
+
     //This function shows pop up menu when button is clicked
     private void showPopupMenu(View view) {
         PopupMenu popupMenu = new PopupMenu(getContext(), view);
@@ -960,6 +1029,7 @@ public class MediaOverlay extends Fragment {
         });
         popupMenu.show();
     }
+
     private void startPlayerService() {
         Intent intent = new Intent(requireContext(), PlayerService.class);
         requireContext().startService(intent);

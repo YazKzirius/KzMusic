@@ -34,6 +34,7 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
+import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
@@ -91,27 +92,33 @@ public class PlayerService extends Service {
             //Playing resuming song at previous duration if the same song as last
             if (SongQueue.getInstance().get_size() >= 1 && SongQueue.getInstance().current_song != null) {
                 int index = SongQueue.getInstance().pointer - 1;
-                MusicFile song1 =  SongQueue.getInstance().get_specified(index);
-                MusicFile song2 = SongQueue.getInstance().get_specified(index - 1);
-                if (song1 == null || song2 == null) {
-                    OfflinePlayerManager.getInstance().stopAllPlayers();
-                    player = new ExoPlayer.Builder(getApplicationContext()).build();
-                    Uri uri = Uri.fromFile(new File(musicFile.getPath()));
-                    MediaItem mediaItem = MediaItem.fromUri(uri);
-                    player.setMediaItem(mediaItem);
+                if (index < 0 || index >= SongQueue.getInstance().get_size()) {
+                    ;
                 } else {
-                    String s1 = song1.getName();
-                    String s2 = song2.getName();
-                    if (s1 != null && s1.equals(s2)) {
-                        // Resume with previous player
-                        player = OfflinePlayerManager.getInstance().current_player;
-                    } else {
+                    if (SongQueue.getInstance().get_specified(index) == null || SongQueue.getInstance().get_specified(index - 1) == null) {
                         OfflinePlayerManager.getInstance().stopAllPlayers();
                         player = new ExoPlayer.Builder(getApplicationContext()).build();
                         Uri uri = Uri.fromFile(new File(musicFile.getPath()));
                         MediaItem mediaItem = MediaItem.fromUri(uri);
                         player.setMediaItem(mediaItem);
-                        add_song(musicFile);
+                    } else {
+                        MusicFile song1;
+                        MusicFile song2;
+                        song1 = SongQueue.getInstance().get_specified(index);
+                        song2 = SongQueue.getInstance().get_specified(index - 1);
+                        String s1 = song1.getName();
+                        String s2 = song2.getName();
+                        if (s1 != null && s1.equals(s2)) {
+                            // Resume with previous player
+                            player = OfflinePlayerManager.getInstance().current_player;
+                        } else {
+                            OfflinePlayerManager.getInstance().stopAllPlayers();
+                            player = new ExoPlayer.Builder(getApplicationContext()).build();
+                            Uri uri = Uri.fromFile(new File(musicFile.getPath()));
+                            MediaItem mediaItem = MediaItem.fromUri(uri);
+                            player.setMediaItem(mediaItem);
+                            add_song(musicFile);
+                        }
                     }
                 }
             } else {
@@ -136,7 +143,7 @@ public class PlayerService extends Service {
     }
     //This function adds new song to firestore collection
     public void add_song(MusicFile musicFile) {
-        if (musicFile != null && musicFile.getName() != null && musicFile.getArtist() != null) {
+        if (musicFile != null) {
             String current_display_title = musicFile.getName();
             String artist = musicFile.getArtist().replaceAll("/", ", ");
 
@@ -217,16 +224,20 @@ public class PlayerService extends Service {
     public void setReverbPreset(int progress) {
         try {
             // Clamp values safely within supported EnvironmentalReverb range
-            int clampedProgress = Math.max(-9000, Math.min(progress, 2000));
-            int roomLevel = Math.max(-9000, Math.min(-2000 + (clampedProgress + 1000), 0));  // roomLevel: -9000 to 0
-            int decayTime = 1000 + (clampedProgress + 1000); // e.g. ~2000–3000ms range depending on level
+            if (SongQueue.getInstance().reverb == null) {
+                ;
+            } else {
+                int clampedProgress = Math.max(-9000, Math.min(progress, 2000));
+                int roomLevel = Math.max(-9000, Math.min(-2000 + (clampedProgress + 1000), 0));  // roomLevel: -9000 to 0
+                int decayTime = 1000 + (clampedProgress + 1000); // e.g. ~2000–3000ms range depending on level
 
-            reverb.setRoomLevel((short) roomLevel);
-            reverb.setReverbLevel((short) clampedProgress);
-            reverb.setDecayTime(decayTime);
-            reverb.setDiffusion((short) 1000);
-            reverb.setDensity((short) 1000);
-            reverb.setEnabled(true);
+                reverb.setRoomLevel((short) roomLevel);
+                reverb.setReverbLevel((short) clampedProgress);
+                reverb.setDecayTime(decayTime);
+                reverb.setDiffusion((short) 1000);
+                reverb.setDensity((short) 1000);
+                reverb.setEnabled(true);
+            }
         } catch (Exception e) {
             Toast.makeText(getApplicationContext(), "Something went wrong with audio effects", Toast.LENGTH_SHORT).show();
             Log.e("AudioEffect", "Error applying reverb: ", e);
@@ -402,88 +413,101 @@ public class PlayerService extends Service {
                 MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
 
         stateBuilder = new PlaybackStateCompat.Builder()
-                .setActions(PlaybackStateCompat.ACTION_PLAY_PAUSE | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_PLAY
-                        | PlaybackStateCompat.ACTION_SKIP_TO_NEXT | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)
-                .setState(PlaybackStateCompat.STATE_PLAYING, 0, (float) 1.0);
-        Random rand = new Random();
+                .setActions(PlaybackStateCompat.ACTION_PLAY_PAUSE |
+                        PlaybackStateCompat.ACTION_PAUSE |
+                        PlaybackStateCompat.ACTION_PLAY |
+                        PlaybackStateCompat.ACTION_SKIP_TO_NEXT |
+                        PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)
+                .setState(PlaybackStateCompat.STATE_PLAYING, 0, 1.0f);
+
         mediaSession.setPlaybackState(stateBuilder.build());
         OfflinePlayerManager.getInstance().addSession(mediaSession);
         showNotification(stateBuilder.build());
+
+        Random rand = new Random();
+
         mediaSession.setCallback(new MediaSessionCompat.Callback() {
             @Override
             public void onPlay() {
                 super.onPlay();
-                OfflinePlayerManager.getInstance().current_player.play();
-                updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
-                showNotification(stateBuilder.build());
-                handlePlay();
+                ExoPlayer player = OfflinePlayerManager.getInstance().current_player;
+                if (player != null) {
+                    player.play();
+                    updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
+                    showNotification(stateBuilder.build());
+                    handlePlay();
+                }
             }
 
             @Override
             public void onPause() {
                 super.onPause();
-                OfflinePlayerManager.getInstance().current_player.pause();
-                //Update database duration
-                updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
-                showNotification(stateBuilder.build());
-                handlePause();
+                ExoPlayer player = OfflinePlayerManager.getInstance().current_player;
+                if (player != null) {
+                    player.pause();
+                    updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
+                    showNotification(stateBuilder.build());
+                    handlePause();
+                }
             }
+
             @Override
             public void onSkipToNext() {
                 super.onSkipToNext();
-                int pos;
-                if (SongQueue.getInstance().current_position == SongQueue.getInstance().song_list.size() - 1 &&
-                        SongQueue.getInstance().shuffle_on != true) {
-                    ;
-                } else {
-                    if (SongQueue.getInstance().shuffle_on != true) {
-                        pos = SongQueue.getInstance().current_position + 1;
+                SongQueue queue = SongQueue.getInstance();
+                List<MusicFile> songs = queue.song_list;
+                if (songs == null || songs.isEmpty()) return;
+
+                int pos = queue.current_position;
+                if (!queue.shuffle_on) {
+                    if (pos < songs.size() - 1) {
+                        pos += 1;
                     } else {
-                        pos = rand.nextInt(SongQueue.getInstance().song_list.size());
+                        return; // already at end
                     }
-                    if (pos >= SongQueue.getInstance().song_list.size() || pos < 0) {
-                        ;
-                    } else {
-                        MusicFile song = SongQueue.getInstance().song_list.get(pos);
-                        if (song != null) {
-                            SongQueue.getInstance().addSong(song);
-                            SongQueue.getInstance().setPosition(pos);
-                            updateNotification(song);
-                            playMusic(song);
-                            handleSkip();
-                        } else {
-                            ;
-                        }
+                } else {
+                    pos = rand.nextInt(songs.size());
+                }
+
+                if (pos >= 0 && pos < songs.size()) {
+                    MusicFile song = songs.get(pos);
+                    if (song != null) {
+                        queue.addSong(song);
+                        queue.setPosition(pos);
+                        updateNotification(song);
+                        playMusic(song);
+                        handleSkip();
                     }
                 }
             }
+
             @Override
             public void onSkipToPrevious() {
                 super.onSkipToPrevious();
-                int pos;
-                if (SongQueue.getInstance().current_position == 0 &&
-                        SongQueue.getInstance().shuffle_on != true) {
-                    ;
-                } else {
-                    if (SongQueue.getInstance().shuffle_on != true) {
-                        pos = SongQueue.getInstance().current_position - 1;
+                SongQueue queue = SongQueue.getInstance();
+                List<MusicFile> songs = queue.song_list;
+                if (songs == null || songs.isEmpty()) return;
+
+                int pos = queue.current_position;
+                if (!queue.shuffle_on) {
+                    if (pos > 0) {
+                        pos -= 1;
                     } else {
-                        pos = rand.nextInt(SongQueue.getInstance().song_list.size());
+                        return; // already at start
                     }
-                    if (pos >= SongQueue.getInstance().song_list.size() || pos < 0) {
-                        ;
-                    } else {
-                        MusicFile song = SongQueue.getInstance().song_list.get(pos);
-                        if (song != null) {
-                            SongQueue.getInstance().addSong(song);
-                            SongQueue.getInstance().setPosition(pos);
-                            updateNotification(song);
-                            playMusic(song);
-                            handleSkip();
-                        } else {
-                            ;
-                        }
-                    };
+                } else {
+                    pos = rand.nextInt(songs.size());
+                }
+
+                if (pos >= 0 && pos < songs.size()) {
+                    MusicFile song = songs.get(pos);
+                    if (song != null) {
+                        queue.addSong(song);
+                        queue.setPosition(pos);
+                        updateNotification(song);
+                        playMusic(song);
+                        handleSkip();
+                    }
                 }
             }
         });
@@ -493,13 +517,17 @@ public class PlayerService extends Service {
 
     public void updatePlaybackState(int state) {
         //Checking if state is on repeat and implementing functionality
-        if (state == PlaybackStateCompat.REPEAT_MODE_ONE) {
-            OfflinePlayerManager.getInstance().current_player.setRepeatMode(Player.REPEAT_MODE_ONE);
-            stateBuilder.setState(stateBuilder.build().getState(), 0, SongQueue.getInstance().speed);
+        if (OfflinePlayerManager.getInstance().current_player == null) {
+            ;
         } else {
-            stateBuilder.setState(state, 0, SongQueue.getInstance().speed);
+            if (state == PlaybackStateCompat.REPEAT_MODE_ONE) {
+                OfflinePlayerManager.getInstance().current_player.setRepeatMode(Player.REPEAT_MODE_ONE);
+                stateBuilder.setState(stateBuilder.build().getState(), 0, SongQueue.getInstance().speed);
+            } else {
+                stateBuilder.setState(state, 0, SongQueue.getInstance().speed);
+            }
+            mediaSession.setPlaybackState(stateBuilder.build());
         }
-        mediaSession.setPlaybackState(stateBuilder.build());
     }
 
     public void createNotificationChannel() {
@@ -514,189 +542,214 @@ public class PlayerService extends Service {
         }
     }
     public void showNotification(PlaybackStateCompat state) {
-        String display_title = SongQueue.getInstance().current_song.getName();
-        String artist = SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
-        display_title = display_title.replaceAll("by "+artist, "").replaceAll(
-                "- "+artist, "");
-        if (isOnlyDigits(display_title)) {
-            display_title = display_title +" by "+ artist;
+        if (SongQueue.getInstance().current_song == null) {
+            ;
         } else {
-            display_title = format_title(display_title) +" by "+ artist;
+            String display_title = SongQueue.getInstance().current_song.getName();
+            String artist = SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", ");
+            display_title = display_title.replaceAll("by "+artist, "").replaceAll(
+                    "- "+artist, "");
+            if (isOnlyDigits(display_title)) {
+                display_title = display_title +" by "+ artist;
+            } else {
+                display_title = format_title(display_title) +" by "+ artist;
+            }
+            // Load album image
+            Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
+            Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(SongQueue.getInstance().current_song.getAlbumId()));
+
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                    .setSmallIcon(R.drawable.library)
+                    .setContentTitle(display_title)
+                    .setContentText(SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", "))
+                    .setPriority(NotificationCompat.PRIORITY_LOW)
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                    .setOnlyAlertOnce(true)
+                    .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
+                            .setMediaSession(mediaSession.getSessionToken())
+                            .setShowActionsInCompactView(0));
+            Glide.with(this).asBitmap().load(album_uri).into(new CustomTarget<Bitmap>() {
+                @Override
+                public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                    builder.setLargeIcon(resource);
+                    if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
+                        builder.addAction(new NotificationCompat.Action(
+                                R.drawable.ic_pause, "Pause", MediaButtonReceiver.buildMediaButtonPendingIntent(
+                                getApplicationContext(), PlaybackStateCompat.ACTION_PAUSE)));
+                    } else {
+                        builder.addAction(new NotificationCompat.Action(
+                                R.drawable.ic_play, "Play", MediaButtonReceiver.buildMediaButtonPendingIntent(
+                                getApplicationContext(), PlaybackStateCompat.ACTION_PLAY)));
+                    }
+
+                    NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                    startForeground(NOTIFICATION_ID, builder.build());
+                }
+
+                @Override
+                public void onLoadCleared(@Nullable Drawable placeholder) {
+                    ;
+                }
+                @Override
+                public void onLoadFailed(@Nullable Drawable errorDrawable) {
+                    builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.logo));
+                    if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
+                        builder.addAction(new NotificationCompat.Action(
+                                R.drawable.ic_pause, "Pause", MediaButtonReceiver.buildMediaButtonPendingIntent(
+                                getApplicationContext(), PlaybackStateCompat.ACTION_PAUSE)));
+                    } else {
+                        builder.addAction(new NotificationCompat.Action(
+                                R.drawable.ic_play, "Play", MediaButtonReceiver.buildMediaButtonPendingIntent(
+                                getApplicationContext(), PlaybackStateCompat.ACTION_PLAY)));
+                    }
+
+                    NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                    startForeground(NOTIFICATION_ID, builder.build());
+                }
+            });
         }
-        // Load album image
-        Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
-        Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(SongQueue.getInstance().current_song.getAlbumId()));
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.library)
-                .setContentTitle(display_title)
-                .setContentText(SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", "))
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setOnlyAlertOnce(true)
-                .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
-                        .setMediaSession(mediaSession.getSessionToken())
-                        .setShowActionsInCompactView(0));
-        Glide.with(this).asBitmap().load(album_uri).into(new CustomTarget<Bitmap>() {
-            @Override
-            public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
-                builder.setLargeIcon(resource);
-                if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
-                    builder.addAction(new NotificationCompat.Action(
-                            R.drawable.ic_pause, "Pause", MediaButtonReceiver.buildMediaButtonPendingIntent(
-                            getApplicationContext(), PlaybackStateCompat.ACTION_PAUSE)));
-                } else {
-                    builder.addAction(new NotificationCompat.Action(
-                            R.drawable.ic_play, "Play", MediaButtonReceiver.buildMediaButtonPendingIntent(
-                            getApplicationContext(), PlaybackStateCompat.ACTION_PLAY)));
-                }
-
-                NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                startForeground(NOTIFICATION_ID, builder.build());
-            }
-
-            @Override
-            public void onLoadCleared(@Nullable Drawable placeholder) {
-                ;
-            }
-            @Override
-            public void onLoadFailed(@Nullable Drawable errorDrawable) {
-                builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.logo));
-                if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
-                    builder.addAction(new NotificationCompat.Action(
-                            R.drawable.ic_pause, "Pause", MediaButtonReceiver.buildMediaButtonPendingIntent(
-                            getApplicationContext(), PlaybackStateCompat.ACTION_PAUSE)));
-                } else {
-                    builder.addAction(new NotificationCompat.Action(
-                            R.drawable.ic_play, "Play", MediaButtonReceiver.buildMediaButtonPendingIntent(
-                            getApplicationContext(), PlaybackStateCompat.ACTION_PLAY)));
-                }
-
-                NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                startForeground(NOTIFICATION_ID, builder.build());
-            }
-        });
     }
     //This function updates the current notification view holder when a song is skipped
     public void updateNotification(MusicFile musicFile) {
-        String display_title = musicFile.getName();
-        String artist = musicFile.getArtist().replaceAll("/", ", ");
-        display_title = display_title.replaceAll("by "+artist, "").replaceAll(
-                "- "+artist, "");
-        if (isOnlyDigits(display_title)) {
-            display_title = display_title +" by "+ artist;
+        if (musicFile == null) {
+            ;
         } else {
-            display_title = format_title(display_title) +" by "+ artist;
+            String display_title = musicFile.getName();
+            String artist = musicFile.getArtist().replaceAll("/", ", ");
+            display_title = display_title.replaceAll("by "+artist, "").replaceAll(
+                    "- "+artist, "");
+            if (isOnlyDigits(display_title)) {
+                display_title = display_title +" by "+ artist;
+            } else {
+                display_title = format_title(display_title) +" by "+ artist;
+            }
+            // Load album image
+            Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
+            Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(musicFile.getAlbumId()));
+            //Updating current notification with new details and meta data
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                    .setSmallIcon(R.drawable.library)
+                    .setContentTitle(display_title)
+                    .setContentText(musicFile.getArtist().replaceAll("/", ", "))
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                    .setOnlyAlertOnce(true)
+                    .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
+                            .setMediaSession(mediaSession.getSessionToken())
+                            .setShowActionsInCompactView(0));
+            Glide.with(this).asBitmap().load(album_uri).into(new CustomTarget<Bitmap>() {
+                @Override
+                public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                    builder.setLargeIcon(resource);
+                    NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                    notificationManager.notify(NOTIFICATION_ID, builder.build());
+                    startForeground(NOTIFICATION_ID, builder.build());
+                }
+
+                @Override
+                public void onLoadCleared(@Nullable Drawable placeholder) {
+
+                }
+                @Override
+                public void onLoadFailed(@Nullable Drawable errorDrawable) {
+                    builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.logo));
+                    NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                    notificationManager.notify(NOTIFICATION_ID, builder.build());
+                    startForeground(NOTIFICATION_ID, builder.build());
+                }
+            });
         }
-        // Load album image
-        Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
-        Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(musicFile.getAlbumId()));
-        //Updating current notification with new details and meta data
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.library)
-                .setContentTitle(display_title)
-                .setContentText(musicFile.getArtist().replaceAll("/", ", "))
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setOnlyAlertOnce(true)
-                .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
-                        .setMediaSession(mediaSession.getSessionToken())
-                        .setShowActionsInCompactView(0));
-        Glide.with(this).asBitmap().load(album_uri).into(new CustomTarget<Bitmap>() {
-            @Override
-            public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
-                builder.setLargeIcon(resource);
-                NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                notificationManager.notify(NOTIFICATION_ID, builder.build());
-                startForeground(NOTIFICATION_ID, builder.build());
-            }
 
-            @Override
-            public void onLoadCleared(@Nullable Drawable placeholder) {
-
-            }
-            @Override
-            public void onLoadFailed(@Nullable Drawable errorDrawable) {
-                builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.logo));
-                NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                notificationManager.notify(NOTIFICATION_ID, builder.build());
-                startForeground(NOTIFICATION_ID, builder.build());
-            }
-        });
     }
     //This function simulates end of song
     public void simulateEndOfSong() {
-        // Call this method to simulate the end of a song
-        OfflinePlayerManager.getInstance().current_player.stop();
-        OfflinePlayerManager.getInstance().current_player.seekTo(OfflinePlayerManager.getInstance().current_player.getDuration());
-        OfflinePlayerManager.getInstance().current_player.release();
+        ExoPlayer player = OfflinePlayerManager.getInstance().current_player;
+        if (player != null) {
+            long duration = player.getDuration();
+
+            // Some ExoPlayer implementations may return TIME_UNSET or 0 if duration is unknown
+            if (duration != C.TIME_UNSET && duration > 0) {
+                player.stop();
+                player.seekTo(duration); // Simulate end
+            } else {
+                // If duration is unknown, just stop the player
+                player.stop();
+            }
+
+            // Clear and release the player cleanly
+            player.release();
+            OfflinePlayerManager.getInstance().setCurrent_player(null);
+        }
     }
 
     //This function enables end of song skipping for endless streaming
     public void enable_endless_stream() {
-        Random rand = new Random();
-        //Adding player listener
-        OfflinePlayerManager.getInstance().current_player.addListener(new Player.Listener() {
-            @Override
-            public void onIsPlayingChanged(boolean isPlaying) {
-                if (isPlaying) {
-                    handleUpdate();
-                } else {
-                    handleStop();
-                }
-            }
-
-            @Override
-            public void onPlaybackStateChanged(int playbackState) {
-                if (playbackState == Player.STATE_ENDED) {
-                    simulateEndOfSong();
-                    int pos;
-                    MusicFile song;
-                    if (SongQueue.getInstance().current_position == SongQueue.getInstance().song_list.size() - 1 &&
-                            SongQueue.getInstance().shuffle_on != true) {
-                        pos = 0;
-                        song = SongQueue.getInstance().song_list.get(pos);
+        if (OfflinePlayerManager.getInstance().current_player == null) {
+            ;
+        } else {
+            Random rand = new Random();
+            //Adding player listener
+            OfflinePlayerManager.getInstance().current_player.addListener(new Player.Listener() {
+                @Override
+                public void onIsPlayingChanged(boolean isPlaying) {
+                    if (isPlaying) {
+                        handleUpdate();
                     } else {
-                        if (SongQueue.getInstance().shuffle_on != true) {
-                            pos = SongQueue.getInstance().current_position + 1;
-                        } else {
-                            pos = rand.nextInt(SongQueue.getInstance().song_list.size());
-                        }
-                        if (pos >= SongQueue.getInstance().song_list.size() || pos < 0) {
+                        handleStop();
+                    }
+                }
+
+                @Override
+                public void onPlaybackStateChanged(int playbackState) {
+                    if (playbackState == Player.STATE_ENDED) {
+                        simulateEndOfSong();
+                        int pos;
+                        MusicFile song;
+                        if (SongQueue.getInstance().current_position == SongQueue.getInstance().song_list.size() - 1 &&
+                                SongQueue.getInstance().shuffle_on != true) {
                             ;
                         } else {
-                            //Checking if next song is the same song and handling exception accordingly
-                            song = SongQueue.getInstance().song_list.get(pos);
-                            if (song == null) {
+                            if (SongQueue.getInstance().shuffle_on != true) {
+                                pos = SongQueue.getInstance().current_position + 1;
+                            } else {
+                                pos = rand.nextInt(SongQueue.getInstance().song_list.size());
+                            }
+                            if (pos >= SongQueue.getInstance().song_list.size() || pos < 0) {
                                 ;
                             } else {
-                                if (song.getName().equals(SongQueue.getInstance().current_song.getName())) {
-                                    if (SongQueue.getInstance().shuffle_on != true) {
-                                        pos += 1;
-                                        song = SongQueue.getInstance().song_list.get(pos);
-                                    } else {
-                                        while (song == SongQueue.getInstance().current_song) {
-                                            pos = rand.nextInt(SongQueue.getInstance().song_list.size());
-                                            song = SongQueue.getInstance().song_list.get(pos);
-                                        }
-                                    }
-                                } else {
+                                //Checking if next song is the same song and handling exception accordingly
+                                if (SongQueue.getInstance().song_list.get(pos) == null) {
                                     ;
+                                } else {
+                                    song = SongQueue.getInstance().song_list.get(pos);
+                                    if (song.getName().equals(SongQueue.getInstance().current_song.getName())) {
+                                        if (SongQueue.getInstance().shuffle_on != true) {
+                                            pos += 1;
+                                            song = SongQueue.getInstance().song_list.get(pos);
+                                        } else {
+                                            while (song == SongQueue.getInstance().current_song) {
+                                                pos = rand.nextInt(SongQueue.getInstance().song_list.size());
+                                                song = SongQueue.getInstance().song_list.get(pos);
+                                            }
+                                        }
+                                    } else {
+                                        ;
+                                    }
+                                    //Skipping song
+                                    SongQueue.getInstance().addSong(song);
+                                    SongQueue.getInstance().setPosition(pos);
+                                    updateNotification(song);
+                                    playMusic(song);
+                                    handleEnd();
                                 }
-                                //Skipping song
-                                SongQueue.getInstance().addSong(song);
-                                SongQueue.getInstance().setPosition(pos);
-                                updateNotification(song);
-                                playMusic(song);
-                                handleEnd();
                             }
                         }
+                    }  else {
+                        ;
                     }
-                }  else {
-                    ;
                 }
-            }
-        });
+            });
+        }
     }
 
     @Override

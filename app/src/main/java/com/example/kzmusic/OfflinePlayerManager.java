@@ -50,8 +50,13 @@ public class OfflinePlayerManager {
         if (!playerList.isEmpty()) {
             List<ExoPlayer> playersCopy = new ArrayList<>(playerList);
             for (ExoPlayer player : playersCopy) {
-                player.stop();
-                playerList.remove(player); // or use removePlayer(player);
+                if (player != null) {
+                    player.stop();
+                    player.release();
+                    playerList.remove(player); // or use removePlayer(player);
+                } else {
+                    ;
+                }
             }
         }
     }

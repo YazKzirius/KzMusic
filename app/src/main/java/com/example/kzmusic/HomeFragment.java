@@ -258,8 +258,8 @@ public class HomeFragment extends Fragment {
     }
     //This function designs the bottom playback bar
     public void design_bar() {
-        MusicFile song = SongQueue.getInstance().current_song;
-        if (song != null) {
+        if (SongQueue.getInstance().current_song != null) {
+            MusicFile song = SongQueue.getInstance().current_song;
             String display_title = song.getName();
             String artist = song.getArtist().replaceAll("/", ", ");
             display_title = display_title.replaceAll("by "+artist, "").replaceAll(
