@@ -1,12 +1,18 @@
 package com.example.kzmusic;
 //Imports
 import java.util.Random;
+
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.Cursor;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
@@ -29,7 +35,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -192,8 +200,74 @@ public class MediaOverlay extends Fragment {
             set_up_reverb();
             //Setting up menu
             set_up_pop_menu();
+            add_animation();
+            add_background_animation();
         }
         return view;
+    }
+    //This function adds animation to UI
+    public void add_animation() {
+        LinearLayout header = view.findViewById(R.id.down_btn).getRootView().findViewById(R.id.down_btn).getParent() instanceof LinearLayout
+                ? (LinearLayout) view.findViewById(R.id.down_btn).getParent()
+                : null;
+
+        if (header != null) {
+            header.setTranslationY(-100f);
+            header.setAlpha(0f);
+            header.animate().translationY(0f).alpha(1f).setDuration(500).start();
+        }
+        ObjectAnimator scaleUpX = ObjectAnimator.ofFloat(album_cover, "scaleX", 1f, 1.07f);
+        ObjectAnimator scaleUpY = ObjectAnimator.ofFloat(album_cover, "scaleY", 1f, 1.07f);
+        scaleUpX.setRepeatMode(ValueAnimator.REVERSE);
+        scaleUpY.setRepeatMode(ValueAnimator.REVERSE);
+        scaleUpX.setRepeatCount(ValueAnimator.INFINITE);
+        scaleUpY.setRepeatCount(ValueAnimator.INFINITE);
+        scaleUpX.setDuration(1600);
+        scaleUpY.setDuration(1600);
+        scaleUpX.start();
+        scaleUpY.start();
+    }
+    //This function adds background animation
+    public void add_background_animation() {
+
+        // Reference your root layout
+        FrameLayout rootLayout = view.findViewById(R.id.media_overlay); // If inside Fragment
+
+// Define a large base radius for a spacious glow
+        float baseRadius = 1400f;
+
+// Create the radial gradient drawable
+        GradientDrawable gradient = new GradientDrawable(
+                GradientDrawable.Orientation.TL_BR,
+                new int[]{
+                        Color.parseColor("#3A0CA3"),  // vibrant purple edge
+                        Color.parseColor("#1A0D2E"),  // deep indigo mid
+                        Color.parseColor("#090909")   // dominant black core
+                }
+        );
+        gradient.setGradientType(GradientDrawable.RADIAL_GRADIENT);
+        gradient.setGradientRadius(baseRadius);
+        gradient.setGradientCenter(0.5f, 0.4f); // slightly above center
+        gradient.setCornerRadius(0f);
+
+// Apply background to layout
+        rootLayout.setBackground(gradient);
+
+// Create pulse animation
+        ValueAnimator animator = ValueAnimator.ofFloat(0.8f, 1.3f);
+        animator.setDuration(5000); // slow, breathable pulse
+        animator.setRepeatMode(ValueAnimator.REVERSE);
+        animator.setRepeatCount(ValueAnimator.INFINITE);
+
+// Update radius during animation
+        animator.addUpdateListener(animation -> {
+            float factor = (float) animation.getAnimatedValue();
+            gradient.setGradientRadius(baseRadius * factor);
+            rootLayout.invalidate(); // force redraw
+        });
+
+// Start the animation
+        animator.start();
     }
     //This button sets up pop up menu display
     public void set_up_pop_menu() {
@@ -346,28 +420,28 @@ public class MediaOverlay extends Fragment {
     }
     //This function sets up and implements button functionality
     public void set_up_media_buttons() {
-        //Pause/play functionality
-        btnPlayPause.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (player.isPlaying()) {
-                    player.pause();
-                    //Update duration in database
-                    // Stop the GIF by clearing the ImageView
-                    Glide.with(getContext()).clear(song_gif);
-                    song_gif.setImageDrawable(null);
-                    //Updating service state
-                    playerService.updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
-                    playerService.showNotification(playerService.stateBuilder.build());
-                    btnPlayPause.setImageResource(R.drawable.ic_play);
-                } else {
-                    player.play();
-                    //Updating service state
-                    playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
-                    playerService.showNotification(playerService.stateBuilder.build());
-                    btnPlayPause.setImageResource(R.drawable.ic_pause);
-                    set_up_circular_view(musicFile);
-                }
+        Random rand = new Random();
+        btnPlayPause.setOnClickListener(v -> {
+            v.animate().scaleX(0.85f).scaleY(0.85f).setDuration(100).withEndAction(() ->
+                    v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+            ).start();
+            if (player.isPlaying()) {
+                player.pause();
+                //Update duration in database
+                // Stop the GIF by clearing the ImageView
+                Glide.with(getContext()).clear(song_gif);
+                song_gif.setImageDrawable(null);
+                //Updating service state
+                playerService.updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
+                playerService.showNotification(playerService.stateBuilder.build());
+                btnPlayPause.setImageResource(R.drawable.ic_play);
+            } else {
+                player.play();
+                //Updating service state
+                playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
+                playerService.showNotification(playerService.stateBuilder.build());
+                btnPlayPause.setImageResource(R.drawable.ic_pause);
+                set_up_circular_view(musicFile);
             }
         });
         //Loop functionality
@@ -383,77 +457,79 @@ public class MediaOverlay extends Fragment {
             SongQueue.getInstance().setIs_looping(false);
             btnLoop.setImageResource(R.drawable.ic_loop);
         }
-        //Loop button click functionality
-        btnLoop.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //Loop functionality
-                is_looping = !is_looping;
-                //If loop was on previously, keep loop on otherwise, continue
-                if (is_looping == true) {
-                    //Setting repeat mode on and replacing icon
-                    playerService.updatePlaybackState(PlaybackStateCompat.REPEAT_MODE_ONE);
-                    playerService.updateNotification(musicFile);
-                    SongQueue.getInstance().setIs_looping(true);
-                    btnLoop.setImageResource(R.drawable.ic_loop_on);
-                } else {
-                    //Setting repeat mode off and replacing icon
-                    SongQueue.getInstance().setIs_looping(false);
-                    btnLoop.setImageResource(R.drawable.ic_loop);
-                }
-            }
-        });
-        //Skip button functionality
-        Random rand = new Random();
-        btnSkip_left.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                player.pause();
-                //Updating total song duration in database
-                //Moving to next song in recycler view if shuffle is off
-                if (shuffle_on == false) {
-                    //Handling the event that current song is top of recycler view
-                    if (position == 0) {
-                        position = musicFiles.size() - 1;
-                    } else {
-                        position -= 1;
-                    }
-                } else {
-                    position = rand.nextInt(musicFiles.size());
-                }
-                musicFile = musicFiles.get(position);
-                //Adding new song to queue
-                SongQueue.getInstance().addSong(musicFile);
-                SongQueue.getInstance().setPosition(position);
+        btnLoop.setOnClickListener(v -> {
+            v.animate().scaleX(0.85f).scaleY(0.85f).setDuration(100).withEndAction(() ->
+                    v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+            ).start();
+            // toggle playback...
+            //Loop functionality
+            is_looping = !is_looping;
+            //If loop was on previously, keep loop on otherwise, continue
+            if (is_looping == true) {
+                //Setting repeat mode on and replacing icon
+                playerService.updatePlaybackState(PlaybackStateCompat.REPEAT_MODE_ONE);
                 playerService.updateNotification(musicFile);
-                playerService.playMusic(musicFile);
-                set_up_view(musicFile);
+                SongQueue.getInstance().setIs_looping(true);
+                btnLoop.setImageResource(R.drawable.ic_loop_on);
+            } else {
+                //Setting repeat mode off and replacing icon
+                SongQueue.getInstance().setIs_looping(false);
+                btnLoop.setImageResource(R.drawable.ic_loop);
             }
+
         });
-        btnSkip_right.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                player.pause();
-                //Moving to next song in recycler view if shuffle is off
-                if (shuffle_on == false) {
-                    //Handling the event that it's the last song in the recycler view
-                    if (position == musicFiles.size() - 1) {
-                        position = 0;
-                    } else {
-                        position += 1;
-                    }
+        btnSkip_left.setOnClickListener(v -> {
+            v.animate().scaleX(0.85f).scaleY(0.85f).setDuration(100).withEndAction(() ->
+                    v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+            ).start();
+            // toggle playback...
+            player.pause();
+            //Updating total song duration in database
+            //Moving to next song in recycler view if shuffle is off
+            if (shuffle_on == false) {
+                //Handling the event that current song is top of recycler view
+                if (position == 0) {
+                    position = musicFiles.size() - 1;
                 } else {
-                    position = rand.nextInt(musicFiles.size());
+                    position -= 1;
                 }
-                musicFile = musicFiles.get(position);
-                //Updating total song duration in database
-                //Adding new song to queue
-                SongQueue.getInstance().addSong(musicFile);
-                SongQueue.getInstance().setPosition(position);
-                playerService.updateNotification(musicFile);
-                playerService.playMusic(musicFile);
-                set_up_view(musicFile);
+            } else {
+                position = rand.nextInt(musicFiles.size());
             }
+            musicFile = musicFiles.get(position);
+            //Adding new song to queue
+            SongQueue.getInstance().addSong(musicFile);
+            SongQueue.getInstance().setPosition(position);
+            playerService.updateNotification(musicFile);
+            playerService.playMusic(musicFile);
+            set_up_view(musicFile);
+
+        });
+        btnSkip_right.setOnClickListener(v -> {
+            v.animate().scaleX(0.85f).scaleY(0.85f).setDuration(100).withEndAction(() ->
+                    v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+            ).start();
+            // toggle playback...
+            player.pause();
+            //Moving to next song in recycler view if shuffle is off
+            if (shuffle_on == false) {
+                //Handling the event that it's the last song in the recycler view
+                if (position == musicFiles.size() - 1) {
+                    position = 0;
+                } else {
+                    position += 1;
+                }
+            } else {
+                position = rand.nextInt(musicFiles.size());
+            }
+            musicFile = musicFiles.get(position);
+            //Updating total song duration in database
+            //Adding new song to queue
+            SongQueue.getInstance().addSong(musicFile);
+            SongQueue.getInstance().setPosition(position);
+            playerService.updateNotification(musicFile);
+            playerService.playMusic(musicFile);
+            set_up_view(musicFile);
         });
         //Implementing shuffle button functionality
         //If loop was on previously, keep loop on otherwise, continue
@@ -466,22 +542,22 @@ public class MediaOverlay extends Fragment {
             SongQueue.getInstance().setShuffle_on(false);
             btnShuffle.setImageResource(R.drawable.ic_shuffle);
         }
-        btnShuffle.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                shuffle_on = !shuffle_on;
-                if (shuffle_on == true) {
-                    //Setting repeat mode on and replacing icon
-                    SongQueue.getInstance().setShuffle_on(true);
-                    btnShuffle.setImageResource(R.drawable.ic_shuffle_on);
-                } else {
-                    //Setting repeat mode off and replacing icon
-                    SongQueue.getInstance().setShuffle_on(false);
-                    btnShuffle.setImageResource(R.drawable.ic_shuffle);
-                }
+        btnShuffle.setOnClickListener(v -> {
+            v.animate().scaleX(0.85f).scaleY(0.85f).setDuration(100).withEndAction(() ->
+                    v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+            ).start();
+            // toggle playback...
+            shuffle_on = !shuffle_on;
+            if (shuffle_on == true) {
+                //Setting repeat mode on and replacing icon
+                SongQueue.getInstance().setShuffle_on(true);
+                btnShuffle.setImageResource(R.drawable.ic_shuffle_on);
+            } else {
+                //Setting repeat mode off and replacing icon
+                SongQueue.getInstance().setShuffle_on(false);
+                btnShuffle.setImageResource(R.drawable.ic_shuffle);
             }
         });
-
     }
 
     //This function sets up and implements a live rewind seekbar

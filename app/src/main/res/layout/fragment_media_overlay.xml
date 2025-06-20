@@ -3,6 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#090909"
+    android:id="@+id/media_overlay"
     tools:context=".MediaOverlay">
 
     <ScrollView
@@ -13,16 +14,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
+            android:layout_gravity="center"
             android:padding="20dp"
             android:gravity="center_horizontal">
-
-            <!-- Logo -->
-            <ImageView
-                android:id="@+id/imageView"
-                android:layout_width="120dp"
-                android:layout_height="120dp"
-                android:src="@drawable/logo"
-                android:layout_gravity="center" />
 
             <!-- Header with down/menu buttons -->
             <LinearLayout
@@ -63,7 +57,7 @@
             <FrameLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp">
+                android:layout_marginTop="40dp">
 
                 <ImageView
                     android:id="@+id/song_playing_gif"
@@ -95,7 +89,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="36dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical">
 
