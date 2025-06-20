@@ -94,7 +94,6 @@ public class PlayerService extends Service {
                 MusicFile song1 =  SongQueue.getInstance().get_specified(index);
                 MusicFile song2 = SongQueue.getInstance().get_specified(index - 1);
                 if (song1 == null || song2 == null) {
-                    Toast.makeText(getApplicationContext(), ""+SongQueue.getInstance().songs_played, Toast.LENGTH_SHORT).show();
                     OfflinePlayerManager.getInstance().stopAllPlayers();
                     player = new ExoPlayer.Builder(getApplicationContext()).build();
                     Uri uri = Uri.fromFile(new File(musicFile.getPath()));
@@ -443,12 +442,20 @@ public class PlayerService extends Service {
                     } else {
                         pos = rand.nextInt(SongQueue.getInstance().song_list.size());
                     }
-                    MusicFile song = SongQueue.getInstance().song_list.get(pos);
-                    SongQueue.getInstance().addSong(song);
-                    SongQueue.getInstance().setPosition(pos);
-                    updateNotification(song);
-                    playMusic(song);
-                    handleSkip();
+                    if (pos >= SongQueue.getInstance().song_list.size() || pos < 0) {
+                        ;
+                    } else {
+                        MusicFile song = SongQueue.getInstance().song_list.get(pos);
+                        if (song != null) {
+                            SongQueue.getInstance().addSong(song);
+                            SongQueue.getInstance().setPosition(pos);
+                            updateNotification(song);
+                            playMusic(song);
+                            handleSkip();
+                        } else {
+                            ;
+                        }
+                    }
                 }
             }
             @Override
@@ -464,12 +471,20 @@ public class PlayerService extends Service {
                     } else {
                         pos = rand.nextInt(SongQueue.getInstance().song_list.size());
                     }
-                    MusicFile song = SongQueue.getInstance().song_list.get(pos);
-                    SongQueue.getInstance().addSong(song);
-                    SongQueue.getInstance().setPosition(pos);
-                    playMusic(song);
-                    updateNotification(song);
-                    handleSkip();
+                    if (pos >= SongQueue.getInstance().song_list.size() || pos < 0) {
+                        ;
+                    } else {
+                        MusicFile song = SongQueue.getInstance().song_list.get(pos);
+                        if (song != null) {
+                            SongQueue.getInstance().addSong(song);
+                            SongQueue.getInstance().setPosition(pos);
+                            updateNotification(song);
+                            playMusic(song);
+                            handleSkip();
+                        } else {
+                            ;
+                        }
+                    };
                 }
             }
         });
