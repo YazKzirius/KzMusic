@@ -37,7 +37,9 @@ public class SessionTimeout extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        OnlinePlayerManager.getInstance().setAccess_token(null);
+        OnlinePlayerManager.getInstance().setExpiration_time(0);
+        OnlinePlayerManager.getInstance().setRefresh_token(null);
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Session Timed Out")
                 .setMessage("Your Spotify session has expired. Would you like to continue without Spotify or reauthorize?")
@@ -45,16 +47,13 @@ public class SessionTimeout extends AppCompatActivity {
                 .setPositiveButton("Continue Without Spotify", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        OnlinePlayerManager.getInstance().setAccess_token(null);
-                        OnlinePlayerManager.getInstance().setExpiration_time(0);
-                        OnlinePlayerManager.getInstance().setRefresh_token(null);
                         finish(); // ✅ Close popup & continue app
                     }
                 })
                 .setNegativeButton("Reauthorize Spotify", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        set_up_spotify_auth();
+                        navigate_to_activity(GetStarted.class);
                     }
                 })
                 .setCancelable(false)
@@ -100,6 +99,7 @@ public class SessionTimeout extends AppCompatActivity {
             // Extract the authorization code from the redirect URI
             String code = uri.getQueryParameter("code");
             if (code != null) {
+                Toast.makeText(this, "Code: " + code, Toast.LENGTH_SHORT).show();
                 // Exchange the authorization code for an access token
                 exchangeAuthorizationCodeForToken(code);
             } else if (uri.getQueryParameter("error") != null) {

@@ -140,8 +140,6 @@ public class Top10Songs extends Fragment {
         set_up_play_bar();
         if (SongQueue.getInstance().get_size() > 0 && SongQueue.getInstance().current_song != null) {
             set_up_skipping();
-            last_position = OfflinePlayerManager.getInstance().current_player.getCurrentPosition();
-            SongQueue.getInstance().setLast_postion(last_position);
         }
        return view;
     }

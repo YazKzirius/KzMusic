@@ -308,11 +308,14 @@ public class MediaOverlay extends Fragment {
                     @Override
                     public void onLoadFailed(@Nullable Drawable errorDrawable) {
                         // Load a backup image if the main image fails to load
-                        Glide.with(getContext())
-                                .asBitmap()
-                                .load(R.drawable.logo) // Backup image resource
-                                .circleCrop()
-                                .into(album_cover);
+                        if (album_cover != null && album_cover.getContext() != null) {
+                            Glide.with(album_cover.getContext())
+                                    .asBitmap()
+                                    .load(R.drawable.logo)
+                                    .circleCrop()
+                                    .into(album_cover);
+                        }
+
                     }
                 });
         Glide.with(getContext()).asGif().load(R.drawable.media_playing).circleCrop().into(song_gif);

@@ -31,7 +31,7 @@
                 android:id="@+id/textView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Register for Kzmusic"
+                android:text="Register for KzMusic"
                 android:textColor="@color/white"
                 android:textSize="22sp"
                 android:textStyle="bold"

@@ -3,6 +3,7 @@ package com.example.kzmusic;
 //Imports
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -90,7 +91,7 @@ public class PlayerService extends Service {
             ;
         } else {
             //Playing resuming song at previous duration if the same song as last
-            if (SongQueue.getInstance().get_size() >= 1 && SongQueue.getInstance().current_song != null) {
+            if (SongQueue.getInstance().get_size() >= 1) {
                 int index = SongQueue.getInstance().pointer - 1;
                 if (index < 0 || index >= SongQueue.getInstance().get_size()) {
                     ;
@@ -101,6 +102,7 @@ public class PlayerService extends Service {
                         Uri uri = Uri.fromFile(new File(musicFile.getPath()));
                         MediaItem mediaItem = MediaItem.fromUri(uri);
                         player.setMediaItem(mediaItem);
+                        add_song(musicFile);
                     } else {
                         MusicFile song1;
                         MusicFile song2;
@@ -128,17 +130,21 @@ public class PlayerService extends Service {
                 player.setMediaItem(mediaItem);
                 add_song(musicFile);
             }
-            //Initializing song properties
-            session_id = player.getAudioSessionId();
-            //Adds player to Player session manager
-            OfflinePlayerManager.getInstance().addPlayer(player);
-            OfflinePlayerManager.getInstance().setCurrent_player(player);
-            SongQueue.getInstance().setAudio_session_id(session_id);
-            enable_endless_stream();
-            //Applying audio effects
-            apply_audio_effect();
-            player.prepare();
-            player.play();
+            if (player == null) {
+                ;
+            } else {
+                //Initializing song properties
+                session_id = player.getAudioSessionId();
+                //Adds player to Player session manager
+                OfflinePlayerManager.getInstance().addPlayer(player);
+                OfflinePlayerManager.getInstance().setCurrent_player(player);
+                SongQueue.getInstance().setAudio_session_id(session_id);
+                enable_endless_stream();
+                //Applying audio effects
+                apply_audio_effect();
+                player.prepare();
+                player.play();
+            }
         }
     }
     //This function adds new song to firestore collection
@@ -557,11 +563,22 @@ public class PlayerService extends Service {
             // Load album image
             Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
             Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(SongQueue.getInstance().current_song.getAlbumId()));
+            // Intent to open MediaOverlay when tapped
+            Intent intent = new Intent(getApplicationContext(), MainPage.class);
+            intent.putExtra("openMediaOverlay", true); // 👈 Signal to open the fragment
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+            PendingIntent pendingIntent = PendingIntent.getActivity(
+                    getApplicationContext(),
+                    0,
+                    intent,
+                    PendingIntent.FLAG_IMMUTABLE);
 
             NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                     .setSmallIcon(R.drawable.library)
                     .setContentTitle(display_title)
                     .setContentText(SongQueue.getInstance().current_song.getArtist().replaceAll("/", ", "))
+                    .setContentIntent(pendingIntent)
                     .setPriority(NotificationCompat.PRIORITY_LOW)
                     .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                     .setOnlyAlertOnce(true)
@@ -626,11 +643,21 @@ public class PlayerService extends Service {
             // Load album image
             Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
             Uri album_uri = Uri.withAppendedPath(albumArtUri, String.valueOf(musicFile.getAlbumId()));
+            //Intent to open MediaOverlay when tapped
+            Intent intent = new Intent(getApplicationContext(), MainPage.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            intent.putExtra("openMediaOverlay", true); // 👈 Signal to open the fragment
+            PendingIntent pendingIntent = PendingIntent.getActivity(
+                    getApplicationContext(),
+                    0,
+                    intent,
+                    PendingIntent.FLAG_IMMUTABLE);
             //Updating current notification with new details and meta data
             NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                     .setSmallIcon(R.drawable.library)
                     .setContentTitle(display_title)
                     .setContentText(musicFile.getArtist().replaceAll("/", ", "))
+                    .setContentIntent(pendingIntent)
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                     .setOnlyAlertOnce(true)

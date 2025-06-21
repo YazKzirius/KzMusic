@@ -61,6 +61,17 @@ public class MainPage extends AppCompatActivity {
             Intent serviceIntent = new Intent(this, TokenRefreshService.class);
             startService(serviceIntent);
         }
+        boolean openOverlay = getIntent().getBooleanExtra("openMediaOverlay", false);
+        if (openOverlay) {
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, new MediaOverlay())
+                    .addToBackStack(null)
+                    .commit();
+
+            // Clear the flag to prevent re-triggering on future resumes
+            getIntent().removeExtra("openMediaOverlay");
+        }
         // create_fragments() can usually stay outside this check,
         // as you'd want to set up your fragments regardless.
         create_fragments();
