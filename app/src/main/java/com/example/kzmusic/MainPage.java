@@ -54,6 +54,10 @@ public class MainPage extends AppCompatActivity {
         super.onNewIntent(intent);
         boolean openOverlay = intent.getBooleanExtra("openMediaOverlay", false);
         if (openOverlay) {
+            if (SongQueue.getInstance().current_song != null) {
+                SongQueue.getInstance().addSong(SongQueue.getInstance().current_song);
+                SongQueue.getInstance().setPosition(SongQueue.getInstance().current_position);
+            }
             getSupportFragmentManager()
                     .beginTransaction()
                     .replace(R.id.fragment_container, new MediaOverlay())

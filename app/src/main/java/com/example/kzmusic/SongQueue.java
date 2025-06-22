@@ -48,9 +48,6 @@ public class SongQueue {
     public void setCurrent_song (MusicFile song) {
         this.current_song = song;
     }
-    public void clear_songs() {
-        this.songs_played.clear();
-    }
     public void setSong_list(List<MusicFile> song_list) {
         this.song_list = song_list;
     }
@@ -60,9 +57,6 @@ public class SongQueue {
     }
     public void setSpeed(Float speed) {
         this.speed = speed;
-    }
-    public void setPointer(int pointer) {
-        ;
     }
 
     public void setPitch(Float pitch) {
@@ -83,10 +77,6 @@ public class SongQueue {
 
     public void setCurrent_resource(int current_resource) {
         this.current_resource = current_resource;
-    }
-
-    public void setLast_postion(long last_postion) {
-        this.last_postion = last_postion;
     }
 
     public void setAudio_session_id(int audio_session_id) {
