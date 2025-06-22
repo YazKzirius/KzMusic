@@ -28,11 +28,15 @@ public class SessionManager {
     private static final String KEY_EMAIL = "email";
 
     public SessionManager(Context context) {
+        if (context == null) {
+            throw new IllegalArgumentException("Context passed to SessionManager is null.");
+        }
         this.context = context;
         sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         sharedPreferences2 = context.getSharedPreferences(PREF2_NAME, Context.MODE_PRIVATE);
         editor = sharedPreferences.edit();
         editor2 = sharedPreferences2.edit();
+
     }
 
     public void createLoginSession(String username, String email) {
