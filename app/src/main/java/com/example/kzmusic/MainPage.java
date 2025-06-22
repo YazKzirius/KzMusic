@@ -9,34 +9,7 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
-import androidx.work.Constraints;
-import androidx.work.Data;
-import androidx.work.ExistingPeriodicWorkPolicy;
-import androidx.work.ExistingWorkPolicy;
-import androidx.work.NetworkType;
-import androidx.work.OneTimeWorkRequest;
-import androidx.work.PeriodicWorkRequest;
-import androidx.work.WorkManager;
-
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import android.os.Handler;
-import android.os.IBinder;
-import android.os.Looper;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.FormBody;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
 
 //This class implements the main page of the application
 //Manages music listening and audio entertainment by mood
@@ -58,8 +31,8 @@ public class MainPage extends AppCompatActivity {
         if (savedInstanceState == null) { // <--- ADD THIS CHECK
             Toast.makeText(this, "Welcome " + username + "!", Toast.LENGTH_LONG).show();
             getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new HomeFragment()).commit();
-            Intent serviceIntent = new Intent(this, TokenRefreshService.class);
-            startService(serviceIntent);
+            Intent serviceIntent = new Intent(getApplicationContext(), TokenRefreshService.class);
+            startService(serviceIntent); // immediate call works, because intent is here and ready
         }
         boolean openOverlay = getIntent().getBooleanExtra("openMediaOverlay", false);
         if (openOverlay) {
@@ -75,6 +48,21 @@ public class MainPage extends AppCompatActivity {
         // create_fragments() can usually stay outside this check,
         // as you'd want to set up your fragments regardless.
         create_fragments();
+    }
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        boolean openOverlay = intent.getBooleanExtra("openMediaOverlay", false);
+        if (openOverlay) {
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, new MediaOverlay())
+                    .addToBackStack(null)
+                    .commit();
+
+            // Clear the flag to prevent re-triggering on future resumes
+            intent.removeExtra("openMediaOverlay");
+        }
     }
     //This function schedules access token refresh by expiration time
     //This function creates main page fragments

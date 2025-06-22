@@ -296,13 +296,9 @@ public class SearchFragment extends Fragment {
                         trackList.addAll(response.body().getTracks().getItems());
                         musicAdapter.notifyDataSetChanged();
                     } else if (response.code() == 401) { // Handle expired access token
-                        Intent intent = new Intent(getContext(), SessionTimeout.class);
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        startActivity(intent); // ✅ Show popup screen
+                        ;
                     } else {
-                        Intent intent = new Intent(getContext(), SessionTimeout.class);
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        startActivity(intent); // ✅ Show popup screen
+                       ;
                     }
                 }
                 @Override
@@ -338,13 +334,9 @@ public class SearchFragment extends Fragment {
                         trackList.addAll(response.body().getTracks().getItems());
                         musicAdapter.notifyDataSetChanged();
                     } else if (response.code() == 401) { // Handle expired access token
-                        Intent intent = new Intent(getContext(), SessionTimeout.class);
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        startActivity(intent); // ✅ Show popup screen
+                        ;
                     } else {
-                        Intent intent = new Intent(getContext(), SessionTimeout.class);
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        startActivity(intent); // ✅ Show popup screen
+                       ;
                     }
                 }
                 @Override

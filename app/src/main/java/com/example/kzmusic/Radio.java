@@ -350,13 +350,9 @@ public class Radio extends Fragment {
                         sessionManager.save_Tracklist_radio(response.body().getTracks().getItems(), sessionManager.getEmail());
                         text1.setText(sessionManager.getUsername()+" radio:");
                     } else if (response.code() == 401) { // Handle expired access token
-                        Intent intent = new Intent(getContext(), SessionTimeout.class);
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        startActivity(intent); // ✅ Show popup screen
+                        ;
                     } else {
-                        Intent intent = new Intent(getContext(), SessionTimeout.class);
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        startActivity(intent); // ✅ Show popup screen
+                        ;
                     }
                 }
                 @Override

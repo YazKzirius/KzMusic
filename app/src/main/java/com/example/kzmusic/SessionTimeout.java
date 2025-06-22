@@ -1,6 +1,5 @@
 package com.example.kzmusic;
 
-
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -37,9 +36,7 @@ public class SessionTimeout extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        OnlinePlayerManager.getInstance().setAccess_token(null);
-        OnlinePlayerManager.getInstance().setExpiration_time(0);
-        OnlinePlayerManager.getInstance().setRefresh_token(null);
+        Toast.makeText(this, ""+OnlinePlayerManager.getInstance().access_token, Toast.LENGTH_LONG).show();
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Session Timed Out")
                 .setMessage("Your Spotify session has expired. Would you like to continue without Spotify or reauthorize?")

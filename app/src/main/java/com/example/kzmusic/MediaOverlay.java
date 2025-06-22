@@ -84,6 +84,8 @@ public class MediaOverlay extends Fragment {
     View view;
     MusicFile musicFile;
     int position;
+    private boolean openedFromNotification = false;
+
     private List<MusicFile> musicFiles = new ArrayList<>();
     //UI Attributes
     private TextView overlaySongTitle;
@@ -205,7 +207,6 @@ public class MediaOverlay extends Fragment {
         }
         return view;
     }
-
     //This function adds animation to UI
     public void add_animation() {
         LinearLayout header = view.findViewById(R.id.down_btn).getRootView().findViewById(R.id.down_btn).getParent() instanceof LinearLayout
@@ -445,39 +446,35 @@ public class MediaOverlay extends Fragment {
     //This function sets up and implements button functionality
     public void set_up_media_buttons() {
         Random rand = new Random();
+
         btnPlayPause.setOnClickListener(v -> {
             v.animate().scaleX(0.85f).scaleY(0.85f).setDuration(100).withEndAction(() ->
                     v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
             ).start();
-            if (player == null) {
-                ;
-            } else {
-                if (player.isPlaying()) {
-                    player.pause();
-                    //Update duration in database
-                    // Stop the GIF by clearing the ImageView
-                    Glide.with(getContext()).clear(song_gif);
-                    song_gif.setImageDrawable(null);
-                    //Updating service state
-                    if (playerService != null) {
-                        playerService.updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
-                        playerService.showNotification(playerService.stateBuilder.build());
-                    }
-                    btnPlayPause.setImageResource(R.drawable.ic_play);
-                } else {
-                    player.play();
-                    //Updating service state
-                    if (playerService != null) {
-                        playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
-                        playerService.showNotification(playerService.stateBuilder.build());
-                    }
-                    btnPlayPause.setImageResource(R.drawable.ic_pause);
-                    set_up_circular_view(musicFile);
-                }
 
+            if (player == null) return;
+
+            if (player.isPlaying()) {
+                player.pause();
+                Glide.with(requireContext()).clear(song_gif);
+                song_gif.setImageDrawable(null);
+                btnPlayPause.setImageResource(R.drawable.ic_play);
+                if (playerService != null) {
+                    playerService.updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
+                    playerService.showNotification(playerService.stateBuilder.build());
+                }
+            } else {
+                player.play();
+                btnPlayPause.setImageResource(R.drawable.ic_pause);
+                set_up_circular_view(musicFile);
+                if (playerService != null) {
+                    playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
+                    playerService.showNotification(playerService.stateBuilder.build());
+                }
             }
         });
-        //Loop functionality
+
+        // Loop setup
         //If loop was on previously, keep loop on otherwise, continue
         if (playerService != null) {
             if (is_looping) {
@@ -527,77 +524,48 @@ public class MediaOverlay extends Fragment {
             v.animate().scaleX(0.85f).scaleY(0.85f).setDuration(100).withEndAction(() ->
                     v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
             ).start();
-            // toggle playback...
-            if (player == null) {
-                ;
-            } else {
-               player.pause();
-                //Updating total song duration in database
-                //Moving to next song in recycler view if shuffle is off
-                if (shuffle_on == false) {
-                    //Handling the event that current song is top of recycler view
-                    if (position == 0) {
-                        position = musicFiles.size() - 1;
-                    } else {
-                        position -= 1;
-                    }
-                } else {
-                    position = rand.nextInt(musicFiles.size());
-                }
-                if (position < 0 || position >= musicFiles.size()) {
-                    ;
-                } else {
-                    musicFile = musicFiles.get(position);
-                    //Adding new song to queue
-                    SongQueue.getInstance().addSong(musicFile);
-                    SongQueue.getInstance().setPosition(position);
-                    if (playerService != null) {
-                        playerService.updateNotification(musicFile);
-                        playerService.playMusic(musicFile);
-                    }
-                    if (musicFile != null) {
-                        set_up_view(musicFile);
-                    }
-                }
-            }
 
+            if (player == null || musicFiles == null || musicFiles.isEmpty()) return;
+
+            player.pause();
+
+            if (!shuffle_on) {
+                position = (position == 0) ? musicFiles.size() - 1 : position - 1;
+            } else {
+                position = rand.nextInt(musicFiles.size());
+            }
+            musicFile = musicFiles.get(position);
+            SongQueue.getInstance().addSong(musicFile);
+            SongQueue.getInstance().setPosition(position);
+            if (playerService != null && musicFile != null) {
+                playerService.updateNotification(musicFile);
+                playerService.playMusic(musicFile);
+                set_up_view(musicFile);
+            }
         });
+
         btnSkip_right.setOnClickListener(v -> {
             v.animate().scaleX(0.85f).scaleY(0.85f).setDuration(100).withEndAction(() ->
                     v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
             ).start();
-            // toggle playback...
-            if (player == null) {
-                ;
+
+            if (player == null || musicFiles == null || musicFiles.isEmpty()) return;
+
+            player.pause();
+
+            if (!shuffle_on) {
+                position = (position == musicFiles.size() - 1) ? 0 : position + 1;
             } else {
-                player.pause();
-                //Updating total song duration in database
-                //Moving to next song in recycler view if shuffle is off
-                if (shuffle_on == false) {
-                    //Handling the event that current song is top of recycler view
-                    if (position == 0) {
-                        position = musicFiles.size() - 1;
-                    } else {
-                        position += 1;
-                    }
-                } else {
-                    position = rand.nextInt(musicFiles.size());
-                }
-                if (position < 0 || position >= musicFiles.size()) {
-                    ;
-                } else {
-                    musicFile = musicFiles.get(position);
-                    //Adding new song to queue
-                    SongQueue.getInstance().addSong(musicFile);
-                    SongQueue.getInstance().setPosition(position);
-                    if (playerService != null) {
-                        playerService.updateNotification(musicFile);
-                        playerService.playMusic(musicFile);
-                    }
-                    if (musicFile != null) {
-                        set_up_view(musicFile);
-                    }
-                }
+                position = rand.nextInt(musicFiles.size());
+            }
+
+            musicFile = musicFiles.get(position);
+            SongQueue.getInstance().addSong(musicFile);
+            SongQueue.getInstance().setPosition(position);
+            if (playerService != null && musicFile != null) {
+                playerService.updateNotification(musicFile);
+                playerService.playMusic(musicFile);
+                set_up_view(musicFile);
             }
         });
         //Implementing shuffle button functionality

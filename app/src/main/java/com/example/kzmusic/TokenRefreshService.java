@@ -42,6 +42,9 @@ public class TokenRefreshService extends Service {
                     firstRun = false; // ✅ Mark first execution as completed
                     Log.d("TokenRefreshService", "⚡ First execution—skipping session timeout check.");
                 } else {
+                    OnlinePlayerManager.getInstance().setAccess_token(null);
+                    OnlinePlayerManager.getInstance().setExpiration_time(0);
+                    OnlinePlayerManager.getInstance().setRefresh_token(null);
                     Log.d("TokenRefreshService", "🚨 Session Timed Out!");
                     Intent intent = new Intent(getApplicationContext(), SessionTimeout.class);
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -49,7 +52,7 @@ public class TokenRefreshService extends Service {
                 }
                 Log.d("TokenRefreshService", "⏳ Next expiration check in 5 seconds.");
                 if (expirationTime != 0) {
-                    handler.postDelayed(this, (expirationTime-300)*1000); // ✅ Runs indefinitely every 5 seconds
+                    handler.postDelayed(this, (5)*1000); // ✅ Runs indefinitely every 5 seconds
                 } else {
                     ;
                 }
