@@ -8,6 +8,8 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -39,25 +41,20 @@ public class SessionTimeout extends AppCompatActivity {
         OnlinePlayerManager.getInstance().setAccess_token(null);
         OnlinePlayerManager.getInstance().setExpiration_time(0);
         OnlinePlayerManager.getInstance().setRefresh_token(null);
-        Toast.makeText(getApplicationContext(), ""+OnlinePlayerManager.getInstance().access_token, Toast.LENGTH_LONG).show();
-        AlertDialog.Builder builder = new AlertDialog.Builder(getApplicationContext());
-        builder.setTitle("Session Timed Out")
-                .setMessage("Your Spotify session has expired. Would you like to continue without Spotify or reauthorize?")
-                .setIcon(R.drawable.logo2)
-                .setPositiveButton("Continue Without Spotify", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        finish(); // ✅ Close popup & continue app
-                    }
-                })
-                .setNegativeButton("Reauthorize Spotify", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
+        //Delay dialog creation until the UI is fully ready
+        new Handler(Looper.getMainLooper()).post(() -> {
+            AlertDialog.Builder builder = new AlertDialog.Builder(SessionTimeout.this);
+            builder.setTitle("Session Timed Out")
+                    .setMessage("Your Spotify session has expired. Would you like to continue without Spotify or reauthorize?")
+                    .setIcon(R.drawable.logo2)
+                    .setCancelable(false)
+                    .setPositiveButton("Continue Without Spotify", (dialog, which) -> finish())
+                    .setNegativeButton("Reauthorize Spotify", (dialog, which) -> {
                         navigate_to_activity(GetStarted.class);
-                    }
-                })
-                .setCancelable(false)
-                .show();
+                    })
+
+                    .show();
+        });
     }
     //This function navigates to a new activity given parameters
     public void navigate_to_activity(Class <?> target) {

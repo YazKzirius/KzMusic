@@ -3,6 +3,7 @@ package com.example.kzmusic;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -44,8 +45,20 @@ public class TokenRefreshService extends Service {
                 } else {
                     Log.d("TokenRefreshService", "🚨 Session Timed Out!");
                     Intent intent = new Intent(getApplicationContext(), SessionTimeout.class);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    startActivity(intent); // ✅ Show popup screen
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+                    PendingIntent pendingIntent = PendingIntent.getActivity(
+                            getApplicationContext(),
+                            0,
+                            intent,
+                            PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
+                    );
+                    try {
+                        pendingIntent.send(); // ✅ Android allows this
+                    } catch (PendingIntent.CanceledException e) {
+                        e.printStackTrace();
+                    }
+
                 }
                 Log.d("TokenRefreshService", "⏳ Next expiration check in 5 seconds.");
                 if (expirationTime != 0) {
