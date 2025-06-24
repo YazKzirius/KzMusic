@@ -149,64 +149,52 @@ public class PlayerService extends Service {
     }
     //This function adds new song to firestore collection
     public void add_song(MusicFile musicFile) {
-        if (musicFile != null) {
-            String current_display_title = musicFile.getName();
-            String artist = musicFile.getArtist().replaceAll("/", ", ");
-
-            // Remove redundant artist mentions from title
-            current_display_title = current_display_title
-                    .replaceAll("by " + Pattern.quote(artist), "")
-                    .replaceAll("- " + Pattern.quote(artist), "")
-                    .trim();
-
-            // Format title
-            if (isOnlyDigits(current_display_title)) {
-                current_display_title = current_display_title + " by " + artist;
-            } else {
-                current_display_title = format_title(current_display_title) + " by " + artist;
-            }
-
-            final String finalDisplayTitleForLambda = current_display_title;
-
-            // Proceed to update Firestore
-            SessionManager sessionManager = new SessionManager(getApplicationContext());
-            String email = sessionManager.getEmail();
-
-            if (email != null && !email.isEmpty()) {
-                SongsFirestore table = new SongsFirestore(getApplicationContext());
-
-                table.db.collection("Users")
-                        .whereEqualTo("EMAIL", email)
-                        .get()
-                        .addOnSuccessListener(userSnapshot -> {
-                            if (!userSnapshot.isEmpty()) {
-                                String user_id = userSnapshot.getDocuments().get(0).getId();
-
-                                table.db.collection("Songs")
-                                        .whereEqualTo("TITLE", finalDisplayTitleForLambda)
-                                        .whereEqualTo("USER_ID", user_id)
-                                        .get()
-                                        .addOnSuccessListener(songSnapshot -> {
-                                            if (songSnapshot.isEmpty()) {
-                                                table.add_new_song(email, finalDisplayTitleForLambda, musicFile.getArtist());
-                                            } else {
-                                                table.updateTimesPlayed(email, finalDisplayTitleForLambda);
-                                            }
-                                        })
-                                        .addOnFailureListener(e ->
-                                                Log.e("Firestore", "Song query failed: " + e.getMessage(), e));
-                            } else {
-                                Log.w("Firestore", "User not found with email: " + email);
-                            }
-                        })
-                        .addOnFailureListener(e ->
-                                Log.e("Firestore", "User lookup failed: " + e.getMessage(), e));
-            } else {
-                Log.e("Session", "Email not found in session manager");
-            }
-        } else {
+        if (musicFile == null || musicFile.getName() == null || musicFile.getArtist() == null) {
             Log.e("MediaInfo", "musicFile, name, or artist is null");
+            return;
         }
+
+        String displayTitle = musicFile.getName();
+        String artist = musicFile.getArtist().replaceAll("/", ", ");
+
+        // Remove redundant artist mentions from title
+        displayTitle = displayTitle
+                .replaceAll("by " + Pattern.quote(artist), "")
+                .replaceAll("- " + Pattern.quote(artist), "")
+                .trim();
+
+        // Format title
+        if (isOnlyDigits(displayTitle)) {
+            displayTitle = displayTitle + " by " + artist;
+        } else {
+            displayTitle = format_title(displayTitle) + " by " + artist;
+        }
+
+        // Get user email from session
+        SessionManager sessionManager = new SessionManager(getApplicationContext());
+        String email = sessionManager.getEmail();
+
+        if (email == null || email.isEmpty()) {
+            Log.e("Session", "Email not found in session manager");
+            return;
+        }
+
+        SongDao songDao = AppDatabase.getDatabase(getApplicationContext()).songDao();
+        String finalTitle = displayTitle;
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            Song existing = songDao.getSongByEmailAndTitle(email, finalTitle);
+            if (existing == null) {
+                Song song = new Song();
+                song.email = email;
+                song.title = finalTitle;
+                song.artist = artist;
+                songDao.insert(song);
+                Log.d("RoomDB", "✅ New song inserted");
+            } else {
+                songDao.incrementTimesPlayed(email, finalTitle);
+                Log.d("RoomDB", "🔁 Song already exists — times played incremented");
+            }
+        });
     }
     //This function assigns audio effects to the exoplayer like speed/reverb
     public void apply_audio_effect() {
@@ -462,9 +450,12 @@ public class PlayerService extends Service {
                 super.onSkipToNext();
                 SongQueue queue = SongQueue.getInstance();
                 List<MusicFile> songs = queue.song_list;
+                int pos = SongQueue.getInstance().current_position;
                 if (songs == null || songs.isEmpty()) return;
 
-                int pos = queue.current_position;
+                if (songs.contains(queue.current_song)) {
+                    pos = songs.indexOf(queue.current_song);
+                }
                 if (!queue.shuffle_on) {
                     if (pos < songs.size() - 1) {
                         pos += 1;
@@ -492,9 +483,11 @@ public class PlayerService extends Service {
                 super.onSkipToPrevious();
                 SongQueue queue = SongQueue.getInstance();
                 List<MusicFile> songs = queue.song_list;
+                int pos = SongQueue.getInstance().current_position;;
                 if (songs == null || songs.isEmpty()) return;
-
-                int pos = queue.current_position;
+                if (songs.contains(queue.current_song)) {
+                    pos = songs.indexOf(queue.current_song);
+                }
                 if (!queue.shuffle_on) {
                     if (pos > 0) {
                         pos -= 1;

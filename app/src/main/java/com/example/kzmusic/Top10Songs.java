@@ -158,54 +158,35 @@ public class Top10Songs extends Fragment {
             requestPermissions(new String[]{Manifest.permission.READ_MEDIA_AUDIO}, REQUEST_CODE);
         } else {
             TextView text1 = view.findViewById(R.id.x_most_played);
-            text1.setText(sessionManager.getUsername()+" Most Played Songs");
-            //Loading music files into recycler view
-            loadMusicFiles();
-            db.collection("Users").whereEqualTo("EMAIL", email).limit(1).get()
-                    .addOnSuccessListener(userSnapshot -> {
-                        if (!userSnapshot.isEmpty()) {
-                            String userId = userSnapshot.getDocuments().get(0).getId();
-                            db.collection("Songs")
-                                    .whereEqualTo("USER_ID", userId) // 🔥 Filter by specific user
-                                    .orderBy("TIMES_PLAYED", Query.Direction.DESCENDING) // 🔄 Get most played
-                                    .get()
-                                    .addOnSuccessListener(songSnapshot -> {
-                                        if (songSnapshot.getDocuments().size() < 10) {
-                                            for (DocumentSnapshot document : songSnapshot.getDocuments()) {
-                                                if (get_music_file(document.getString("TITLE")) != null) {
-                                                    top_songs.add(get_music_file(document.getString("TITLE")));
-                                                } else {
-                                                    ;
-                                                }
-                                            }
-                                        } else {
-                                            int count = 0;
-                                            for (DocumentSnapshot document : songSnapshot.getDocuments()) {
-                                                if (get_music_file(document.getString("TITLE")) != null) {
-                                                    count += 1;
-                                                    top_songs.add(get_music_file(document.getString("TITLE")));
-                                                } else {
-                                                    ;
-                                                }
-                                                if (count == 10) {
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        musicAdapter.notifyDataSetChanged();
-                                        SongQueue.getInstance().setSong_list(top_songs);
+            text1.setText(sessionManager.getUsername() + " Most Played Songs");
 
-                                    })
-                                    .addOnFailureListener(e -> {
-                                        Log.e("Firestore", "Error retrieving top songs", e);
-                                    });
-                        } else {
-                            ;
-                        }
-                    })
-                    .addOnFailureListener(e -> {
-                        Log.e("Firestore", "Error retrieving user", e);
-                    });
+            loadMusicFiles(); // This should populate your list of available local music
+
+            AppDatabase.databaseWriteExecutor.execute(() -> {
+                SongDao songDao = AppDatabase.getDatabase(getContext()).songDao();
+
+                // 🔍 Query top 10 songs for the user based on TIMES_PLAYED
+                List<Song> topDbSongs = songDao.getTopSongsByUser(sessionManager.getEmail());
+
+                List<MusicFile> topLocalSongs = new ArrayList<>();
+                int count = 0;
+
+                for (Song s : topDbSongs) {
+                    MusicFile matched = get_music_file(s.title); // Match by title from device
+                    if (matched != null) {
+                        topLocalSongs.add(matched);
+                        count++;
+                        if (count == 10) break;
+                    }
+                }
+
+                requireActivity().runOnUiThread(() -> {
+                    top_songs.clear();
+                    top_songs.addAll(topLocalSongs);
+                    musicAdapter.notifyDataSetChanged();
+                    SongQueue.getInstance().setSong_list(top_songs);
+                });
+            });
         }
     }
 

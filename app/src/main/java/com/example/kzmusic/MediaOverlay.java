@@ -528,19 +528,27 @@ public class MediaOverlay extends Fragment {
             if (player == null || musicFiles == null || musicFiles.isEmpty()) return;
 
             player.pause();
-
+            if (musicFiles.contains(musicFile)) {
+                position = musicFiles.indexOf(musicFile);
+            } else {
+                position = SongQueue.getInstance().current_position;;
+            }
             if (!shuffle_on) {
                 position = (position == 0) ? musicFiles.size() - 1 : position - 1;
             } else {
                 position = rand.nextInt(musicFiles.size());
             }
-            musicFile = musicFiles.get(position);
-            SongQueue.getInstance().addSong(musicFile);
-            SongQueue.getInstance().setPosition(position);
-            if (playerService != null && musicFile != null) {
-                playerService.updateNotification(musicFile);
-                playerService.playMusic(musicFile);
-                set_up_view(musicFile);
+            if (position < 0 || position >= musicFiles.size()) {
+                ;
+            } else {
+                musicFile = musicFiles.get(position);
+                SongQueue.getInstance().addSong(musicFile);
+                SongQueue.getInstance().setPosition(position);
+                if (playerService != null && musicFile != null) {
+                    playerService.updateNotification(musicFile);
+                    playerService.playMusic(musicFile);
+                    set_up_view(musicFile);
+                }
             }
         });
 
@@ -552,20 +560,27 @@ public class MediaOverlay extends Fragment {
             if (player == null || musicFiles == null || musicFiles.isEmpty()) return;
 
             player.pause();
-
+            if (musicFiles.contains(musicFile)) {
+                position = musicFiles.indexOf(musicFile);
+            } else {
+                position = SongQueue.getInstance().current_position;
+            }
             if (!shuffle_on) {
                 position = (position == musicFiles.size() - 1) ? 0 : position + 1;
             } else {
                 position = rand.nextInt(musicFiles.size());
             }
-
-            musicFile = musicFiles.get(position);
-            SongQueue.getInstance().addSong(musicFile);
-            SongQueue.getInstance().setPosition(position);
-            if (playerService != null && musicFile != null) {
-                playerService.updateNotification(musicFile);
-                playerService.playMusic(musicFile);
-                set_up_view(musicFile);
+            if (position < 0 || position >= musicFiles.size()) {
+                ;
+            } else {
+                musicFile = musicFiles.get(position);
+                SongQueue.getInstance().addSong(musicFile);
+                SongQueue.getInstance().setPosition(position);
+                if (playerService != null && musicFile != null) {
+                    playerService.updateNotification(musicFile);
+                    playerService.playMusic(musicFile);
+                    set_up_view(musicFile);
+                }
             }
         });
         //Implementing shuffle button functionality

@@ -73,5 +73,14 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.play.services.auth)
     implementation(libs.work.runtime.ktx)
+    // Room components
+    implementation(libs.room.runtime)
+    annotationProcessor(libs.room.compiler)
+
+// Optional - Kotlin Extensions and Coroutines support
+    implementation(libs.room.ktx)
+
+// Optional - Testing
+    testImplementation(libs.room.testing)
 
 }
