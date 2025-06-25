@@ -448,65 +448,62 @@ public class PlayerService extends Service {
             @Override
             public void onSkipToNext() {
                 super.onSkipToNext();
-                SongQueue queue = SongQueue.getInstance();
-                List<MusicFile> songs = queue.song_list;
-                int pos = SongQueue.getInstance().current_position;
-                if (songs == null || songs.isEmpty()) return;
-
-                if (songs.contains(queue.current_song)) {
-                    pos = songs.indexOf(queue.current_song);
+                int pos;
+                if (OfflinePlayerManager.getInstance().current_player == null  ||
+                        SongQueue.getInstance().song_list == null || SongQueue.getInstance().song_list.isEmpty()) return;
+                if (SongQueue.getInstance().song_list.contains(SongQueue.getInstance().current_song)) {
+                    pos = SongQueue.getInstance().song_list.indexOf(SongQueue.getInstance().current_song);
+                } else {
+                    pos = SongQueue.getInstance().current_position;
                 }
-                if (!queue.shuffle_on) {
-                    if (pos < songs.size() - 1) {
-                        pos += 1;
-                    } else {
-                        return; // already at end
+                if (!SongQueue.getInstance().shuffle_on) {
+                    pos += 1;
+                    if (SongQueue.getInstance().current_position == SongQueue.getInstance().song_list.size() - 1) {
+                        pos  = 0;
                     }
                 } else {
-                    pos = rand.nextInt(songs.size());
+                    pos = rand.nextInt(SongQueue.getInstance().song_list.size());
                 }
-
-                if (pos >= 0 && pos < songs.size()) {
-                    MusicFile song = songs.get(pos);
-                    if (song != null) {
-                        queue.addSong(song);
-                        queue.setPosition(pos);
-                        updateNotification(song);
-                        playMusic(song);
-                        handleSkip();
-                    }
+                if (pos < 0 || pos >= SongQueue.getInstance().song_list.size()) {
+                    pos  = 0;
+                } else {
+                    MusicFile song = SongQueue.getInstance().song_list.get(pos);
+                    SongQueue.getInstance().addSong(song);
+                    SongQueue.getInstance().setPosition(pos);
+                    updateNotification(song);
+                    playMusic(song);
+                    handleSkip();
                 }
             }
 
             @Override
             public void onSkipToPrevious() {
                 super.onSkipToPrevious();
-                SongQueue queue = SongQueue.getInstance();
-                List<MusicFile> songs = queue.song_list;
-                int pos = SongQueue.getInstance().current_position;;
-                if (songs == null || songs.isEmpty()) return;
-                if (songs.contains(queue.current_song)) {
-                    pos = songs.indexOf(queue.current_song);
+                int pos;
+                if (OfflinePlayerManager.getInstance().current_player == null  ||
+                        SongQueue.getInstance().song_list == null || SongQueue.getInstance().song_list.isEmpty()) return;
+                if (SongQueue.getInstance().song_list.contains(SongQueue.getInstance().current_song)) {
+                    pos = SongQueue.getInstance().song_list.indexOf(SongQueue.getInstance().current_song);
+                } else {
+                    pos = SongQueue.getInstance().current_position;
                 }
-                if (!queue.shuffle_on) {
-                    if (pos > 0) {
-                        pos -= 1;
-                    } else {
-                        return; // already at start
+                if (!SongQueue.getInstance().shuffle_on) {
+                    pos -= 1;
+                    if (SongQueue.getInstance().current_position == 0) {
+                        pos  = SongQueue.getInstance().song_list.size() - 1;
                     }
                 } else {
-                    pos = rand.nextInt(songs.size());
+                    pos = rand.nextInt(SongQueue.getInstance().song_list.size());
                 }
-
-                if (pos >= 0 && pos < songs.size()) {
-                    MusicFile song = songs.get(pos);
-                    if (song != null) {
-                        queue.addSong(song);
-                        queue.setPosition(pos);
-                        updateNotification(song);
-                        playMusic(song);
-                        handleSkip();
-                    }
+                if (pos < 0 || pos >= SongQueue.getInstance().song_list.size()) {
+                    pos  = 0;
+                } else {
+                    MusicFile song = SongQueue.getInstance().song_list.get(pos);
+                    SongQueue.getInstance().addSong(song);
+                    SongQueue.getInstance().setPosition(pos);
+                    updateNotification(song);
+                    playMusic(song);
+                    handleSkip();
                 }
             }
         });

@@ -526,7 +526,6 @@ public class MediaOverlay extends Fragment {
             ).start();
 
             if (player == null || musicFiles == null || musicFiles.isEmpty()) return;
-
             player.pause();
             if (musicFiles.contains(musicFile)) {
                 position = musicFiles.indexOf(musicFile);

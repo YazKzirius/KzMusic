@@ -164,7 +164,7 @@ public class Radio extends Fragment {
         } else {
             musicAdapter.updateTracks(sessionManager.getSavedTracklist(email+"TRACK_LIST_RADIO"));
         }
-        text1.setText(sessionManager.getUsername()+" radio");
+        text1.setText(sessionManager.getUsername()+" radio:");
         //Setting up bottom playback navigator
         set_up_spotify_play();
         set_up_play_bar();
@@ -348,7 +348,6 @@ public class Radio extends Fragment {
                     if (response.isSuccessful() && response.body() != null) {
                         musicAdapter.updateTracks(response.body().getTracks().getItems());
                         sessionManager.save_Tracklist_radio(response.body().getTracks().getItems(), sessionManager.getEmail());
-                        text1.setText(sessionManager.getUsername()+" radio:");
                     } else if (response.code() == 401) { // Handle expired access token
                         ;
                     } else {
