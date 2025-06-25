@@ -2,14 +2,19 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/nav_home"
-        android:icon="@drawable/home"
+        android:icon="@drawable/outline_browse_24"
         android:iconTint="#090909"
-        android:title="Home" />
+        android:title="Browse" />
     <item
         android:id="@+id/nav_search"
         android:icon="@drawable/search"
         android:iconTint="#090909"
         android:title="Search" />
+    <item
+        android:id="@+id/nav_genAI"
+        android:icon="@drawable/outline_electric_bolt_24"
+        android:iconTint="#090909"
+        android:title="GenAI" />
     <item
         android:id="@+id/nav_library"
         android:icon="@drawable/library"

@@ -353,7 +353,11 @@ public class LikedSongs extends Fragment {
                                 tracklist.add(Tracks.get(j));
                             }
                         }
-                        sessionManager.save_Tracklist_liked(tracklist, email);
+                        if (sessionManager.getSavedTracklist(email+"TRACK_LIST_LIKED").size() != tracklist.size()) {
+                            sessionManager.save_Tracklist_liked(new ArrayList<>(), email);
+                        } else {
+                            sessionManager.save_Tracklist_liked(tracklist, email);
+                        }
                         musicAdapter1.notifyDataSetChanged();
                         //Checking for more than One of the same track
                     } else if (response.code() == 401) { // Handle expired access token

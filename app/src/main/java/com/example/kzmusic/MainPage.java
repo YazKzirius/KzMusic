@@ -79,11 +79,14 @@ public class MainPage extends AppCompatActivity {
                 fragment = new HomeFragment();
             } else if (id == R.id.nav_search) {
                 fragment = new SearchFragment();
+            } else if (id == R.id.nav_genAI) {
+                fragment = new GenAIFragment();
             } else if (id == R.id.nav_library) {
                 fragment = new LibraryFragment();
             } else if (id == R.id.nav_account) {
                 fragment = new AccountSettingsFragment();
-            } else {
+            }
+            else {
                 return false;
             }
             getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, fragment).commit();

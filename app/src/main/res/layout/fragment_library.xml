@@ -40,26 +40,6 @@
             android:textStyle="bold"
             android:layout_marginTop="12dp" />
 
-        <!-- Liked Songs Button -->
-        <ImageButton
-            android:id="@+id/liked_btn"
-            android:layout_width="130dp"
-            android:layout_height="130dp"
-            android:layout_marginTop="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_liked"
-            android:tint="@color/white"
-            android:scaleType="centerInside"
-            android:contentDescription="Liked Songs" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Liked Songs"
-            android:textColor="@color/white"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:layout_marginTop="12dp" />
     </LinearLayout>
 
     <!-- Playback Bar -->

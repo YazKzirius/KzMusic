@@ -178,6 +178,7 @@ public class HomeFragment extends Fragment {
         ImageView button1 = view.findViewById(R.id.ic_radio);
         ImageView button2 = view.findViewById(R.id.ic_podium);
         ImageView button3 = view.findViewById(R.id.ic_for_you);
+        ImageButton button4 = view.findViewById(R.id.liked_btn);
         button1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -208,6 +209,17 @@ public class HomeFragment extends Fragment {
                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                 fragmentTransaction.replace(R.id.fragment_container, newFragment);
                 fragmentTransaction.addToBackStack(null);  // Optional: adds the transaction to the back stack
+                fragmentTransaction.commit();
+            }
+        });
+        //Like button functionality
+        button4.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Fragment liked = new LikedSongs();
+                FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
+                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                fragmentTransaction.replace(R.id.fragment_container, liked);
                 fragmentTransaction.commit();
             }
         });

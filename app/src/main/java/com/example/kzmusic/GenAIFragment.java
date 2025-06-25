@@ -1,16 +1,12 @@
 package com.example.kzmusic;
 
-//Imports
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.media.audiofx.EnvironmentalReverb;
 import android.net.Uri;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -18,7 +14,6 @@ import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 
 import android.os.IBinder;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,10 +21,8 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
-import com.google.android.exoplayer2.ExoPlayer;
 import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
 
@@ -38,11 +31,10 @@ import java.util.regex.Pattern;
 
 /**
  * A simple {@link Fragment} subclass.
- * Use the {@link LibraryFragment#newInstance} factory method to
+ * Use the {@link GenAIFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-//This implements the user library fragment
-public class LibraryFragment extends Fragment {
+public class GenAIFragment extends Fragment {
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -53,21 +45,20 @@ public class LibraryFragment extends Fragment {
     private String mParam1;
     private String mParam2;
     View view;
+    String username;
+    String email;
     ImageView art;
     TextView title;
     TextView Artist;
     ImageButton ic_down;
     RelativeLayout playback_bar;
-    ExoPlayer exo_player;
-    private EnvironmentalReverb reverb;
-    int session_id;
+    SessionManager sessionManager;
     private SharedViewModel sharedViewModel;
     PlayerService playerService;
     Boolean isBound;
     ServiceConnection serviceConnection;
-    private long last_position;
 
-    public LibraryFragment() {
+    public GenAIFragment() {
         // Required empty public constructor
     }
 
@@ -77,11 +68,11 @@ public class LibraryFragment extends Fragment {
      *
      * @param param1 Parameter 1.
      * @param param2 Parameter 2.
-     * @return A new instance of fragment LibraryFragment.
+     * @return A new instance of fragment GenAIFragment.
      */
     // TODO: Rename and change types and number of parameters
-    public static LibraryFragment newInstance(String param1, String param2) {
-        LibraryFragment fragment = new LibraryFragment();
+    public static GenAIFragment newInstance(String param1, String param2) {
+        GenAIFragment fragment = new GenAIFragment();
         Bundle args = new Bundle();
         args.putString(ARG_PARAM1, param1);
         args.putString(ARG_PARAM2, param2);
@@ -102,26 +93,22 @@ public class LibraryFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        view = inflater.inflate(R.layout.fragment_library, container, false);
+        view = inflater.inflate(R.layout.fragment_gen_a_i, container, false);
         art = view.findViewById(R.id.current_song_art);
         title = view.findViewById(R.id.current_song_title);
         Artist = view.findViewById(R.id.current_song_artist);
         ic_down = view.findViewById(R.id.up_button);
         playback_bar = view.findViewById(R.id.playback_bar);
+        sessionManager = new SessionManager(getContext());
+        username = sessionManager.getUsername();
+        email = sessionManager.getEmail();
         //Setting up bottom playback navigator
         set_up_spotify_play();
         set_up_play_bar();
         if (SongQueue.getInstance().get_size() > 0 && SongQueue.getInstance().current_song != null) {
             set_up_skipping();
         }
-        set_up_library();
-
         return view;
-    }
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        ;
     }
     //This function sets up media notification bar skip events
     public void set_up_skipping() {
@@ -344,7 +331,7 @@ public class LibraryFragment extends Fragment {
     //This function opens a new song overlay
     public void open_new_overlay(MusicFile file, int position) {
         if (file == null) {
-            ;
+
         } else {
             //Adding song to queue
             stopPlayerService();
@@ -356,21 +343,6 @@ public class LibraryFragment extends Fragment {
             fragmentTransaction.replace(R.id.fragment_container, media_page);
             fragmentTransaction.commit();
         }
-    }
-    //This function sets up library button functionality
-    public void set_up_library() {
-        ImageView button = view.findViewById(R.id.library_btn);
-        //Library button functionality
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Fragment music_page = new UserMusic();
-                FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
-                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                fragmentTransaction.replace(R.id.fragment_container, music_page);
-                fragmentTransaction.commit();
-            }
-        });
     }
     //This function handles Spotify overlay play/pause
     public void set_up_spotify_play() {
