@@ -185,7 +185,6 @@ public class LikedSongs extends Fragment {
                                                             get_liked_songs();
                                                         } else {
                                                             musicAdapter1.updateTracks(sessionManager.getSavedTracklist(email+"TRACK_LIST_LIKED"));
-                                                            sessionManager.save_Tracklist_liked(sessionManager.getSavedTracklist("TRACK_LIST_LIKED"), email);
                                                         }
                                                     } else {
                                                         get_liked_songs();
@@ -353,8 +352,8 @@ public class LikedSongs extends Fragment {
                                 tracklist.add(Tracks.get(j));
                             }
                         }
-                        if (sessionManager.getSavedTracklist(email+"TRACK_LIST_LIKED").size() != tracklist.size()) {
-                            sessionManager.save_Tracklist_liked(new ArrayList<>(), email);
+                        if (sessionManager.getSavedTracklist(email+"TRACK_LIST_LIKED").size() < tracklist.size()) {
+                            sessionManager.save_Tracklist_liked(tracklist, email);
                         } else {
                             sessionManager.save_Tracklist_liked(tracklist, email);
                         }

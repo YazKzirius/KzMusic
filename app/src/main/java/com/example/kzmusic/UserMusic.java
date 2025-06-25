@@ -31,6 +31,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -60,8 +61,7 @@ public class UserMusic extends Fragment {
     private String mParam1;
     private String mParam2;
     private static final int REQUEST_CODE = 1;
-    private List<MusicFile> musicFiles_odd = new ArrayList<>();
-    private List<MusicFile> musicFiles_even = new ArrayList<>();
+    private List<MusicFile> musicFiles_history = new ArrayList<>();
     private List<MusicFile> musicFiles_original = new ArrayList<>();
     private RecyclerView recyclerView1;
     private MusicFileAdapter musicAdapter1;
@@ -129,18 +129,14 @@ public class UserMusic extends Fragment {
         username = sessionManager.getUsername();
         email = sessionManager.getEmail();
         TextView text = view.findViewById(R.id.x_music);
-        text.setText(username+" library");
+        text.setText(username+" Local library");
         SongQueue.getInstance().setCurrent_resource(R.layout.item_song);
         //First recycler view
         recyclerView1 = view.findViewById(R.id.recycler_view2);
-        recyclerView1.setLayoutManager(new LinearLayoutManager(getContext()));
-        musicAdapter1 = new MusicFileAdapter(getContext(), musicFiles_odd);
+        recyclerView1.setLayoutManager(new GridLayoutManager(getContext(), 2));
+        musicAdapter1 = new MusicFileAdapter(getContext(), musicFiles_original);
         recyclerView1.setAdapter(musicAdapter1);
         //Second recycler view
-        recyclerView2 = view.findViewById(R.id.recycler_view3);
-        recyclerView2.setLayoutManager(new LinearLayoutManager(getContext()));
-        musicAdapter2 = new MusicFileAdapter(getContext(), musicFiles_even);
-        recyclerView2.setAdapter(musicAdapter2);
         //Checks for manifest external storage permissions
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_MEDIA_AUDIO)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -151,7 +147,6 @@ public class UserMusic extends Fragment {
             SongQueue.getInstance().setSong_list(musicFiles_original);
         }
         musicAdapter1.notifyDataSetChanged();
-        musicAdapter2.notifyDataSetChanged();
         //Setting up bottom playback navigator
         set_up_spotify_play();
         set_up_play_bar();
@@ -246,12 +241,6 @@ public class UserMusic extends Fragment {
                     ;
                 } else {
                     musicFiles_original.add(musicFile);
-                    if ((count % 2) != 0 || count == 1) {
-                        musicFiles_odd.add(musicFile);
-                    } else {
-                        musicFiles_even.add(musicFile);
-                    }
-                    count += 1;
                 }
             }
             SongQueue.getInstance().setSong_list(musicFiles_original);

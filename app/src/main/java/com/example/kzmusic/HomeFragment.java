@@ -124,9 +124,12 @@ public class HomeFragment extends Fragment {
         TextView text1 = view.findViewById(R.id.your_radio);
         TextView text3 = view.findViewById(R.id.made_for_x);
         TextView text4 = view.findViewById(R.id.top_songs);
-        text1.setText(username+" radio:");
+        TextView text5 = view.findViewById(R.id.liked_songs_label);
+
+        text1.setText(username+" radio");
         text3.setText(username+" mix");
         text4.setText(username+" Top 10");
+        text5.setText(username+" Saved Songs");
         //Setting up Homepage and getting given accesstoken
         set_up_buttons();
         set_up_spotify_play();
