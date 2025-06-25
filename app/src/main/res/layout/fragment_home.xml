@@ -10,11 +10,11 @@
     <!-- TODO: Update blank fragment layout -->
     <!-- SeekBar added at the top -->
     <androidx.constraintlayout.widget.ConstraintLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#090909"
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto">
+        android:background="#090909">
 
         <!-- App Logo -->
         <ImageView
@@ -55,7 +55,7 @@
 
                 <TextView
                     android:id="@+id/your_radio"
-                    android:layout_width="wrap_content"
+                    android:layout_width="120dp"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:gravity="center"
@@ -81,7 +81,7 @@
 
                 <TextView
                     android:id="@+id/made_for_x"
-                    android:layout_width="wrap_content"
+                    android:layout_width="120dp"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:gravity="center"
@@ -144,7 +144,6 @@
                     android:layout_marginBottom="12dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_liked"
-                    android:tint="@color/white"
                     android:scaleType="centerInside"
                     android:contentDescription="Liked Songs" />
 
@@ -219,8 +218,7 @@
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:src="@drawable/ic_up"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:tint="@color/white" />
+            android:background="?attr/selectableItemBackgroundBorderless" />
     </RelativeLayout>
 
 </FrameLayout>
