@@ -151,7 +151,6 @@ public class Top10Songs extends Fragment {
         musicAdapter = new MusicFileAdapter(getContext(), top_songs);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setAdapter(musicAdapter);
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
         //Checks for manifest external storage permissions
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_MEDIA_AUDIO)
                 != PackageManager.PERMISSION_GRANTED) {

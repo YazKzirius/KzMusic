@@ -51,12 +51,4 @@
         android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@drawable/ic_add_song"
         android:contentDescription="Add to playlist" />
-
-    <ImageButton
-        android:id="@+id/menu_btn"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@drawable/ic_colon"
-        android:contentDescription="More Options" />
 </LinearLayout>

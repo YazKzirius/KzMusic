@@ -20,7 +20,7 @@ public interface SongDao {
 
     @Query("UPDATE songs SET times_played = times_played + 1 WHERE email = :email AND title = :title")
     void incrementTimesPlayed(String email, String title);
-    @Query("SELECT * FROM songs WHERE email = :email ORDER BY times_played DESC LIMIT 10")
+    @Query("SELECT * FROM songs WHERE email = :email ORDER BY times_played DESC LIMIT 100")
     List<Song> getTopSongsByUser(String email);
 
 }

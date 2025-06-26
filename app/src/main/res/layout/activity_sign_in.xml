@@ -44,6 +44,7 @@
                 android:id="@+id/TextEmailAddress"
                 style="@style/AuthFieldStyle"
                 android:hint="Email address"
+                android:textStyle="bold"
                 android:layout_marginTop="24dp" />
 
             <!-- Password -->
@@ -52,6 +53,7 @@
                 style="@style/AuthFieldStyle"
                 android:hint="Password"
                 android:inputType="textPassword"
+                android:textStyle="bold"
                 android:layout_marginTop="20dp" />
 
             <!-- Google Sign-In -->
@@ -90,7 +92,7 @@
                 android:layout_marginTop="30dp"
                 android:text="Sign In"
                 android:textSize="18sp"
-                android:backgroundTint="#1DB954"
+                android:backgroundTint="@color/purple"
                 android:textColor="@android:color/white"
                 android:textAllCaps="false" />
 

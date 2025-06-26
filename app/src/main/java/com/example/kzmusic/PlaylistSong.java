@@ -1,15 +1,17 @@
 package com.example.kzmusic;
 
-
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
-@Entity(tableName = "songs")
-public class Song {
+@Entity(tableName = "PlaylistSongs")
+public class PlaylistSong {
 
     @PrimaryKey(autoGenerate = true)
     public int id;
+
+    @ColumnInfo(name = "playlist_id")
+    public int playlist_id;
 
     @ColumnInfo(name = "email")
     public String email;
@@ -19,13 +21,4 @@ public class Song {
 
     @ColumnInfo(name = "artist")
     public String artist;
-
-    @ColumnInfo(name = "playlist")
-    public int playlist_id;
-
-    @ColumnInfo(name = "total_duration")
-    public int totalDuration = 0;
-
-    @ColumnInfo(name = "times_played")
-    public int timesPlayed = 1;
 }

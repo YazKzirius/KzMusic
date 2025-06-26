@@ -68,12 +68,14 @@
                 android:id="@+id/User"
                 style="@style/AuthFieldStyle"
                 android:hint="Username"
+                android:textStyle="bold"
                 android:layout_marginTop="24dp" />
 
             <EditText
                 android:id="@+id/Email"
                 style="@style/AuthFieldStyle"
                 android:hint="Email address"
+                android:textStyle="bold"
                 android:layout_marginTop="20dp" />
 
             <EditText
@@ -81,12 +83,14 @@
                 style="@style/AuthFieldStyle"
                 android:hint="Password"
                 android:inputType="textPassword"
+                android:textStyle="bold"
                 android:layout_marginTop="20dp" />
 
             <EditText
                 android:id="@+id/pass2"
                 style="@style/AuthFieldStyle"
                 android:hint="Confirm Password"
+                android:textStyle="bold"
                 android:inputType="textPassword"
                 android:layout_marginTop="20dp" />
 
@@ -98,7 +102,7 @@
                 android:text="Create Account"
                 android:textSize="18sp"
                 android:textAllCaps="false"
-                android:backgroundTint="#1DB954"
+                android:backgroundTint="@color/purple"
                 android:textColor="@android:color/white" />
 
             <Button

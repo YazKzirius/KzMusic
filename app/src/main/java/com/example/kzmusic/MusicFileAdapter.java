@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -67,8 +68,20 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
         MusicFile musicFile = musicFiles.get(position);
         //Updating song position
         if (SongQueue.getInstance().current_resource == R.layout.item_song) {
-            new_position = SongQueue.getInstance().song_list.indexOf(musicFile);;
-        } else {
+            new_position = SongQueue.getInstance().song_list.indexOf(musicFile);
+            ;
+        } else if (SongQueue.getInstance().current_resource == R.layout.item_song3) {
+            new_position = holder.getLayoutPosition();
+            holder.add_menu.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    SessionManager sessionManager = new SessionManager(context);
+                    String email = sessionManager.getEmail();
+                    add_song(musicFile.getName(), musicFile.getArtist(), SongQueue.getInstance().current_playlist, email);
+                }
+            });
+        }
+        else {
             new_position = holder.getLayoutPosition();
             holder.menu.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -126,7 +139,7 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
             @Override
             public void onClick(View v) {
                 //Checking if in different activity and responding accordingly
-                if (SongQueue.getInstance().current_resource == R.layout.item_song2) {
+                if (SongQueue.getInstance().current_resource == R.layout.item_song2 || SongQueue.getInstance().current_resource == R.layout.item_song3) {
                     new_position = holder.getLayoutPosition();
                 } else {
                     new_position = SongQueue.getInstance().song_list.indexOf(musicFile);
@@ -160,6 +173,25 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
             }
         });
         popupMenu.show();
+    }
+    //This function adds a song to a playlist
+    public void add_song(String name, String artist, String playlist_title, String email) {
+        PlaylistDao playlistDao = AppDatabase.getDatabase(context).playlistDao();
+        PlaylistSongDao playlistSongDao = AppDatabase.getDatabase(context).playlistSongDao();
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            String existing = playlistSongDao.get_playlist_song(email, playlistDao.getPlaylistIdByEmailAndTitle(email, playlist_title), name);
+            if (existing == null) {
+                PlaylistSong playlistSong = new PlaylistSong();
+                playlistSong.playlist_id = playlistDao.getPlaylistIdByEmailAndTitle(email, playlist_title);
+                playlistSong.email = email;
+                playlistSong.title = name;
+                playlistSong.artist = artist;
+                playlistSongDao.insert(playlistSong);
+                Log.d("RoomDB", "✅ New song inserted "+playlistDao.getPlaylistIdByEmailAndTitle(email, playlist_title));
+            } else {
+                Log.d("RoomDB", "🔁 Song already exists "+playlistDao.getPlaylistIdByEmailAndTitle(email, playlist_title));
+            }
+        });
     }
     // This function formats song title, removing unnecessary data and watermarks
     public String format_title(String title) {
@@ -305,6 +337,7 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
         TextView artistTextView;
         ImageView albumImageView;
         ImageButton menu;
+        ImageButton add_menu;
 
         public MusicViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -313,6 +346,8 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
             albumImageView = itemView.findViewById(R.id.album_image);
             if (SongQueue.getInstance().current_resource == R.layout.item_song2) {
                 menu = itemView.findViewById(R.id.menu_btn);
+            } else if (SongQueue.getInstance().current_resource == R.layout.item_song3) {
+                add_menu = itemView.findViewById(R.id.add_btn);
             }
         }
 

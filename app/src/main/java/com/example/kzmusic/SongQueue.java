@@ -29,6 +29,7 @@ public class SongQueue {
     int pointer = 0;
     int current_resource;
     int audio_session_id;
+    String current_playlist = "";
     private SongQueue() {
         this.songs_played = new ArrayList<>();
 
@@ -50,7 +51,6 @@ public class SongQueue {
     public void update_history(MusicFile song) {
         if (song != null) {
             history.add(song);
-            Collections.reverse(history);
         }
     }
     public void setCurrent_song (MusicFile song) {
@@ -100,6 +100,12 @@ public class SongQueue {
     }
     public int get_size() {
         return songs_played.size();
+    }
+    public String get_current_playlist() {
+        return current_playlist;
+    }
+    public void set_current_playlist(String playlist) {
+        current_playlist = playlist;
     }
     public MusicFile get_specified(int index) {
         if (index < 0 || index >= songs_played.size()) { // ✅ Prevents invalid index access
