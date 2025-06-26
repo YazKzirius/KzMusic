@@ -103,6 +103,7 @@ public class PlayerService extends Service {
                         MediaItem mediaItem = MediaItem.fromUri(uri);
                         player.setMediaItem(mediaItem);
                         add_song(musicFile);
+                        update_song_history(musicFile);
                     } else {
                         MusicFile song1;
                         MusicFile song2;
@@ -120,6 +121,7 @@ public class PlayerService extends Service {
                             MediaItem mediaItem = MediaItem.fromUri(uri);
                             player.setMediaItem(mediaItem);
                             add_song(musicFile);
+                            update_song_history(musicFile);
                         }
                     }
                 }
@@ -129,6 +131,7 @@ public class PlayerService extends Service {
                 MediaItem mediaItem = MediaItem.fromUri(uri);
                 player.setMediaItem(mediaItem);
                 add_song(musicFile);
+                update_song_history(musicFile);
             }
             if (player == null) {
                 ;
@@ -195,6 +198,13 @@ public class PlayerService extends Service {
                 Log.d("RoomDB", "🔁 Song already exists — times played incremented");
             }
         });
+    }
+    public void update_song_history(MusicFile musicFile) {
+        if (musicFile == null) {
+            ;
+        } else {
+            SongQueue.getInstance().update_history(musicFile);
+        }
     }
     //This function assigns audio effects to the exoplayer like speed/reverb
     public void apply_audio_effect() {

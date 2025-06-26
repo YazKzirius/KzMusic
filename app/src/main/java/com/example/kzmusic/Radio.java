@@ -164,7 +164,7 @@ public class Radio extends Fragment {
         } else {
             musicAdapter.updateTracks(sessionManager.getSavedTracklist(email+"TRACK_LIST_RADIO"));
         }
-        text1.setText(sessionManager.getUsername()+" radio:");
+        text1.setText(sessionManager.getUsername()+" radio");
         //Setting up bottom playback navigator
         set_up_spotify_play();
         set_up_play_bar();

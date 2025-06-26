@@ -5,13 +5,15 @@ import android.media.audiofx.EnvironmentalReverb;
 import com.google.android.exoplayer2.ExoPlayer;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 //This class implements a queue data structure for the songs played
 public class SongQueue {
     private static SongQueue instance;
-    List<MusicFile> song_list;
+    List<MusicFile> song_list = new ArrayList<>();
     List<MusicFile> songs_played;
+    List<MusicFile> history = new ArrayList<>();
     MusicFile current_song;
     String CHANNEL_ID = "media_playback_channel";
     int NOTIFICATION_ID = 1;
@@ -43,6 +45,12 @@ public class SongQueue {
             songs_played.add(song);
             this.current_song = song;
             this.pointer += 1;
+        }
+    }
+    public void update_history(MusicFile song) {
+        if (song != null) {
+            history.add(song);
+            Collections.reverse(history);
         }
     }
     public void setCurrent_song (MusicFile song) {

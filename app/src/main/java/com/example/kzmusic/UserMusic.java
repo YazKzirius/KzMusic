@@ -34,6 +34,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
 import com.bumptech.glide.Glide;
 import com.spotify.protocol.client.Subscription;
@@ -133,7 +134,7 @@ public class UserMusic extends Fragment {
         SongQueue.getInstance().setCurrent_resource(R.layout.item_song);
         //First recycler view
         recyclerView1 = view.findViewById(R.id.recycler_view2);
-        recyclerView1.setLayoutManager(new GridLayoutManager(getContext(), 2));
+        recyclerView1.setLayoutManager(new GridLayoutManager(getContext(), 3));
         musicAdapter1 = new MusicFileAdapter(getContext(), musicFiles_original);
         recyclerView1.setAdapter(musicAdapter1);
         //Second recycler view
