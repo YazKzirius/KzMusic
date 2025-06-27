@@ -373,10 +373,13 @@ public class AccountSettingsFragment extends Fragment {
         if (file == null) {
 
         } else {
-            //Adding song to queue
-            stopPlayerService();
             SongQueue.getInstance().addSong(file);
             SongQueue.getInstance().setPosition(position);
+            if (playerService != null) {
+                playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
+                playerService.updateNotification(file);
+                playerService.handlePlay();
+            }
             Fragment media_page = new MediaOverlay();
             FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();

@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.IBinder;
 import android.provider.MediaStore;
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -164,19 +165,9 @@ public class PlaylistOverlay extends Fragment {
         play_all_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (SongQueue.getInstance().shuffle_on == false) {
-                    MusicFile track = playlist.get(0);
-                    if (track != null) {
-                        open_overlay(track, 0);
-                    }
-                } else {
-                    Random rand = new Random();
-                    int index = rand.nextInt(playlist.size());
-                    MusicFile track = playlist.get(index);
-                    if (track != null) {
-                        open_overlay(track, index);
-                    }
-
+                MusicFile track = playlist.get(0);
+                if (track != null) {
+                    open_overlay(track, 0);
                 }
             }
         });
@@ -184,14 +175,9 @@ public class PlaylistOverlay extends Fragment {
         shuffle_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int index = 0;
-                if (SongQueue.getInstance().shuffle_on == false) {
-                    SongQueue.getInstance().setShuffle_on(true);
-                    Random rand = new Random();
-                    index = rand.nextInt(playlist.size());
-                } else {
-                    SongQueue.getInstance().setShuffle_on(false);
-                }
+                SongQueue.getInstance().setShuffle_on(true);
+                Random rand = new Random();
+                int index = rand.nextInt(playlist.size());
                 MusicFile track = playlist.get(index);
                 if (track != null) {
                     open_overlay(track, index);
@@ -229,10 +215,10 @@ public class PlaylistOverlay extends Fragment {
                         playlist.add(musicFile);
                     }
                 }
-                musicAdapter1.notifyDataSetChanged();
                 Log.d("RoomDB", "🔁 Displaying playlist "+playlistDao.getPlaylistIdByEmailAndTitle(email, playlist_title));
             }
         });
+        musicAdapter1.notifyDataSetChanged();
 
     }
     //This function loads User music audio files from personal directory
@@ -285,7 +271,6 @@ public class PlaylistOverlay extends Fragment {
                     musicFiles_original.add(musicFile);
                 }
             }
-            SongQueue.getInstance().setSong_list(musicFiles_original);
         }
     }
     //This function sets up media notification bar skip events
@@ -512,10 +497,14 @@ public class PlaylistOverlay extends Fragment {
 
         } else {
             //Adding song to queue
-            stopPlayerService();
             SongQueue.getInstance().addSong(file);
             SongQueue.getInstance().setPosition(position);
             Fragment media_page = new MediaOverlay();
+            if (playerService != null) {
+                playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
+                playerService.updateNotification(file);
+                playerService.handlePlay();
+            }
             FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
             fragmentTransaction.replace(R.id.fragment_container, media_page);

@@ -8,7 +8,7 @@ import androidx.room.RoomDatabase;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@Database(entities = {Song.class, Playlist.class, PlaylistSong.class}, version = 4)
+@Database(entities = {Song.class, Playlist.class, PlaylistSong.class}, version = 6)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract SongDao songDao();

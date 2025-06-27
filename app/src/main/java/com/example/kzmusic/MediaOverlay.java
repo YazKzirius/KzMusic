@@ -983,7 +983,6 @@ public class MediaOverlay extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        stopPlayerService();
         if (runnable != null && handler != null) {
             handler.removeCallbacks(runnable);
         }

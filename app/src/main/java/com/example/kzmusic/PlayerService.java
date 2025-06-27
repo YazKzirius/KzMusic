@@ -76,8 +76,7 @@ public class PlayerService extends Service {
         if (OfflinePlayerManager.getInstance().get_size() > 0) {
             OfflinePlayerManager.getInstance().StopAllSessions();
         }
-        //Updating channel ID settings
-        SongQueue.getInstance().update_id();
+        Log.d("Player Service", "Service created");
         //Playing the song
         NOTIFICATION_ID = SongQueue.getInstance().NOTIFICATION_ID;
         CHANNEL_ID += NOTIFICATION_ID;

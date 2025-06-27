@@ -557,7 +557,6 @@ public class Radio extends Fragment {
 
         } else {
             //Adding song to queue
-            stopPlayerService();
             SongQueue.getInstance().addSong(file);
             SongQueue.getInstance().setPosition(position);
             Fragment media_page = new MediaOverlay();

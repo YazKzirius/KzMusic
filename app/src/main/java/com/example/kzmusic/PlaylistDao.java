@@ -18,8 +18,12 @@ public interface PlaylistDao {
     Playlist getPlaylistByEmailAndTitle(String email, String title);
     @Query("SELECT id FROM Playlists WHERE email = :email AND playlist_title = :title LIMIT 1")
     int getPlaylistIdByEmailAndTitle(String email, String title);
-    @Query("UPDATE Playlists SET playlist_title = :title, url = :url WHERE email = :email AND playlist_title = :title")
-    void update_playlist(String email, String title, String url);
+
+   @Query("UPDATE Playlists SET url = :url, playlist_title = :title WHERE email = :email AND id = :id")
+    void update_playlist(String email, int id, String title, String url);
+
+    @Query("DELETE FROM Playlists WHERE email = :email AND id = :id")
+    void delete_playlist(String email, int id);
     @Query("SELECT url FROM Playlists WHERE email = :email AND playlist_title = :title")
     String getUrl(String email, String title);
     @Query("SELECT * FROM Playlists WHERE email = :email")

@@ -23,6 +23,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.IBinder;
 import android.provider.MediaStore;
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -147,7 +148,7 @@ public class EditPlaylist extends Fragment {
         musicAdapter2.notifyDataSetChanged();
         //Getting playlist songs
         get_playlist_songs(SongQueue.getInstance().current_playlist);
-        next_btn_functionality();
+        button_functionality();
         if (SongQueue.getInstance().get_size() > 0 && SongQueue.getInstance().current_song != null) {
             set_up_skipping();
         }
@@ -235,18 +236,51 @@ public class EditPlaylist extends Fragment {
                     musicFiles_original.add(musicFile);
                 }
             }
-            SongQueue.getInstance().setSong_list(musicFiles_original);
         }
     }
     //This function moves to playlist overlay
-    public void next_btn_functionality() {
+    public void button_functionality() {
         Button next_btn = view.findViewById(R.id.next_btn);
         EditText playlist_name = view.findViewById(R.id.playlist_name);
         next_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //Update database functionality
+                SessionManager sessionManager = new SessionManager(getContext());
+                String email = sessionManager.getEmail();
+                String playlist_title = playlist_name.getText().toString();
+                PlaylistDao playlistDao = AppDatabase.getDatabase(getContext()).playlistDao();
+                AppDatabase.databaseWriteExecutor.execute(() -> {
+                    int id = playlistDao.getPlaylistIdByEmailAndTitle(email, SongQueue.getInstance().current_playlist);
+                    playlistDao.update_playlist(email, id, playlist_title, playlistDao.getUrl(email, SongQueue.getInstance().current_playlist));
+                    Log.d("Update", "UPDATED");
+                    SongQueue.getInstance().set_current_playlist(playlist_title);
+                });
                 Fragment fragment = new PlaylistOverlay();
+                getActivity().getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit();
+            }
+        });
+        Button delete_btn = view.findViewById(R.id.delete_btn);
+        delete_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Delete playlist
+                SessionManager sessionManager = new SessionManager(getContext());
+                String email = sessionManager.getEmail();
+                PlaylistDao playlistDao = AppDatabase.getDatabase(getContext()).playlistDao();
+                PlaylistSongDao playlistSongDao = AppDatabase.getDatabase(getContext()).playlistSongDao();
+                AppDatabase.databaseWriteExecutor.execute(() -> {
+                    int id = playlistDao.getPlaylistIdByEmailAndTitle(email, SongQueue.getInstance().current_playlist);
+                    List<String> songs = playlistSongDao.get_playlist_songs(email, id);
+                    for (String song : songs) {
+                        playlistSongDao.remove_song(email, id, song);
+                    }
+                    playlistDao.delete_playlist(email, id);
+                });
+                Fragment fragment = new LibraryFragment();
                 getActivity().getSupportFragmentManager().beginTransaction()
                         .replace(R.id.fragment_container, fragment)
                         .addToBackStack(null)
@@ -478,9 +512,13 @@ public class EditPlaylist extends Fragment {
 
         } else {
             //Adding song to queue
-            stopPlayerService();
             SongQueue.getInstance().addSong(file);
             SongQueue.getInstance().setPosition(position);
+            if (playerService != null) {
+                playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
+                playerService.updateNotification(file);
+                playerService.handlePlay();
+            }
             Fragment media_page = new MediaOverlay();
             FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();

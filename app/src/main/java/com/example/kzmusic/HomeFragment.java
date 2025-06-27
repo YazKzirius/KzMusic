@@ -414,10 +414,14 @@ public class HomeFragment extends Fragment {
             ;
         } else {
             //Adding song to queue
-            stopPlayerService();
             SongQueue.getInstance().addSong(file);
             SongQueue.getInstance().setPosition(position);
             Fragment media_page = new MediaOverlay();
+            if (playerService != null) {
+                playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
+                playerService.updateNotification(file);
+                playerService.handlePlay();
+            }
             FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
             fragmentTransaction.replace(R.id.fragment_container, media_page);

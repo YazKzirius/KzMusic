@@ -80,15 +80,31 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
                     SessionManager sessionManager = new SessionManager(context);
                     String email = sessionManager.getEmail();
                     holder.add_menu.setImageResource(R.drawable.ic_added);
+                    add_song(musicFile.getName(), musicFile.getArtist(), SongQueue.getInstance().current_playlist, email);
                     Fragment edit_page = new EditPlaylist();
                     FragmentManager fragmentManager = ((AppCompatActivity) context).getSupportFragmentManager();
                     FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                     fragmentTransaction.replace(R.id.fragment_container, edit_page);
                     fragmentTransaction.commit();
-                    add_song(musicFile.getName(), musicFile.getArtist(), SongQueue.getInstance().current_playlist, email);
 
                 }
             });
+            holder.delete_menu.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    SessionManager sessionManager = new SessionManager(context);
+                    String email = sessionManager.getEmail();
+                    remove_song(musicFile.getName(), musicFile.getArtist(), SongQueue.getInstance().current_playlist, email);
+                    Fragment edit_page = new EditPlaylist();
+                    FragmentManager fragmentManager = ((AppCompatActivity) context).getSupportFragmentManager();
+                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                    fragmentTransaction.replace(R.id.fragment_container, edit_page);
+                    fragmentTransaction.commit();
+
+
+                }
+            });
+
         }
         else {
             new_position = holder.getLayoutPosition();
@@ -129,8 +145,10 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
                 new Handler(Looper.getMainLooper()).post(() -> {
                     if (isNew) {
                         holder.add_menu.setImageResource(R.drawable.ic_add_song);
+                        holder.delete_menu.setVisibility(View.GONE);
                     } else {
                         holder.add_menu.setImageResource(R.drawable.ic_added);
+                        holder.delete_menu.setVisibility(View.VISIBLE);
                     }
                 });
             });
@@ -223,6 +241,14 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
             } else {
                 Log.d("RoomDB", "🔁 Song already exists "+playlistDao.getPlaylistIdByEmailAndTitle(email, playlist_title));
             }
+        });
+    }
+    //This function removes a song from a playlist
+    public void remove_song(String name, String artist, String playlist_title, String email) {
+        PlaylistDao playlistDao = AppDatabase.getDatabase(context).playlistDao();
+        PlaylistSongDao playlistSongDao = AppDatabase.getDatabase(context).playlistSongDao();
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            playlistSongDao.remove_song(email, playlistDao.getPlaylistIdByEmailAndTitle(email, playlist_title), name);
         });
     }
     // This function formats song title, removing unnecessary data and watermarks
@@ -370,6 +396,7 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
         ImageView albumImageView;
         ImageButton menu;
         ImageButton add_menu;
+        ImageButton delete_menu;
 
         public MusicViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -380,6 +407,7 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
                 menu = itemView.findViewById(R.id.menu_btn);
             } else if (SongQueue.getInstance().current_resource == R.layout.item_song3) {
                 add_menu = itemView.findViewById(R.id.add_btn);
+                delete_menu = itemView.findViewById(R.id.delete_btn);
             }
         }
 

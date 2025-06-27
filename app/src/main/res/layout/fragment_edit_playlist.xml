@@ -24,51 +24,62 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:padding="16dp">
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:background="#090909">
 
-                <!-- Image + Label -->
+
+                <!-- Row: Image + Label + Input -->
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="center_horizontal"
-                    android:layout_marginEnd="24dp">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
-                    <ImageView
-                        android:id="@+id/imageView2"
-                        android:layout_width="120dp"
-                        android:layout_height="120dp"
-                        android:scaleType="centerInside"
-                        android:padding="12dp"
-                        android:src="@drawable/ic_album_photo" />
-
-                    <TextView
-                        android:id="@+id/textView"
+                    <!-- Image + Label -->
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="Add photo"
-                        android:textColor="@color/white"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
+                        android:orientation="vertical"
+                        android:gravity="center_horizontal"
+                        android:layout_marginEnd="24dp">
 
-                <!-- Input -->
-                <EditText
-                    android:id="@+id/playlist_name"
-                    style="@style/AuthFieldStyle"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:hint="My Playlist #1"
-                    android:textColor="@color/white"
-                    android:textStyle="bold"
+                        <ImageView
+                            android:id="@+id/imageView2"
+                            android:layout_width="120dp"
+                            android:layout_height="120dp"
+                            android:scaleType="centerInside"
+                            android:padding="12dp"
+                            android:src="@drawable/ic_album_photo" />
+
+                    </LinearLayout>
+
+                    <!-- Input Field -->
+                    <EditText
+                        android:id="@+id/playlist_name"
+                        style="@style/AuthFieldStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:hint="My Playlist #1"
+                        android:textColor="@color/white"
+                        android:textStyle="bold"
+                        android:textSize="18sp"
+                        android:backgroundTint="@color/purple"
+                        android:padding="12dp"
+                        android:background="@drawable/rounded_background" />
+                </LinearLayout>
+                <!-- Delete Button below the playlist input -->
+                <Button
+                    android:id="@+id/delete_btn"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:text="Delete Playlist"
                     android:textSize="18sp"
-                    android:backgroundTint="@color/purple"
-                    android:padding="12dp"
-                    android:background="@drawable/rounded_background" />
+                    android:backgroundTint="@android:color/system_error_light"
+                    android:textColor="@android:color/white"
+                    android:textStyle="bold"
+                    android:textAllCaps="false" />
             </LinearLayout>
 
             <!-- Added Tracks Label -->
@@ -103,7 +114,7 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recycler_view_songs"
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
+                android:layout_height="150dp"
                 android:layout_marginTop="10dp"
                 android:layout_marginBottom="24dp"
                 android:clipToPadding="false" />
