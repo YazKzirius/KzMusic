@@ -87,6 +87,9 @@ public class LibraryFragment extends Fragment {
     private SessionManager sessionManager;
     private LinearLayout local;
     private static final int REQUEST_CODE = 1;
+    private RecyclerView recyclerView2;
+    private PlaylistAdapter playlistAdapter2;
+    private List<Playlist> playlists = new ArrayList<>();
 
     public LibraryFragment() {
         // Required empty public constructor
@@ -133,9 +136,13 @@ public class LibraryFragment extends Fragment {
         //First recycler view
         SongQueue.getInstance().setCurrent_resource(R.layout.item_song2);
         recyclerView1 = view.findViewById(R.id.recycler_view_history);
-        recyclerView1.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
+        recyclerView1.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
         musicAdapter1 = new MusicFileAdapter(getContext(), play_history);
         recyclerView1.setAdapter(musicAdapter1);
+        recyclerView2 = view.findViewById(R.id.recycler_view_playlist);
+        recyclerView2.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
+        playlistAdapter2 = new PlaylistAdapter(getContext(), playlists);
+        recyclerView2.setAdapter(playlistAdapter2);
         sessionManager = new SessionManager(getContext());
         //Setting up bottom playback navigator
         set_up_spotify_play();
@@ -179,13 +186,29 @@ public class LibraryFragment extends Fragment {
             play_history.addAll(history);
             musicAdapter1.notifyDataSetChanged();
         }
-
+        //Adding current playlists
+        loadPlaylists();
         return view;
     }
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         ;
+    }
+    private void loadPlaylists() {
+        PlaylistDao playlistDao = AppDatabase.getDatabase(requireContext()).playlistDao();
+
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            String email = sessionManager.getEmail();
+            List<Playlist> loadedPlaylists = playlistDao.getAllPlaylists(email);
+
+            // Switch to main thread to update adapter and UI
+            requireActivity().runOnUiThread(() -> {
+                playlists.clear();
+                playlists.addAll(loadedPlaylists);
+                playlistAdapter2.notifyDataSetChanged();
+            });
+        });
     }
     //This function sets up media notification bar skip events
     public void set_up_skipping() {

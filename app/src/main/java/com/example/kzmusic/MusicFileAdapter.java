@@ -6,6 +6,8 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
@@ -77,7 +79,14 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
                 public void onClick(View v) {
                     SessionManager sessionManager = new SessionManager(context);
                     String email = sessionManager.getEmail();
+                    holder.add_menu.setImageResource(R.drawable.ic_added);
+                    Fragment edit_page = new EditPlaylist();
+                    FragmentManager fragmentManager = ((AppCompatActivity) context).getSupportFragmentManager();
+                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                    fragmentTransaction.replace(R.id.fragment_container, edit_page);
+                    fragmentTransaction.commit();
                     add_song(musicFile.getName(), musicFile.getArtist(), SongQueue.getInstance().current_playlist, email);
+
                 }
             });
         }
@@ -103,6 +112,29 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
         holder.nameTextView.setText(new_position+1+". "+display_title);
         holder.artistTextView.setText(musicFile.getArtist().replaceAll("/",", "));
         Uri albumArtUri = getAlbumArtUri(musicFile.getAlbumId());
+        if (SongQueue.getInstance().current_resource == R.layout.item_song3) {
+            //Checking If already added
+            SessionManager sessionManager = new SessionManager(context);
+            String email = sessionManager.getEmail();
+            PlaylistDao playlistDao = AppDatabase.getDatabase(context).playlistDao();
+            PlaylistSongDao playlistSongDao = AppDatabase.getDatabase(context).playlistSongDao();
+            String playlist_title = SongQueue.getInstance().current_playlist;
+            AppDatabase.databaseWriteExecutor.execute(() -> {
+                int playlistId = playlistDao.getPlaylistIdByEmailAndTitle(email, playlist_title);
+                String existing = playlistSongDao.get_playlist_song(email, playlistId, musicFile.getName());
+
+                boolean isNew = existing == null;
+
+                // Now post UI change back to the main thread
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    if (isNew) {
+                        holder.add_menu.setImageResource(R.drawable.ic_add_song);
+                    } else {
+                        holder.add_menu.setImageResource(R.drawable.ic_added);
+                    }
+                });
+            });
+        }
         if (SongQueue.getInstance().current_song != null) {
             if (format_title(musicFile.getName()).equals(format_title(SongQueue.getInstance().current_song.getName()))) {
                 holder.nameTextView.setTextColor(context.getResources().getColor(R.color.purple));
