@@ -134,7 +134,7 @@ public class Top10Songs extends Fragment {
        username = sessionManager.getUsername();
        email = sessionManager.getEmail();
        //Getting data in view
-       get_top_10_songs();
+       get_top_100_songs();
        //Setting up bottom playback navigator
         set_up_spotify_play();
         set_up_play_bar();
@@ -144,7 +144,7 @@ public class Top10Songs extends Fragment {
        return view;
     }
     //This function gets the user's top 5 songs
-    public void get_top_10_songs() {
+    public void get_top_100_songs() {
         //Setting item view type
         SongQueue.getInstance().setCurrent_resource(R.layout.item_song2);
         recyclerView = view.findViewById(R.id.top_songs_view);
@@ -175,7 +175,7 @@ public class Top10Songs extends Fragment {
                     if (matched != null) {
                         topLocalSongs.add(matched);
                         count++;
-                        if (count == 10) break;
+                        if (count == 100) break;
                     }
                 }
 
@@ -337,7 +337,7 @@ public class Top10Songs extends Fragment {
                 Boolean shouldSkip = event.getContentIfNotHandled();
                 if (shouldSkip != null && shouldSkip) {
                     // Handle the skip event in the fragment
-                    get_top_10_songs();
+                    get_top_100_songs();
                     set_up_play_bar();
                 }
             }

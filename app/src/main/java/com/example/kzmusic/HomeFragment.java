@@ -128,7 +128,7 @@ public class HomeFragment extends Fragment {
 
         text1.setText(username+" radio");
         text3.setText(username+" mix");
-        text4.setText(username+" Top 10");
+        text4.setText(username+" Top 100");
         text5.setText(username+" Saved Songs");
         //Setting up Homepage and getting given accesstoken
         set_up_buttons();

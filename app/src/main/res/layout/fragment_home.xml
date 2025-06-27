@@ -123,7 +123,7 @@
                     android:id="@+id/top_songs"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Your Top 10"
+                    android:text="Your Top 100"
                     android:textColor="@color/white"
                     android:textSize="20sp"
                     android:textStyle="bold"
