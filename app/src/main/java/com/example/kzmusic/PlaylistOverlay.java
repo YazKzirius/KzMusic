@@ -1,22 +1,32 @@
 package com.example.kzmusic;
 
+import android.Manifest;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.IBinder;
+import android.provider.MediaStore;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -26,6 +36,9 @@ import com.bumptech.glide.Glide;
 import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -58,7 +71,11 @@ public class PlaylistOverlay extends Fragment {
     ServiceConnection serviceConnection;
     private long last_position;
     private SessionManager sessionManager;
-
+    private static final int REQUEST_CODE = 1;
+    private RecyclerView recyclerView1;
+    private MusicFileAdapter musicAdapter1;
+    private List<MusicFile> playlist = new ArrayList<>();
+    private List<MusicFile> musicFiles_original = new ArrayList<>();
     public PlaylistOverlay() {
         // Required empty public constructor
     }
@@ -105,10 +122,171 @@ public class PlaylistOverlay extends Fragment {
         sessionManager = new SessionManager(getContext());
         username = sessionManager.getUsername();
         email = sessionManager.getEmail();
+        SongQueue.getInstance().setCurrent_resource(R.layout.item_song2);
+        recyclerView1 = view.findViewById(R.id.recycler_view_playlist_songs);
+        recyclerView1.setLayoutManager(new LinearLayoutManager(getContext()));
+        musicAdapter1 = new MusicFileAdapter(getContext(), playlist);
+        recyclerView1.setAdapter(musicAdapter1);
+        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_MEDIA_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.READ_MEDIA_AUDIO}, REQUEST_CODE);
+        } else {
+            //Loading music files into recycler view
+            loadMusicFiles();
+            SongQueue.getInstance().setSong_list(musicFiles_original);
+        }
+        if (SongQueue.getInstance().current_playlist != null) {
+            TextView playlist_name = view.findViewById(R.id.playlist_name);
+            playlist_name.setText(SongQueue.getInstance().current_playlist);
+            get_playlist_songs(SongQueue.getInstance().current_playlist);
+            SongQueue.getInstance().setSong_list(playlist);
+            set_up_buttons();
+        }
         if (SongQueue.getInstance().get_size() > 0 && SongQueue.getInstance().current_song != null) {
             set_up_skipping();
         }
         return view;
+    }
+    //This function sets up functionality for the remaining buttons
+    public void set_up_buttons() {
+        ImageButton edit_btn = view.findViewById(R.id.edit_btn);
+        edit_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Fragment edit_page = new EditPlaylist();
+                FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
+                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                fragmentTransaction.replace(R.id.fragment_container, edit_page);
+                fragmentTransaction.commit();
+            }
+        });
+        Button play_all_btn = view.findViewById(R.id.play_all_btn);
+        play_all_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (SongQueue.getInstance().shuffle_on == false) {
+                    MusicFile track = playlist.get(0);
+                    if (track != null) {
+                        open_overlay(track, 0);
+                    }
+                } else {
+                    Random rand = new Random();
+                    int index = rand.nextInt(playlist.size());
+                    MusicFile track = playlist.get(index);
+                    if (track != null) {
+                        open_overlay(track, index);
+                    }
+
+                }
+            }
+        });
+        Button shuffle_btn = view.findViewById(R.id.shuffle_btn);
+        shuffle_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int index = 0;
+                if (SongQueue.getInstance().shuffle_on == false) {
+                    SongQueue.getInstance().setShuffle_on(true);
+                    Random rand = new Random();
+                    index = rand.nextInt(playlist.size());
+                } else {
+                    SongQueue.getInstance().setShuffle_on(false);
+                }
+                MusicFile track = playlist.get(index);
+                if (track != null) {
+                    open_overlay(track, index);
+                }
+            }
+        });
+    }
+    //This function opens the playback handling overlay
+    //Whilst sending necessary data over
+    public void open_overlay(MusicFile musicFile, int position) {
+        Fragment media_page = new MediaOverlay();
+        //Adding song to queue
+        SongQueue.getInstance().addSong(musicFile);
+        SongQueue.getInstance().setPosition(position);
+        //Opening fragment
+        FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.replace(R.id.fragment_container, media_page);
+        fragmentTransaction.commit();
+    }
+    //This function gets playlist songs in database
+    public void get_playlist_songs(String playlist_title) {
+        SessionManager sessionManager = new SessionManager(getContext());
+        String email = sessionManager.getEmail();
+        PlaylistDao playlistDao = AppDatabase.getDatabase(getContext()).playlistDao();
+        PlaylistSongDao playlistSongDao = AppDatabase.getDatabase(getContext()).playlistSongDao();
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            List<String> songs = playlistSongDao.get_playlist_songs(email, playlistDao.getPlaylistIdByEmailAndTitle(email, playlist_title));
+            if (songs == null || songs.isEmpty()) {
+                Log.d("RoomDB", "✅ Empty Playlist "+playlistDao.getPlaylistIdByEmailAndTitle(email, playlist_title));
+            } else {
+                for (MusicFile musicFile : musicFiles_original) {
+                    List<String> names = playlist.stream().map(track -> { return track.getName(); }).toList();
+                    if (songs.contains(musicFile.getName()) && !names.contains(musicFile.getName())) {
+                        playlist.add(musicFile);
+                    }
+                }
+                musicAdapter1.notifyDataSetChanged();
+                Log.d("RoomDB", "🔁 Displaying playlist "+playlistDao.getPlaylistIdByEmailAndTitle(email, playlist_title));
+            }
+        });
+
+    }
+    //This function loads User music audio files from personal directory
+    private void loadMusicFiles() {
+        Uri collection;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            collection = MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL);
+        } else {
+            collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+        }
+
+        String[] projection = new String[]{
+                MediaStore.Audio.Media._ID,
+                MediaStore.Audio.Media.DISPLAY_NAME,
+                MediaStore.Audio.Media.ARTIST,
+                MediaStore.Audio.Media.DATA,
+                MediaStore.Audio.Media.ALBUM_ID
+        };
+
+        String selection = MediaStore.Audio.Media.IS_MUSIC + " != 0";
+
+        try (Cursor cursor = getContext().getContentResolver().query(
+                collection,
+                projection,
+                selection,
+                null,
+                null
+        )) {
+            int idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID);
+            int nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME);
+            int artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST);
+            int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA);
+            int albumIdColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID);
+            int count = 1;
+            while (cursor.moveToNext()) {
+                //Getting music information
+                long id = cursor.getLong(idColumn);
+                String name = cursor.getString(nameColumn);
+                String artist = cursor.getString(artistColumn);
+                String data = cursor.getString(dataColumn);
+                long albumId = cursor.getLong(albumIdColumn);
+                //Defining music file
+                MusicFile musicFile = new MusicFile(id, name, artist, data, albumId);
+                //Filtering out music from short sounds and voice recordings
+                if (artist.equals("Voice Recorder")) {
+                    ;
+                } else if (artist.equals("<unknown>")) {
+                    ;
+                } else {
+                    musicFiles_original.add(musicFile);
+                }
+            }
+            SongQueue.getInstance().setSong_list(musicFiles_original);
+        }
     }
     //This function sets up media notification bar skip events
     public void set_up_skipping() {

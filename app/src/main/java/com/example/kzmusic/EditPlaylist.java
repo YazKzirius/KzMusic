@@ -174,7 +174,8 @@ public class EditPlaylist extends Fragment {
                 Log.d("RoomDB", "✅ Empty Playlist "+playlistDao.getPlaylistIdByEmailAndTitle(email, playlist_title));
             } else {
                 for (MusicFile musicFile : musicFiles_original) {
-                    if (songs.contains(musicFile.getName())) {
+                    List<String> names = playlist.stream().map(track -> { return track.getName(); }).toList();
+                    if (songs.contains(musicFile.getName()) && !names.contains(musicFile.getName())) {
                         playlist.add(musicFile);
                     }
                 }

@@ -113,7 +113,7 @@
                 android:id="@+id/next_btn"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:text="Next"
+                android:text="Finish"
                 android:textSize="18sp"
                 android:backgroundTint="@color/purple"
                 android:textColor="@android:color/white"
