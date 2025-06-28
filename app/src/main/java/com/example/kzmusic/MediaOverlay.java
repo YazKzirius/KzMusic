@@ -425,6 +425,7 @@ public class MediaOverlay extends Fragment {
                         Glide.with(getContext()).clear(song_gif);
                         song_gif.setImageDrawable(null);
                         btnPlayPause.setImageResource(R.drawable.ic_pause);
+                        set_up_circular_view(musicFile);
                     }
                 } else {
                     ;
