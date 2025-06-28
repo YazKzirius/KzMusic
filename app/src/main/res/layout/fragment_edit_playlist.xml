@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="#090909"
     tools:context=".EditPlaylist">
 
@@ -12,11 +13,11 @@
         android:fillViewport="true"
         android:paddingHorizontal="20dp"
         android:paddingTop="24dp"
-        android:paddingBottom="32dp">
+        android:layout_marginBottom="90dp">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:orientation="vertical"
             android:gravity="center_horizontal">
 
@@ -45,12 +46,13 @@
                         android:layout_marginEnd="24dp">
 
                         <ImageView
-                            android:id="@+id/imageView2"
-                            android:layout_width="120dp"
-                            android:layout_height="120dp"
-                            android:scaleType="centerInside"
-                            android:padding="12dp"
-                            android:src="@drawable/ic_album_photo" />
+                            android:id="@+id/add_photo"
+                            android:layout_width="100dp"
+                            android:layout_height="100dp"
+                            android:layout_marginEnd="12dp"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/ic_album_photo"
+                            android:contentDescription="Album Art" />
 
                     </LinearLayout>
 
@@ -82,30 +84,12 @@
                     android:textAllCaps="false" />
             </LinearLayout>
 
-            <!-- Added Tracks Label -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="Added Tracks"
-                android:textColor="@color/white"
-                android:textSize="20sp"
-                android:textStyle="bold" />
-
-            <!-- Playlist Recycler -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recycler_view_playlist"
-                android:layout_width="match_parent"
-                android:layout_height="100dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginBottom="24dp"
-                android:clipToPadding="false" />
 
             <!-- Local Library Label -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Local Library"
+                android:text="Add songs to playlist"
                 android:textColor="@color/white"
                 android:textSize="20sp"
                 android:textStyle="bold" />
@@ -114,22 +98,41 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recycler_view_songs"
                 android:layout_width="match_parent"
-                android:layout_height="150dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:layout_marginBottom="24dp"
                 android:clipToPadding="false" />
 
             <!-- Next Button -->
-            <Button
-                android:id="@+id/next_btn"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:text="Finish"
-                android:textSize="18sp"
-                android:backgroundTint="@color/purple"
-                android:textColor="@android:color/white"
-                android:textStyle="bold"
-                android:textAllCaps="false"/>
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:orientation="horizontal"
+                android:background="@drawable/rounded_background"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="16dp">
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:id="@+id/ic_next"
+                    android:layout_marginStart="8dp"
+                    app:tint="@color/purple"
+                    android:src="@drawable/ic_added"
+                    android:background="?attr/selectableItemBackgroundBorderless" />
+
+                <Button
+                    android:id="@+id/next_btn"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Finish Editing"
+                    android:backgroundTint="@color/white"
+                    android:textColor="@android:color/black"
+                    android:textSize="16sp"
+                    android:layout_marginStart="12dp" />
+            </LinearLayout>
         </LinearLayout>
     </ScrollView>
     <!-- Playback Bar -->

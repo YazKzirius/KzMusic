@@ -1,6 +1,7 @@
 package com.example.kzmusic;
 
 import android.content.Context;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -49,19 +50,20 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.Playli
         PlaylistDao playlistDao = AppDatabase.getDatabase(context).playlistDao();
         AppDatabase.databaseWriteExecutor.execute(() -> {
             List<String> songs = playlistSongDao.get_playlist_songs(email, playlistDao.getPlaylistIdByEmailAndTitle(email, playlist_name));
+            String url = playlistDao.getUrl(email, playlist_name);
             new Handler(Looper.getMainLooper()).post(() -> {
                 if (songs == null || songs.isEmpty()) {
                     ;
                 } else {
                     holder.num_tracks.setText(songs.size() + " Tracks");
                 }
+                if (url.equals("") || url == null ) {
+                    holder.playlistArt.setImageResource(R.drawable.logo);
+                } else {
+                    holder.playlistArt.setImageURI(Uri.parse(url));
+                }
             });
         });
-        if (playlist.url.equals("")) {
-            holder.playlistArt.setImageResource(R.drawable.logo);
-        } else {
-            holder.playlistArt.setImageResource(R.drawable.logo);
-        }
         holder.itemView.setOnClickListener(v -> {
             open_overlay(playlist);
         });

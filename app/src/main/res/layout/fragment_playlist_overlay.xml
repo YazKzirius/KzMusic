@@ -3,107 +3,141 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="#090909"
     tools:context=".PlaylistOverlay">
-
-    <!-- TODO: Update blank fragment layout -->
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:padding="20dp"
-        android:layout_marginBottom="80dp"
-        android:background="#090909">
-
-        <!-- Logo -->
-        <ImageView
-            android:id="@+id/imageView"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:layout_gravity="center"
-            android:layout_marginBottom="16dp"
-            android:scaleType="centerInside"
-            android:src="@drawable/logo" />
-
-        <!-- Image + Playlist Name + Edit -->
+        android:fillViewport="true"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="24dp"
+        android:layout_marginBottom="90dp">
+        <!-- TODO: Update blank fragment layout -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:padding="16dp">
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:layout_marginBottom="80dp"
+            android:background="#090909">
 
+            <!-- Logo -->
             <ImageView
-                android:id="@+id/imageView2"
+                android:id="@+id/imageView"
                 android:layout_width="120dp"
                 android:layout_height="120dp"
-                android:layout_marginEnd="16dp"
+                android:layout_gravity="center"
+                android:layout_marginBottom="16dp"
                 android:scaleType="centerInside"
-                android:padding="12dp"
-                android:src="@drawable/ic_album_photo" />
+                android:src="@drawable/logo" />
 
-            <TextView
-                android:id="@+id/playlist_name"
-                style="@style/AuthFieldStyle"
-                android:layout_width="0dp"
+            <!-- Image + Playlist Name + Edit -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="16dp">
+
+                <ImageView
+                    android:id="@+id/album_art"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:layout_marginEnd="12dp"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_album_photo"
+                    android:contentDescription="Album Art" />
+
+                <TextView
+                    android:id="@+id/playlist_name"
+                    style="@style/AuthFieldStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="My Playlist #1"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:backgroundTint="@color/purple"
+                    android:background="@drawable/rounded_background"
+                    android:padding="12dp" />
+
+            </LinearLayout>
+
+            <!-- Play/Shuffle Buttons -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_horizontal"
+                android:layout_marginTop="8dp">
+
+                <Button
+                    android:id="@+id/play_all_btn"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:text="Play"
+                    android:textAllCaps="false"
+                    android:backgroundTint="@color/purple"
+                    android:textColor="@color/white"
+                    android:layout_marginEnd="10dp" />
+
+                <Button
+                    android:id="@+id/shuffle_btn"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:text="Shuffle"
+                    android:textAllCaps="false"
+                    android:backgroundTint="@color/purple"
+                    android:textColor="@color/white" />
+            </LinearLayout>
+
+            <!-- Playlist Song Recycler -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_view_playlist_songs"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="16dp"
                 android:layout_weight="1"
-                android:hint="My Playlist #1"
-                android:textColor="@color/white"
-                android:textStyle="bold"
-                android:textSize="18sp"
-                android:backgroundTint="@color/purple"
+                android:clipToPadding="false" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:orientation="horizontal"
                 android:background="@drawable/rounded_background"
-                android:padding="12dp" />
+                android:gravity="center_vertical"
+                android:paddingHorizontal="16dp">
 
-            <ImageButton
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_marginStart="8dp"
-                android:src="@drawable/ic_edit"
-                android:id="@+id/edit_btn"
-                android:background="?attr/selectableItemBackgroundBorderless" />
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:id="@+id/edit_icon"
+                    android:layout_marginStart="8dp"
+                    app:tint="@color/purple"
+                    android:src="@drawable/ic_edit"
+                    android:background="?attr/selectableItemBackgroundBorderless" />
+
+                <Button
+                    android:id="@+id/edit_btn"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Edit Playlist"
+                    android:backgroundTint="@color/white"
+                    android:textColor="@android:color/black"
+                    android:textSize="16sp"
+                    android:layout_marginStart="12dp" />
+            </LinearLayout>
+
         </LinearLayout>
 
-        <!-- Play/Shuffle Buttons -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_horizontal"
-            android:layout_marginTop="8dp">
+    </ScrollView>
 
-            <Button
-                android:id="@+id/play_all_btn"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:text="Play"
-                android:textAllCaps="false"
-                android:backgroundTint="@color/purple"
-                android:textColor="@color/white"
-                android:layout_marginEnd="10dp" />
 
-            <Button
-                android:id="@+id/shuffle_btn"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:text="Shuffle"
-                android:textAllCaps="false"
-                android:backgroundTint="@color/purple"
-                android:textColor="@color/white" />
-        </LinearLayout>
-
-        <!-- Playlist Song Recycler -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler_view_playlist_songs"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_marginTop="16dp"
-            android:layout_weight="1"
-            android:clipToPadding="false" />
-    </LinearLayout>
     <!-- Playback Bar -->
     <RelativeLayout
         android:id="@+id/playback_bar"

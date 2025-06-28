@@ -20,7 +20,9 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.provider.MediaStore;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
@@ -30,6 +32,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
@@ -150,8 +153,19 @@ public class PlaylistOverlay extends Fragment {
     }
     //This function sets up functionality for the remaining buttons
     public void set_up_buttons() {
-        ImageButton edit_btn = view.findViewById(R.id.edit_btn);
+        Button edit_btn = view.findViewById(R.id.edit_btn);
         edit_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Fragment edit_page = new EditPlaylist();
+                FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
+                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                fragmentTransaction.replace(R.id.fragment_container, edit_page);
+                fragmentTransaction.commit();
+            }
+        });
+        ImageView edit_icon = view.findViewById(R.id.edit_icon);
+        edit_icon.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Fragment edit_page = new EditPlaylist();
@@ -200,26 +214,47 @@ public class PlaylistOverlay extends Fragment {
     }
     //This function gets playlist songs in database
     public void get_playlist_songs(String playlist_title) {
+        ImageView art = view.findViewById(R.id.album_art);
         SessionManager sessionManager = new SessionManager(getContext());
         String email = sessionManager.getEmail();
         PlaylistDao playlistDao = AppDatabase.getDatabase(getContext()).playlistDao();
         PlaylistSongDao playlistSongDao = AppDatabase.getDatabase(getContext()).playlistSongDao();
+
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            List<String> songs = playlistSongDao.get_playlist_songs(email, playlistDao.getPlaylistIdByEmailAndTitle(email, playlist_title));
+            int playlistId = playlistDao.getPlaylistIdByEmailAndTitle(email, playlist_title);
+            List<String> songs = playlistSongDao.get_playlist_songs(email, playlistId);
+
             if (songs == null || songs.isEmpty()) {
-                Log.d("RoomDB", "✅ Empty Playlist "+playlistDao.getPlaylistIdByEmailAndTitle(email, playlist_title));
+                Log.d("RoomDB", "✅ Empty Playlist " + playlistId);
             } else {
+                List<MusicFile> toAdd = new ArrayList<>();
+                List<String> currentNames = playlist.stream()
+                        .map(MusicFile::getName)
+                        .toList();
+
                 for (MusicFile musicFile : musicFiles_original) {
-                    List<String> names = playlist.stream().map(track -> { return track.getName(); }).toList();
-                    if (songs.contains(musicFile.getName()) && !names.contains(musicFile.getName())) {
-                        playlist.add(musicFile);
+                    if (songs.contains(musicFile.getName()) && !currentNames.contains(musicFile.getName())) {
+                        toAdd.add(musicFile);
                     }
                 }
-                Log.d("RoomDB", "🔁 Displaying playlist "+playlistDao.getPlaylistIdByEmailAndTitle(email, playlist_title));
+
+                String url = playlistDao.getUrl(email, playlist_title);
+
+                // Safely update the UI on the main thread
+                requireActivity().runOnUiThread(() -> {
+                    playlist.addAll(toAdd);
+
+                    if (url == null || url.isEmpty()) {
+                        art.setImageResource(R.drawable.logo);
+                    } else {
+                        art.setImageURI(Uri.parse(url));
+                    }
+
+                    musicAdapter1.notifyDataSetChanged();
+                    Log.d("RoomDB", "🔁 Displaying playlist " + playlistId);
+                });
             }
         });
-        musicAdapter1.notifyDataSetChanged();
-
     }
     //This function loads User music audio files from personal directory
     private void loadMusicFiles() {

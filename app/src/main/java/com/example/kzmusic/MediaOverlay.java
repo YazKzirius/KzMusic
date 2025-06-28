@@ -333,12 +333,18 @@ public class MediaOverlay extends Fragment {
                 //Playing new song
                 playerService.playMusic(musicFile);
                 //This updates notifcation ui every new call
+                playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
                 playerService.updateNotification(musicFile);
+
+
                 isBound = true;
                 // Pass the ViewModel to the service
                 sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
                 playerService.setViewModel(sharedViewModel);
                 // Now you can call service methods
+                set_up_circular_view(musicFile);
+                //Setting up seekbar
+                set_up_bar();
             }
 
             @Override

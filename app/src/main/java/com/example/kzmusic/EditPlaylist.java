@@ -1,6 +1,7 @@
 package com.example.kzmusic;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -11,6 +12,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -21,7 +24,9 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.provider.MediaStore;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
@@ -62,13 +67,12 @@ public class EditPlaylist extends Fragment {
     private String mParam1;
     private String mParam2;
     private List<MusicFile> musicFiles_original = new ArrayList<>();
+    private static final int IMAGE_PICK_CODE = 1001;
+
     private View view;
     private RecyclerView recyclerView2;
     private MusicFileAdapter musicAdapter2;
     private static final int REQUEST_CODE = 1;
-    private RecyclerView recyclerView1;
-    private MusicFileAdapter musicAdapter1;
-    private List<MusicFile> playlist = new ArrayList<>();
     String url = "";
     ImageView art;
     TextView title;
@@ -80,6 +84,9 @@ public class EditPlaylist extends Fragment {
     Boolean isBound;
     ServiceConnection serviceConnection;
     private long last_position;
+    private ActivityResultLauncher<Intent> imagePickerLauncher;
+    private Uri selectedImageUri;
+
 
     public EditPlaylist() {
         // Required empty public constructor
@@ -125,11 +132,9 @@ public class EditPlaylist extends Fragment {
         playback_bar = view.findViewById(R.id.playback_bar);
         set_up_spotify_play();
         set_up_play_bar();
+        update_album_photo();
+        initializeImagePicker();
         SongQueue.getInstance().setCurrent_resource(R.layout.item_song3);
-        recyclerView1 = view.findViewById(R.id.recycler_view_playlist);
-        recyclerView1.setLayoutManager(new LinearLayoutManager(getContext()));
-        musicAdapter1 = new MusicFileAdapter(getContext(), playlist);
-        recyclerView1.setAdapter(musicAdapter1);
         recyclerView2 = view.findViewById(R.id.recycler_view_songs);
         recyclerView2.setLayoutManager(new LinearLayoutManager(getContext()));
         musicAdapter2 = new MusicFileAdapter(getContext(), musicFiles_original);
@@ -146,13 +151,36 @@ public class EditPlaylist extends Fragment {
             SongQueue.getInstance().setSong_list(musicFiles_original);
         }
         musicAdapter2.notifyDataSetChanged();
-        //Getting playlist songs
-        get_playlist_songs(SongQueue.getInstance().current_playlist);
         button_functionality();
         if (SongQueue.getInstance().get_size() > 0 && SongQueue.getInstance().current_song != null) {
             set_up_skipping();
         }
         return view;
+    }
+    //This function intialises image picker
+    private void initializeImagePicker() {
+        imagePickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    Intent data = result.getData();
+                    if (result.getResultCode() == Activity.RESULT_OK && data != null && data.getData() != null) {
+                        Uri selectedImageUri = data.getData();
+                        Log.d("ImagePicker", "Selected URI: " + selectedImageUri);
+
+                        // Take persistable URI permission
+                        final int takeFlags = data.getFlags()
+                                & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                        requireActivity().getContentResolver()
+                                .takePersistableUriPermission(selectedImageUri, takeFlags);
+
+                        // Display image in ImageView
+                        ImageView imageView = view.findViewById(R.id.add_photo);
+                        imageView.setImageURI(selectedImageUri);
+                        url = selectedImageUri.toString();
+                    } else {
+                        Log.d("ImagePicker", "User cancelled or no image selected.");
+                    }
+                });
     }
     private void displayPlaylistNames() {
         AppDatabase.databaseWriteExecutor.execute(() -> {
@@ -163,28 +191,23 @@ public class EditPlaylist extends Fragment {
             Log.d("RoomDB", "✅ Playlists retrieved "+playlists.size());
         });
     }
-    //This function gets playlist songs in database
-    public void get_playlist_songs(String playlist_title) {
-        SessionManager sessionManager = new SessionManager(getContext());
-        String email = sessionManager.getEmail();
+    //This function updates album photo
+    public void update_album_photo() {
+        ImageView imageView = view.findViewById(R.id.add_photo);
         PlaylistDao playlistDao = AppDatabase.getDatabase(getContext()).playlistDao();
-        PlaylistSongDao playlistSongDao = AppDatabase.getDatabase(getContext()).playlistSongDao();
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            List<String> songs = playlistSongDao.get_playlist_songs(email, playlistDao.getPlaylistIdByEmailAndTitle(email, playlist_title));
-            if (songs == null || songs.isEmpty()) {
-                Log.d("RoomDB", "✅ Empty Playlist "+playlistDao.getPlaylistIdByEmailAndTitle(email, playlist_title));
-            } else {
-                for (MusicFile musicFile : musicFiles_original) {
-                    List<String> names = playlist.stream().map(track -> { return track.getName(); }).toList();
-                    if (songs.contains(musicFile.getName()) && !names.contains(musicFile.getName())) {
-                        playlist.add(musicFile);
-                    }
+            SessionManager sessionManager = new SessionManager(getContext());
+            String playlist_name = SongQueue.getInstance().current_playlist;
+            String email = sessionManager.getEmail();
+            url = playlistDao.getUrl(email, playlist_name);
+            new Handler(Looper.getMainLooper()).post(() -> {
+                if (url == null || url.isEmpty()) {
+                    imageView.setImageResource(R.drawable.ic_album_photo);
+                } else {
+                    imageView.setImageURI(Uri.parse(url));
                 }
-                musicAdapter1.notifyDataSetChanged();
-                Log.d("RoomDB", "🔁 Displaying playlist "+playlistDao.getPlaylistIdByEmailAndTitle(email, playlist_title));
-            }
+            });
         });
-
     }
     //This function loads User music audio files from personal directory
     private void loadMusicFiles() {
@@ -240,6 +263,17 @@ public class EditPlaylist extends Fragment {
     }
     //This function moves to playlist overlay
     public void button_functionality() {
+        //This implements image searching when the add photo is clicked
+        ImageView imageView = view.findViewById(R.id.add_photo);
+        imageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("image/*");
+                imagePickerLauncher.launch(intent);
+            }
+        });
         Button next_btn = view.findViewById(R.id.next_btn);
         EditText playlist_name = view.findViewById(R.id.playlist_name);
         next_btn.setOnClickListener(new View.OnClickListener() {
@@ -252,7 +286,7 @@ public class EditPlaylist extends Fragment {
                 PlaylistDao playlistDao = AppDatabase.getDatabase(getContext()).playlistDao();
                 AppDatabase.databaseWriteExecutor.execute(() -> {
                     int id = playlistDao.getPlaylistIdByEmailAndTitle(email, SongQueue.getInstance().current_playlist);
-                    playlistDao.update_playlist(email, id, playlist_title, playlistDao.getUrl(email, SongQueue.getInstance().current_playlist));
+                    playlistDao.update_playlist(email, id, playlist_title, url);
                     Log.d("Update", "UPDATED");
                     SongQueue.getInstance().set_current_playlist(playlist_title);
                 });
@@ -262,6 +296,29 @@ public class EditPlaylist extends Fragment {
                         .addToBackStack(null)
                         .commit();
             }
+        });
+        ImageView ic_next = view.findViewById(R.id.ic_next);
+        ic_next.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Update database functionality
+                SessionManager sessionManager = new SessionManager(getContext());
+                String email = sessionManager.getEmail();
+                String playlist_title = playlist_name.getText().toString();
+                PlaylistDao playlistDao = AppDatabase.getDatabase(getContext()).playlistDao();
+                AppDatabase.databaseWriteExecutor.execute(() -> {
+                    int id = playlistDao.getPlaylistIdByEmailAndTitle(email, SongQueue.getInstance().current_playlist);
+                    playlistDao.update_playlist(email, id, playlist_title, url);
+                    Log.d("Update", "UPDATED");
+                    SongQueue.getInstance().set_current_playlist(playlist_title);
+                });
+                Fragment fragment = new PlaylistOverlay();
+                getActivity().getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit();
+            }
+
         });
         Button delete_btn = view.findViewById(R.id.delete_btn);
         delete_btn.setOnClickListener(new View.OnClickListener() {
@@ -288,6 +345,7 @@ public class EditPlaylist extends Fragment {
             }
         });
     }
+    //This stores the image url in RoomDB
     //This function sets up media notification bar skip events
     public void set_up_skipping() {
         serviceConnection = new ServiceConnection() {

@@ -80,12 +80,8 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
                     SessionManager sessionManager = new SessionManager(context);
                     String email = sessionManager.getEmail();
                     holder.add_menu.setImageResource(R.drawable.ic_added);
+                    holder.delete_menu.setVisibility(View.VISIBLE);
                     add_song(musicFile.getName(), musicFile.getArtist(), SongQueue.getInstance().current_playlist, email);
-                    Fragment edit_page = new EditPlaylist();
-                    FragmentManager fragmentManager = ((AppCompatActivity) context).getSupportFragmentManager();
-                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                    fragmentTransaction.replace(R.id.fragment_container, edit_page);
-                    fragmentTransaction.commit();
 
                 }
             });
@@ -94,14 +90,9 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
                 public void onClick(View v) {
                     SessionManager sessionManager = new SessionManager(context);
                     String email = sessionManager.getEmail();
+                    holder.add_menu.setImageResource(R.drawable.ic_add_song);
+                    holder.delete_menu.setVisibility(View.GONE);
                     remove_song(musicFile.getName(), musicFile.getArtist(), SongQueue.getInstance().current_playlist, email);
-                    Fragment edit_page = new EditPlaylist();
-                    FragmentManager fragmentManager = ((AppCompatActivity) context).getSupportFragmentManager();
-                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                    fragmentTransaction.replace(R.id.fragment_container, edit_page);
-                    fragmentTransaction.commit();
-
-
                 }
             });
 
