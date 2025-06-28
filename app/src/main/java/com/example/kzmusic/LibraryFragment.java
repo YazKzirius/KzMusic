@@ -164,28 +164,10 @@ public class LibraryFragment extends Fragment {
             } else {
                 //Loading music files into recycler view
                 loadMusicFiles();
-                SongQueue.getInstance().setSong_list(musicFiles_original);
             }
             TextView text = view.findViewById(R.id.no_tracks_label);
             text.setText(musicFiles_original.size()+" tracks");
-            List<MusicFile> history = new ArrayList<>();
-            List<String> trackNames = musicFiles_original.stream()
-                    .map(track -> {
-                        String name = track.getName();
-                        return name;
-                    })
-                    .collect(Collectors.toList());
-            for (MusicFile musicFile : SongQueue.getInstance().history) {
-                if (trackNames.contains(musicFile.getName())) {
-                    history.add(musicFile);
-                } else {
-                    ;
-                }
-            }
-            Collections.reverse(history);
-            play_history.clear();
-            play_history.addAll(history);
-            musicAdapter1.notifyDataSetChanged();
+            update_history();
         }
         //Adding current playlists
         loadPlaylists();
@@ -196,6 +178,27 @@ public class LibraryFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         ;
     }
+    //This function updates play history
+    public void update_history() {
+        List<MusicFile> history = new ArrayList<>();
+        List<String> trackNames = musicFiles_original.stream()
+                .map(track -> {
+                    String name = track.getName();
+                    return name;
+                })
+                .collect(Collectors.toList());
+        for (MusicFile musicFile : SongQueue.getInstance().history) {
+            if (trackNames.contains(musicFile.getName())) {
+                history.add(musicFile);
+            } else {
+                ;
+            }
+        }
+        Collections.reverse(history);
+        play_history.clear();
+        play_history.addAll(history);
+        musicAdapter1.notifyDataSetChanged();
+    }
     private void loadPlaylists() {
         PlaylistDao playlistDao = AppDatabase.getDatabase(requireContext()).playlistDao();
 
@@ -203,12 +206,16 @@ public class LibraryFragment extends Fragment {
             String email = sessionManager.getEmail();
             List<Playlist> loadedPlaylists = playlistDao.getAllPlaylists(email);
 
-            // Switch to main thread to update adapter and UI
-            requireActivity().runOnUiThread(() -> {
-                playlists.clear();
-                playlists.addAll(loadedPlaylists);
-                playlistAdapter2.notifyDataSetChanged();
-            });
+            // Delay UI update until Fragment is attached and view is still valid
+            if (isAdded() && getActivity() != null && getView() != null) {
+                getActivity().runOnUiThread(() -> {
+                    if (isAdded()) { // double-check in case it detached meanwhile
+                        playlists.clear();
+                        playlists.addAll(loadedPlaylists);
+                        playlistAdapter2.notifyDataSetChanged();
+                    }
+                });
+            }
         });
     }
     //This function sets up media notification bar skip events
@@ -243,6 +250,7 @@ public class LibraryFragment extends Fragment {
                 Boolean shouldSkip = event.getContentIfNotHandled();
                 if (shouldSkip != null && shouldSkip) {
                     // Handle the skip event in the fragment
+                    update_history();
                     set_up_play_bar();
                 }
             }
@@ -362,7 +370,6 @@ public class LibraryFragment extends Fragment {
                     musicFiles_original.add(musicFile);
                 }
             }
-            SongQueue.getInstance().setSong_list(musicFiles_original);
         }
     }
 

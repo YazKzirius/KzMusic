@@ -687,95 +687,75 @@ public class PlayerService extends Service {
         }
 
     }
-    //This function simulates end of song
     public void simulateEndOfSong() {
         ExoPlayer player = OfflinePlayerManager.getInstance().current_player;
-        if (player != null) {
-            long duration = player.getDuration();
+        if (player == null) return;
 
-            // Some ExoPlayer implementations may return TIME_UNSET or 0 if duration is unknown
-            if (duration != C.TIME_UNSET && duration > 0) {
-                player.stop();
-                player.seekTo(duration); // Simulate end
-            } else {
-                // If duration is unknown, just stop the player
-                player.stop();
+        long duration = player.getDuration();
+
+        // ExoPlayer may return TIME_UNSET (-9223372036854775807L) or 0 if duration is not ready
+        if (duration > 0 && duration != C.TIME_UNSET) {
+            player.seekTo(duration); // Nudge playback to the end
+        }
+
+        player.stop(); // Stop gracefully (can trigger END event)
+
+        // Be extra safe and release resources to avoid leaks
+        player.release();
+        OfflinePlayerManager.getInstance().setCurrent_player(null);
+    }
+    public void enable_endless_stream() {
+        Player player = OfflinePlayerManager.getInstance().current_player;
+        if (player == null) return;
+
+        player.addListener(new Player.Listener() {
+            @Override
+            public void onIsPlayingChanged(boolean isPlaying) {
+                if (isPlaying) handleUpdate();
+                else handleStop();
             }
 
-            // Clear and release the player cleanly
-            player.release();
-            OfflinePlayerManager.getInstance().setCurrent_player(null);
-        }
-    }
+            @Override
+            public void onPlaybackStateChanged(int playbackState) {
+                if (playbackState != Player.STATE_ENDED) return;
 
-    //This function enables end of song skipping for endless streaming
-    public void enable_endless_stream() {
-        if (OfflinePlayerManager.getInstance().current_player == null) {
-            ;
-        } else {
-            Random rand = new Random();
-            //Adding player listener
-            OfflinePlayerManager.getInstance().current_player.addListener(new Player.Listener() {
-                @Override
-                public void onIsPlayingChanged(boolean isPlaying) {
-                    if (isPlaying) {
-                        handleUpdate();
-                    } else {
-                        handleStop();
-                    }
+                simulateEndOfSong();
+
+                SongQueue queue = SongQueue.getInstance();
+                List<MusicFile> songs = queue.song_list;
+                int currentPos = queue.current_position;
+                boolean shuffle = queue.shuffle_on;
+
+                if (songs == null || songs.isEmpty()) return;
+
+                int nextPos = currentPos;
+
+                if (!shuffle) {
+                    nextPos = currentPos + 1;
+                    if (nextPos >= songs.size()) return; // End of list
+                } else {
+                    Random rand = new Random();
+                    MusicFile nextSong;
+                    int attempts = 0;
+                    do {
+                        nextPos = rand.nextInt(songs.size());
+                        nextSong = songs.get(nextPos);
+                        attempts++;
+                    } while ((nextSong == null || nextSong.equals(queue.current_song)) && attempts < 10);
                 }
 
-                @Override
-                public void onPlaybackStateChanged(int playbackState) {
-                    if (playbackState == Player.STATE_ENDED) {
-                        simulateEndOfSong();
-                        int pos;
-                        MusicFile song;
-                        if (SongQueue.getInstance().current_position == SongQueue.getInstance().song_list.size() - 1 &&
-                                SongQueue.getInstance().shuffle_on != true) {
-                            ;
-                        } else {
-                            if (SongQueue.getInstance().shuffle_on != true) {
-                                pos = SongQueue.getInstance().current_position + 1;
-                            } else {
-                                pos = rand.nextInt(SongQueue.getInstance().song_list.size());
-                            }
-                            if (pos >= SongQueue.getInstance().song_list.size() || pos < 0) {
-                                ;
-                            } else {
-                                //Checking if next song is the same song and handling exception accordingly
-                                if (SongQueue.getInstance().song_list.get(pos) == null) {
-                                    ;
-                                } else {
-                                    song = SongQueue.getInstance().song_list.get(pos);
-                                    if (song.getName().equals(SongQueue.getInstance().current_song.getName())) {
-                                        if (SongQueue.getInstance().shuffle_on != true) {
-                                            pos += 1;
-                                            song = SongQueue.getInstance().song_list.get(pos);
-                                        } else {
-                                            while (song == SongQueue.getInstance().current_song) {
-                                                pos = rand.nextInt(SongQueue.getInstance().song_list.size());
-                                                song = SongQueue.getInstance().song_list.get(pos);
-                                            }
-                                        }
-                                    } else {
-                                        ;
-                                    }
-                                    //Skipping song
-                                    SongQueue.getInstance().addSong(song);
-                                    SongQueue.getInstance().setPosition(pos);
-                                    updateNotification(song);
-                                    playMusic(song);
-                                    handleEnd();
-                                }
-                            }
-                        }
-                    }  else {
-                        ;
-                    }
-                }
-            });
-        }
+                if (nextPos >= songs.size() || nextPos < 0 || songs.get(nextPos) == null) return;
+
+                MusicFile next = songs.get(nextPos);
+                queue.addSong(next);
+                queue.setPosition(nextPos);
+
+                playMusic(next);
+                updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
+                updateNotification(next);
+                handleEnd();
+            }
+        });
     }
 
     @Override

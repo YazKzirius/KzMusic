@@ -146,13 +146,12 @@ public class Top10Songs extends Fragment {
     }
     //This function gets the user's top 5 songs
     public void get_top_100_songs() {
-        //Setting item view type
         SongQueue.getInstance().setCurrent_resource(R.layout.item_song2);
         recyclerView = view.findViewById(R.id.top_songs_view);
         musicAdapter = new MusicFileAdapter(getContext(), top_songs);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setAdapter(musicAdapter);
-        //Checks for manifest external storage permissions
+
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_MEDIA_AUDIO)
                 != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.READ_MEDIA_AUDIO}, REQUEST_CODE);
@@ -160,56 +159,59 @@ public class Top10Songs extends Fragment {
             TextView text1 = view.findViewById(R.id.x_most_played);
             text1.setText(sessionManager.getUsername() + " Most Played Songs");
 
-            loadMusicFiles(); // This should populate your list of available local music
+            loadMusicFiles(); // ensure musicFiles is up-to-date
+
+            // 🧱 Defensive copy to prevent concurrent access
+            List<MusicFile> safeMusicFiles = new ArrayList<>(musicFiles);
 
             AppDatabase.databaseWriteExecutor.execute(() -> {
                 SongDao songDao = AppDatabase.getDatabase(getContext()).songDao();
-
-                // 🔍 Query top 10 songs for the user based on TIMES_PLAYED
                 List<Song> topDbSongs = songDao.getTopSongsByUser(sessionManager.getEmail());
 
                 List<MusicFile> topLocalSongs = new ArrayList<>();
                 int count = 0;
 
                 for (Song s : topDbSongs) {
-                    MusicFile matched = get_music_file(s.title); // Match by title from device
+                    MusicFile matched = get_music_file(safeMusicFiles, s.title);
                     if (matched != null) {
                         topLocalSongs.add(matched);
-                        count++;
-                        if (count == 100) break;
+                        if (++count == 100) break;
                     }
                 }
+                // Guard against detached fragment before UI update
+                if (isAdded() && getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        top_songs.clear();
+                        top_songs.addAll(topLocalSongs);
+                        musicAdapter.notifyDataSetChanged();
+                    });
+                }
 
-                requireActivity().runOnUiThread(() -> {
-                    top_songs.clear();
-                    top_songs.addAll(topLocalSongs);
-                    musicAdapter.notifyDataSetChanged();
-                    SongQueue.getInstance().setSong_list(top_songs);
-                });
             });
         }
     }
 
     //This function gets music files by specific name
-    public MusicFile get_music_file(String name) {
-        List<String> track_names = musicFiles.stream().map(track -> {
-            String display_title = track.getName();
-            String artist = track.getArtist().replaceAll("/", ", ");
-            display_title = display_title.replaceAll("by "+artist, "").replaceAll(
-                    "- "+artist, "");
-            if (isOnlyDigits(display_title)) {
-                display_title = display_title +" by "+ artist;
-            } else {
-                display_title = format_title(display_title) +" by "+ artist;
-            };
-            return display_title;
-        }).collect(Collectors.toList());
-        int index = track_names.indexOf(name);
-        if (index == -1 || index >= musicFiles.size()) {
-            return null;
-        } else {
-            return musicFiles.get(index);
+    public MusicFile get_music_file(List<MusicFile> sourceFiles, String name) {
+        List<String> names = sourceFiles.stream()
+                .map(track -> {
+                    String artist = track.getArtist() != null ? track.getArtist().replaceAll("/", ", ") : "";
+                    String displayTitle = track.getName();
+                    displayTitle = displayTitle.replace("by " + artist, "").replace("- " + artist, "").trim();
+
+                    if (isOnlyDigits(displayTitle)) {
+                        displayTitle = displayTitle + " by " + artist;
+                    } else {
+                        displayTitle = format_title(displayTitle) + " by " + artist;
+                    }
+                    return displayTitle;
+                })
+                .collect(Collectors.toList());
+        if (names.contains(name)) {
+            int index = names.indexOf(name);
+            return sourceFiles.get(index);
         }
+        return null;
     }
     //This function loads User music audio files from personal directory
     private void loadMusicFiles() {
@@ -261,7 +263,6 @@ public class Top10Songs extends Fragment {
                     musicFiles.add(musicFile);
                 }
             }
-            SongQueue.getInstance().setSong_list(musicFiles);
         }
     }
     //This function assigns data from playback overlay to bottom navigation

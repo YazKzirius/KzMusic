@@ -188,12 +188,11 @@ public class MediaOverlay extends Fragment {
             shuffle_on = SongQueue.getInstance().shuffle_on;
             //Setting up notification
             startPlayerService();
+            musicFiles = SongQueue.getInstance().song_list;
             //Setting up skipping;
             set_up_skipping();
             //Playing music
             set_up_view(musicFile);
-            //Loading previous music files
-            loadMusicFiles();
             //Setting up media buttons
             set_up_media_buttons();
             //Setting up speed+pitch seekbar functionality
@@ -335,6 +334,7 @@ public class MediaOverlay extends Fragment {
                 //This updates notifcation ui every new call
                 playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
                 playerService.updateNotification(musicFile);
+                playerService.handlePlay();
 
 
                 isBound = true;
@@ -380,6 +380,9 @@ public class MediaOverlay extends Fragment {
                             display_title = format_title(display_title) + " by " + artist;
                         }
                         overlaySongTitle.setText(display_title);
+                        playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
+                        playerService.updateNotification(musicFile);
+                        playerService.handlePlay();
                         //Displaying circular view
                         set_up_circular_view(musicFile);
                         //Setting up seekbar
@@ -854,67 +857,6 @@ public class MediaOverlay extends Fragment {
         seekBarReverb.setMin(0);
         seekBarReverb.setProgress(reverb_level);
         setReverbPreset(reverb_level);
-    }
-
-
-    //This function loads User music audio files from personal directory
-    //This function loads User music audio files from personal directory
-    private void loadMusicFiles() {
-        Uri collection;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            collection = MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL);
-        } else {
-            collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-        }
-
-        String[] projection = new String[]{
-                MediaStore.Audio.Media._ID,
-                MediaStore.Audio.Media.DISPLAY_NAME,
-                MediaStore.Audio.Media.ARTIST,
-                MediaStore.Audio.Media.DATA,
-                MediaStore.Audio.Media.ALBUM_ID
-        };
-
-        String selection = MediaStore.Audio.Media.IS_MUSIC + " != 0";
-
-        try (Cursor cursor = getContext().getContentResolver().query(
-                collection,
-                projection,
-                selection,
-                null,
-                null
-        )) {
-            int idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID);
-            int nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME);
-            int artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST);
-            int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA);
-            int albumIdColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID);
-
-            while (cursor.moveToNext()) {
-                //Getting music information
-                long id = cursor.getLong(idColumn);
-                String name = cursor.getString(nameColumn);
-                String artist = cursor.getString(artistColumn);
-                String data = cursor.getString(dataColumn);
-                long albumId = cursor.getLong(albumIdColumn);
-                //Defining music file
-                MusicFile musicFile = new MusicFile(id, name, artist, data, albumId);
-                //Filtering out music from short sounds and voice recordings
-                if (artist.equals("Voice Recorder")) {
-                    ;
-                } else if (artist.equals("<unknown>")) {
-                    ;
-                } else {
-                    musicFiles.add(musicFile);
-                }
-            }
-        }
-        if (SongQueue.getInstance().current_resource == R.layout.item_song2) {
-            musicFiles = SongQueue.getInstance().song_list;
-        } else {
-            ;
-        }
-
     }
     //This function sets up speed manager seek bar
     public void set_up_speed_and_pitch() {

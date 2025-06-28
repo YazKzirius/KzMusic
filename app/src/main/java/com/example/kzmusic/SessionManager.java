@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 
+import androidx.fragment.app.Fragment;
+
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
@@ -26,6 +28,8 @@ public class SessionManager {
     private static final String KEY_IS_LOGGEDIN = "isLoggedIn";
     private static final String KEY_USERNAME = "username";
     private static final String KEY_EMAIL = "email";
+    Class<?> current_activity;
+    Fragment current_fragment;
 
     public SessionManager(Context context) {
         if (context == null) {
@@ -37,6 +41,19 @@ public class SessionManager {
         editor = sharedPreferences.edit();
         editor2 = sharedPreferences2.edit();
 
+    }
+
+    public void setCurrent_activity(Class<?> current_activity) {
+        this.current_activity = current_activity;
+    }
+    public void setCurrent_fragment(Fragment current_fragment) {
+        this.current_fragment = current_fragment;
+    }
+    public Class<?> getCurrent_activity() {
+        return current_activity;
+    }
+    public Fragment getCurrent_fragment() {
+        return current_fragment;
     }
 
     public void createLoginSession(String username, String email) {

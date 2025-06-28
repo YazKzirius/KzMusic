@@ -27,7 +27,7 @@ public class MainPage extends AppCompatActivity {
         sessionManager = new SessionManager(getApplicationContext());
         username = sessionManager.getUsername();
         email = sessionManager.getEmail();
-
+        sessionManager.setCurrent_activity(MainPage.class);
         if (savedInstanceState == null) { // <--- ADD THIS CHECK
             Toast.makeText(this, "Welcome " + username + "!", Toast.LENGTH_LONG).show();
             getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new HomeFragment()).commit();

@@ -148,7 +148,7 @@ public class EditPlaylist extends Fragment {
         } else {
             //Loading music files into recycler view
             loadMusicFiles();
-            SongQueue.getInstance().setSong_list(musicFiles_original);
+
         }
         musicAdapter2.notifyDataSetChanged();
         button_functionality();
@@ -170,6 +170,7 @@ public class EditPlaylist extends Fragment {
                         // Take persistable URI permission
                         final int takeFlags = data.getFlags()
                                 & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+
                         requireActivity().getContentResolver()
                                 .takePersistableUriPermission(selectedImageUri, takeFlags);
 
@@ -378,6 +379,7 @@ public class EditPlaylist extends Fragment {
                 Boolean shouldSkip = event.getContentIfNotHandled();
                 if (shouldSkip != null && shouldSkip) {
                     // Handle the skip event in the fragment
+                    loadMusicFiles();
                     set_up_play_bar();
                 }
             }

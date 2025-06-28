@@ -146,7 +146,6 @@ public class UserMusic extends Fragment {
         } else {
             //Loading music files into recycler view
             loadMusicFiles();
-            SongQueue.getInstance().setSong_list(musicFiles_original);
         }
         musicAdapter1.notifyDataSetChanged();
         //Setting up bottom playback navigator
@@ -245,7 +244,6 @@ public class UserMusic extends Fragment {
                     musicFiles_original.add(musicFile);
                 }
             }
-            SongQueue.getInstance().setSong_list(musicFiles_original);
         }
     }
     //This function assigns data from playback overlay to bottom navigation

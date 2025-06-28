@@ -366,6 +366,7 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
     //This function opens the playback handling overlay
     //Whilst sending necessary data over
     public void open_overlay(MusicFile musicFile, int position) {
+        SongQueue.getInstance().setSong_list(musicFiles);
         Fragment media_page = new MediaOverlay();
         //Adding song to queue
         SongQueue.getInstance().addSong(musicFile);

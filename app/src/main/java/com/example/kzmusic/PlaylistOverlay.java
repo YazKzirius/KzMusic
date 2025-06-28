@@ -137,13 +137,11 @@ public class PlaylistOverlay extends Fragment {
         } else {
             //Loading music files into recycler view
             loadMusicFiles();
-            SongQueue.getInstance().setSong_list(musicFiles_original);
         }
         if (SongQueue.getInstance().current_playlist != null) {
             TextView playlist_name = view.findViewById(R.id.playlist_name);
             playlist_name.setText(SongQueue.getInstance().current_playlist);
             get_playlist_songs(SongQueue.getInstance().current_playlist);
-            SongQueue.getInstance().setSong_list(playlist);
             set_up_buttons();
         }
         if (SongQueue.getInstance().get_size() > 0 && SongQueue.getInstance().current_song != null) {
@@ -220,28 +218,34 @@ public class PlaylistOverlay extends Fragment {
         PlaylistDao playlistDao = AppDatabase.getDatabase(getContext()).playlistDao();
         PlaylistSongDao playlistSongDao = AppDatabase.getDatabase(getContext()).playlistSongDao();
 
+        // Copy current playlist names on the UI thread to avoid concurrent access
+        List<String> currentNames = new ArrayList<>();
+        requireActivity().runOnUiThread(() -> {
+            for (MusicFile m : playlist) {
+                currentNames.add(m.getName());
+            }
+        });
+
         AppDatabase.databaseWriteExecutor.execute(() -> {
             int playlistId = playlistDao.getPlaylistIdByEmailAndTitle(email, playlist_title);
             List<String> songs = playlistSongDao.get_playlist_songs(email, playlistId);
 
             if (songs == null || songs.isEmpty()) {
                 Log.d("RoomDB", "✅ Empty Playlist " + playlistId);
-            } else {
-                List<MusicFile> toAdd = new ArrayList<>();
-                List<String> currentNames = playlist.stream()
-                        .map(MusicFile::getName)
-                        .toList();
+                return;
+            }
 
-                for (MusicFile musicFile : musicFiles_original) {
-                    if (songs.contains(musicFile.getName()) && !currentNames.contains(musicFile.getName())) {
-                        toAdd.add(musicFile);
-                    }
+            List<MusicFile> toAdd = new ArrayList<>();
+            for (MusicFile musicFile : new ArrayList<>(musicFiles_original)) {
+                if (songs.contains(musicFile.getName()) && !currentNames.contains(musicFile.getName())) {
+                    toAdd.add(musicFile);
                 }
+            }
 
-                String url = playlistDao.getUrl(email, playlist_title);
-
-                // Safely update the UI on the main thread
-                requireActivity().runOnUiThread(() -> {
+            String url = playlistDao.getUrl(email, playlist_title);
+            // Guard against detached fragment before UI update
+            if (isAdded() && getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
                     playlist.addAll(toAdd);
 
                     if (url == null || url.isEmpty()) {
@@ -254,6 +258,8 @@ public class PlaylistOverlay extends Fragment {
                     Log.d("RoomDB", "🔁 Displaying playlist " + playlistId);
                 });
             }
+
+
         });
     }
     //This function loads User music audio files from personal directory
@@ -340,6 +346,7 @@ public class PlaylistOverlay extends Fragment {
                 Boolean shouldSkip = event.getContentIfNotHandled();
                 if (shouldSkip != null && shouldSkip) {
                     // Handle the skip event in the fragment
+                    get_playlist_songs(SongQueue.getInstance().current_playlist);
                     set_up_play_bar();
                 }
             }
