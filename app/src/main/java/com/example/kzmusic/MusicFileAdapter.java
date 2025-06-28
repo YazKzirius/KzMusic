@@ -70,7 +70,7 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
         MusicFile musicFile = musicFiles.get(position);
         //Updating song position
         if (SongQueue.getInstance().current_resource == R.layout.item_song) {
-            new_position = SongQueue.getInstance().song_list.indexOf(musicFile);
+            new_position = musicFiles.indexOf(musicFile);
             ;
         } else if (SongQueue.getInstance().current_resource == R.layout.item_song3) {
             new_position = holder.getLayoutPosition();
@@ -116,7 +116,11 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
         } else {
             display_title = format_title(display_title) +" by "+ artist;
         }
-        holder.nameTextView.setText(new_position+1+". "+display_title);
+        if (SongQueue.getInstance().current_resource == R.layout.item_song) {
+            holder.nameTextView.setText(display_title);
+        } else {
+            holder.nameTextView.setText(new_position+1+". "+display_title);
+        }
         holder.artistTextView.setText(musicFile.getArtist().replaceAll("/",", "));
         Uri albumArtUri = getAlbumArtUri(musicFile.getAlbumId());
         if (SongQueue.getInstance().current_resource == R.layout.item_song3) {
