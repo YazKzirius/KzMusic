@@ -4,41 +4,138 @@
     android:layout_height="match_parent"
     android:background="#090909"
     tools:context=".AccountSettingsFragment">
-
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:gravity="center_horizontal"
-        android:padding="24dp"
-        android:layout_marginBottom="80dp">
+        android:fillViewport="true">
 
-        <ImageView
-            android:id="@+id/imageView"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:scaleType="centerInside"
-            android:src="@drawable/logo"
-            android:layout_marginBottom="16dp" />
-
-        <ImageButton
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:layout_marginBottom="24dp"
-            android:src="@drawable/ic_account2"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Account Icon" />
-
-        <Button
-            android:id="@+id/sign_out_btn"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Sign Out"
-            android:textAllCaps="false"
-            android:textSize="16sp"
-            android:backgroundTint="@color/purple"
-            android:textColor="@android:color/white" />
-    </LinearLayout>
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:padding="24dp"
+            android:layout_marginBottom="80dp">
+
+            <!-- App Logo -->
+            <ImageView
+                android:id="@+id/imageView"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:layout_marginBottom="16dp"
+                android:src="@drawable/logo"
+                android:contentDescription="App Logo"
+                android:scaleType="centerCrop" />
+
+            <!-- Profile Picture -->
+            <ImageButton
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:layout_marginBottom="12dp"
+                android:src="@drawable/ic_account2"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Account Icon"
+                android:scaleType="centerCrop" />
+
+            <!-- Username Display -->
+            <TextView
+                android:id="@+id/username_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Welcome, Yazeed"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:textColor="@android:color/white"
+                android:layout_marginBottom="24dp" />
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@android:color/darker_gray"
+                android:layout_marginBottom="24dp" />
+
+            <!-- Change Password -->
+            <Button
+                android:id="@+id/change_password_btn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Change Password"
+                android:textAllCaps="false"
+                android:backgroundTint="@color/purple"
+                android:textColor="@android:color/white"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Connect with Spotify -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="@drawable/rounded_background"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="16dp"
+                android:layout_marginBottom="16dp">
+
+                <ImageView
+                    android:id="@+id/spotify_icon"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/ic_spotify"
+                    android:contentDescription="Spotify Icon" />
+
+                <Button
+                    android:id="@+id/connect_spotify_btn"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Connect with Spotify"
+                    android:backgroundTint="@color/white"
+                    android:textColor="@android:color/black"
+                    android:textSize="16sp"
+                    android:layout_marginStart="12dp" />
+            </LinearLayout>
+
+            <!-- Analytics Navigation -->
+            <LinearLayout
+                android:id="@+id/analytics_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/card_background"
+                android:elevation="4dp"
+                android:padding="16dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="16dp">
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/ic_bar_chart"
+                    android:contentDescription="Analytics Icon" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:text="View Listening Analytics"
+                    android:textSize="16sp"
+                    android:textColor="@android:color/black"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Sign Out -->
+            <Button
+                android:id="@+id/sign_out_btn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Sign Out"
+                android:textAllCaps="false"
+                android:textSize="16sp"
+                android:backgroundTint="@color/purple"
+                android:textColor="@android:color/white" />
+        </LinearLayout>
+    </ScrollView>
 
     <!-- Playback Bar -->
     <RelativeLayout
@@ -99,7 +196,6 @@
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:src="@drawable/ic_up"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:tint="@color/white" />
+            android:background="?attr/selectableItemBackgroundBorderless" />
     </RelativeLayout>
 </FrameLayout>

@@ -200,7 +200,7 @@ public class MediaOverlay extends Fragment {
             //Setting up reverberation seekbar functionality
             set_up_reverb();
             //Setting up menu
-            set_up_pop_menu();
+            set_up_top_menu();
             add_animation();
             add_background_animation();
         }
@@ -273,7 +273,18 @@ public class MediaOverlay extends Fragment {
     }
 
     //This button sets up pop up menu display
-    public void set_up_pop_menu() {
+    public void set_up_top_menu() {
+        ImageButton down = view.findViewById(R.id.down_btn);
+        down.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FragmentManager fm = requireActivity().getSupportFragmentManager();
+                if (fm.getBackStackEntryCount() > 0) {
+                    fm.popBackStack();
+                }
+
+            }
+        });
         ImageButton menu = view.findViewById(R.id.menu_btn2);
         menu.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -329,22 +340,22 @@ public class MediaOverlay extends Fragment {
             public void onServiceConnected(ComponentName name, IBinder service) {
                 PlayerService.LocalBinder binder = (PlayerService.LocalBinder) service;
                 playerService = binder.getService();
-                //Playing new song
-                playerService.playMusic(musicFile);
-                //This updates notifcation ui every new call
-                playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
-                playerService.updateNotification(musicFile);
-                playerService.handlePlay();
-
-
-                isBound = true;
-                // Pass the ViewModel to the service
-                sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
-                playerService.setViewModel(sharedViewModel);
-                // Now you can call service methods
-                set_up_circular_view(musicFile);
-                //Setting up seekbar
-                set_up_bar();
+                if (playerService != null) {
+                    //Playing new song
+                    playerService.playMusic(musicFile);
+                    //This updates notifcation ui every new call
+                    playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
+                    playerService.updateNotification(musicFile);
+                    playerService.handlePlay();
+                    isBound = true;
+                    // Pass the ViewModel to the service
+                    sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+                    playerService.setViewModel(sharedViewModel);
+                    // Now you can call service methods
+                    set_up_circular_view(musicFile);
+                    //Setting up seekbar
+                    set_up_bar();
+                }
             }
 
             @Override
@@ -380,9 +391,11 @@ public class MediaOverlay extends Fragment {
                             display_title = format_title(display_title) + " by " + artist;
                         }
                         overlaySongTitle.setText(display_title);
-                        playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
-                        playerService.updateNotification(musicFile);
-                        playerService.handlePlay();
+                        if (playerService != null) {
+                            playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
+                            playerService.updateNotification(musicFile);
+                            playerService.handlePlay();
+                        }
                         //Displaying circular view
                         set_up_circular_view(musicFile);
                         //Setting up seekbar

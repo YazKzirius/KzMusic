@@ -146,6 +146,10 @@ public class SearchFragment extends Fragment {
                 //Pausing current player, so no playback overlap
                 if (OfflinePlayerManager.getInstance().get_size() > 0 && SongQueue.getInstance().current_song != null) {
                     OfflinePlayerManager.getInstance().current_player.pause();
+                    if (playerService != null) {
+                        playerService.updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
+                        playerService.updateNotification(SongQueue.getInstance().current_song);
+                    }
                     OnlinePlayerManager.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                 } else {
@@ -275,6 +279,7 @@ public class SearchFragment extends Fragment {
         FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.fragment_container, spotify_overlay);
+        fragmentTransaction.addToBackStack(null);
         fragmentTransaction.commit();
     }
     //This function makes an API call using previous access token to search for random music
@@ -322,7 +327,16 @@ public class SearchFragment extends Fragment {
             TextView text1 = view.findViewById(R.id.results);
             text1.setText("No internet connection, please try again.");
         } else {
-            String[] randomQueries = {"happy", "sad", "party", "chill", "love", "workout"};
+            String[] randomQueries = {
+                    "vibe: chill synthwave",
+                    "inspired by: tame impala",
+                    "soundtrack for: late-night coding",
+                    "nostalgia: 90s hip-hop",
+                    "playlist: feel-good throwbacks",
+                    "theme: fantasy RPG battle",
+                    "mood: euphoric dance",
+                    "genre: alt-R&B with soul"
+            };
             String randomQuery = randomQueries[(int) (Math.random() * randomQueries.length)];
             SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
             Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
@@ -545,6 +559,7 @@ public class SearchFragment extends Fragment {
             FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
             fragmentTransaction.replace(R.id.fragment_container, media_page);
+            fragmentTransaction.addToBackStack(null);
             fragmentTransaction.commit();
         }
     }

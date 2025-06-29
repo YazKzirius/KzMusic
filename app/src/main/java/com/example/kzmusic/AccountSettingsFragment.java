@@ -125,6 +125,22 @@ public class AccountSettingsFragment extends Fragment {
         set_up_spotify_play();
         set_up_play_bar();
         Button sign_out = view.findViewById(R.id.sign_out_btn);
+        // Welcome text with personalization
+        TextView usernameText = view.findViewById(R.id.username_text);
+        String username = sessionManager.getUsername();
+        if (username != null && !username.isEmpty()) {
+            usernameText.setText("Welcome, " + username);
+        }
+        //Spoitfy connect functionality
+        Button connect_spotify = view.findViewById(R.id.connect_spotify_btn);
+        connect_spotify.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+               Intent intent = new Intent(getActivity(), GetStarted.class);
+               startActivity(intent);
+            }
+            });
+        //Sign out functionality
         sign_out.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -384,6 +400,7 @@ public class AccountSettingsFragment extends Fragment {
             FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
             fragmentTransaction.replace(R.id.fragment_container, media_page);
+            fragmentTransaction.addToBackStack(null);
             fragmentTransaction.commit();
         }
     }

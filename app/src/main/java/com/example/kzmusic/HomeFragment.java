@@ -126,8 +126,8 @@ public class HomeFragment extends Fragment {
         TextView text4 = view.findViewById(R.id.top_songs);
         TextView text5 = view.findViewById(R.id.liked_songs_label);
 
-        text1.setText(username+" radio");
-        text3.setText(username+" mix");
+        text1.setText("Discover New Tunes");
+        text3.setText(username+"'s Mix");
         text4.setText(username+" Top 100");
         text5.setText(username+" Saved Songs");
         //Setting up Homepage and getting given accesstoken
@@ -223,6 +223,7 @@ public class HomeFragment extends Fragment {
                 FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                 fragmentTransaction.replace(R.id.fragment_container, liked);
+                fragmentTransaction.addToBackStack(null);
                 fragmentTransaction.commit();
             }
         });
@@ -425,6 +426,7 @@ public class HomeFragment extends Fragment {
             FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
             fragmentTransaction.replace(R.id.fragment_container, media_page);
+            fragmentTransaction.addToBackStack(null);
             fragmentTransaction.commit();
         }
     }

@@ -151,8 +151,7 @@ public class LibraryFragment extends Fragment {
         if (SongQueue.getInstance().get_size() > 0 && SongQueue.getInstance().current_song != null) {
             set_up_skipping();
         } else {
-            TextView text = view.findViewById(R.id.no_tracks_label);
-            text.setText(musicFiles_original.size()+" tracks");
+            ;
         }
         set_up_library();
         if (SongQueue.getInstance().history == null) {
@@ -162,6 +161,7 @@ public class LibraryFragment extends Fragment {
                     != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[]{Manifest.permission.READ_MEDIA_AUDIO}, REQUEST_CODE);
             } else {
+                musicFiles_original.clear();
                 //Loading music files into recycler view
                 loadMusicFiles();
             }
@@ -505,6 +505,7 @@ public class LibraryFragment extends Fragment {
             FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
             fragmentTransaction.replace(R.id.fragment_container, media_page);
+            fragmentTransaction.addToBackStack(null);
             fragmentTransaction.commit();
         }
     }
@@ -520,6 +521,7 @@ public class LibraryFragment extends Fragment {
                 FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                 fragmentTransaction.replace(R.id.fragment_container, music_page);
+                fragmentTransaction.addToBackStack(null);
                 fragmentTransaction.commit();
             }
         });
@@ -530,6 +532,7 @@ public class LibraryFragment extends Fragment {
                 FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                 fragmentTransaction.replace(R.id.fragment_container, music_page);
+                fragmentTransaction.addToBackStack(null);
                 fragmentTransaction.commit();
             }
         });
@@ -540,6 +543,7 @@ public class LibraryFragment extends Fragment {
                 FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                 fragmentTransaction.replace(R.id.fragment_container, music_page);
+                fragmentTransaction.addToBackStack(null);
                 fragmentTransaction.commit();
             }
         });

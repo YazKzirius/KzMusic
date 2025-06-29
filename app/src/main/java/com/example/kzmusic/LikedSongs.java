@@ -145,6 +145,10 @@ public class LikedSongs extends Fragment {
                 if (OfflinePlayerManager.getInstance().get_size() > 0 && OfflinePlayerManager.getInstance().current_player != null) {
                     OfflinePlayerManager.getInstance().current_player.pause();
                     OnlinePlayerManager.getInstance().setCurrent_track(track);
+                    if (playerService != null) {
+                        playerService.updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
+                        playerService.updateNotification(SongQueue.getInstance().current_song);
+                    }
                     open_spotify_overlay();
                     ;
                 } else {
@@ -501,6 +505,7 @@ public class LikedSongs extends Fragment {
         FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.fragment_container, spotify_overlay);
+        fragmentTransaction.addToBackStack(null);
         fragmentTransaction.commit();
     }
     //This function assigns data from playback overlay to bottom navigation
@@ -720,6 +725,7 @@ public class LikedSongs extends Fragment {
             FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
             fragmentTransaction.replace(R.id.fragment_container, media_page);
+            fragmentTransaction.addToBackStack(null);
             fragmentTransaction.commit();
         }
     }

@@ -68,7 +68,6 @@ public class UserMix extends Fragment {
     private String mParam1;
     private String mParam2;
     //Page attributes
-    private  List<SearchResponse.Track> trackList = new ArrayList<>();
     private List<SearchResponse.Track> tracklist = new ArrayList<>();
     private List<MusicFile> musicFiles = new ArrayList<>();
     RecyclerView recyclerView;
@@ -138,13 +137,17 @@ public class UserMix extends Fragment {
         email = sessionManager.getEmail();
         recyclerView=view.findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        musicAdapter=new MusicAdapter(trackList,getContext(),new MusicAdapter.OnItemClickListener() {
+        musicAdapter=new MusicAdapter(tracklist,getContext(),new MusicAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(SearchResponse.Track track){
                 //Pausing current player, so no playback overlap
                 if (OfflinePlayerManager.getInstance().get_size() > 0) {
                     OfflinePlayerManager.getInstance().current_player.pause();
                     OnlinePlayerManager.getInstance().setCurrent_track(track);
+                    if (playerService != null) {
+                        playerService.updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
+                        playerService.updateNotification(SongQueue.getInstance().current_song);
+                    }
                     open_spotify_overlay();
                 } else {
                     OnlinePlayerManager.getInstance().setCurrent_track(track);
@@ -406,10 +409,10 @@ public class UserMix extends Fragment {
                 @Override
                 public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
                     if (response.isSuccessful() && response.body() != null) {
-                        musicAdapter.updateTracks(response.body().getTracks().getItems().subList(0, 4));
                         tracklist.addAll(response.body().getTracks().getItems().subList(0, 4));
                         if (tracklist.size() == 40) {
-                            sessionManager.save_Tracklist_mix(tracklist, sessionManager.getEmail());
+                            musicAdapter.notifyDataSetChanged();
+                            sessionManager.save_Tracklist_mix(tracklist, email);
                         }
                     } else if (response.code() == 401) { // Handle expired access token
                         ;
@@ -486,6 +489,7 @@ public class UserMix extends Fragment {
         FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.fragment_container, spotify_overlay);
+        fragmentTransaction.addToBackStack(null);
         fragmentTransaction.commit();
     }
     //This function handles Spotify overlay play/pause
@@ -705,6 +709,7 @@ public class UserMix extends Fragment {
             FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
             fragmentTransaction.replace(R.id.fragment_container, media_page);
+            fragmentTransaction.addToBackStack(null);
             fragmentTransaction.commit();
         }
     }

@@ -89,15 +89,12 @@ public class MainPage extends AppCompatActivity {
             else {
                 return false;
             }
-            getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, fragment).commit();
+            getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, fragment).addToBackStack(null).commit();
             return true;
         });
     }
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (OfflinePlayerManager.getInstance().current_player != null) {
-          OfflinePlayerManager.getInstance().current_player.pause();
-        }
     }
 }

@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import android.os.IBinder;
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -147,6 +148,10 @@ public class Radio extends Fragment {
                 //Pausing current player, so no playback overlap
                 if (OfflinePlayerManager.getInstance().get_size() > 0 && SongQueue.getInstance().current_song != null) {
                     OfflinePlayerManager.getInstance().current_player.pause();
+                    if (playerService != null) {
+                        playerService.updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
+                        playerService.updateNotification(SongQueue.getInstance().current_song);
+                    }
                     OnlinePlayerManager.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
                 } else {
@@ -164,7 +169,7 @@ public class Radio extends Fragment {
         } else {
             musicAdapter.updateTracks(sessionManager.getSavedTracklist(email+"TRACK_LIST_RADIO"));
         }
-        text1.setText(sessionManager.getUsername()+" radio");
+        text1.setText("Tuning into fresh sounds for " + sessionManager.getUsername());
         //Setting up bottom playback navigator
         set_up_spotify_play();
         set_up_play_bar();
@@ -338,7 +343,17 @@ public class Radio extends Fragment {
         if (accesstoken == null) {
             text1.setText("No internet connection, please try again.");
         } else {
-            String[] randomQueries = {"happy", "sad", "party", "chill", "love", "workout"};
+            String[] randomQueries = {
+                    "vibe: chill synthwave",
+                    "inspired by: tame impala",
+                    "soundtrack for: late-night coding",
+                    "nostalgia: 90s hip-hop",
+                    "playlist: feel-good throwbacks",
+                    "theme: fantasy RPG battle",
+                    "mood: euphoric dance",
+                    "genre: alt-R&B with soul"
+            };
+
             String randomQuery = randomQueries[(int) (Math.random() * randomQueries.length)];
             SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
             Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
@@ -549,6 +564,7 @@ public class Radio extends Fragment {
         FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.fragment_container, spotify_overlay);
+        fragmentTransaction.addToBackStack(null);
         fragmentTransaction.commit();
     }
     //This function opens a new song overlay
@@ -560,9 +576,15 @@ public class Radio extends Fragment {
             SongQueue.getInstance().addSong(file);
             SongQueue.getInstance().setPosition(position);
             Fragment media_page = new MediaOverlay();
+            if (playerService != null) {
+                playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
+                playerService.updateNotification(file);
+                playerService.handlePlay();
+            }
             FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
             fragmentTransaction.replace(R.id.fragment_container, media_page);
+            fragmentTransaction.addToBackStack(null);
             fragmentTransaction.commit();
         }
     }

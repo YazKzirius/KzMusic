@@ -379,6 +379,7 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
         FragmentManager fragmentManager = ((AppCompatActivity) context).getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.fragment_container, media_page);
+        fragmentTransaction.addToBackStack(null);
         fragmentTransaction.commit();
     }
     private Uri getAlbumArtUri(long albumId) {

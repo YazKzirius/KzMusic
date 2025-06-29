@@ -159,6 +159,7 @@ public class PlaylistOverlay extends Fragment {
                 FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                 fragmentTransaction.replace(R.id.fragment_container, edit_page);
+                fragmentTransaction.addToBackStack(null);
                 fragmentTransaction.commit();
             }
         });
@@ -170,6 +171,7 @@ public class PlaylistOverlay extends Fragment {
                 FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                 fragmentTransaction.replace(R.id.fragment_container, edit_page);
+                fragmentTransaction.addToBackStack(null);
                 fragmentTransaction.commit();
             }
         });
@@ -177,6 +179,7 @@ public class PlaylistOverlay extends Fragment {
         play_all_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                SongQueue.getInstance().setSong_list(playlist);
                 MusicFile track = playlist.get(0);
                 if (track != null) {
                     open_overlay(track, 0);
@@ -187,6 +190,7 @@ public class PlaylistOverlay extends Fragment {
         shuffle_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                SongQueue.getInstance().setSong_list(playlist);
                 SongQueue.getInstance().setShuffle_on(true);
                 Random rand = new Random();
                 int index = rand.nextInt(playlist.size());
@@ -208,6 +212,7 @@ public class PlaylistOverlay extends Fragment {
         FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.fragment_container, media_page);
+        fragmentTransaction.addToBackStack(null);
         fragmentTransaction.commit();
     }
     //This function gets playlist songs in database
@@ -550,6 +555,7 @@ public class PlaylistOverlay extends Fragment {
             FragmentManager fragmentManager = ((AppCompatActivity) getContext()).getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
             fragmentTransaction.replace(R.id.fragment_container, media_page);
+            fragmentTransaction.addToBackStack(null);
             fragmentTransaction.commit();
         }
     }

@@ -81,6 +81,7 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.Playli
         FragmentManager fragmentManager = ((AppCompatActivity) context).getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.fragment_container, playlistOverlay);
+        fragmentTransaction.addToBackStack(null);
         fragmentTransaction.commit();
     }
 
