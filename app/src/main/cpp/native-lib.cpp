@@ -1,3 +1,4 @@
+//Native C++ Superpowered Library
 #include <jni.h>
 #include <android/log.h>
 #include "Superpowered.h"
