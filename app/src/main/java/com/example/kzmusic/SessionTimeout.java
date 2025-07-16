@@ -14,6 +14,8 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.spotify.sdk.android.auth.AuthorizationClient;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -50,7 +52,7 @@ public class SessionTimeout extends AppCompatActivity {
                     .setCancelable(false)
                     .setPositiveButton("Continue Without Spotify", (dialog, which) -> finish())
                     .setNegativeButton("Reauthorize Spotify", (dialog, which) -> {
-                        navigate_to_activity(GetStarted.class);
+                        set_up_spotify_auth();
                     })
 
                     .show();
@@ -64,6 +66,9 @@ public class SessionTimeout extends AppCompatActivity {
     //These functions sets up the Spotify Sign-in/authorisation using spotify web API
     public void set_up_spotify_auth() {
         if (isNetworkAvailable()) {
+            // Clear any stored WebView cookies to avoid persistent session reuse
+            AuthorizationClient.clearCookies(getApplicationContext());
+
             // Spotify authorization URL
             String authUrl = AUTH_URL + "?client_id=" + CLIENT_ID +
                     "&response_type=code" +
@@ -74,7 +79,6 @@ public class SessionTimeout extends AppCompatActivity {
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(authUrl));
             startActivity(intent);
         } else {
-            // Optionally, inform the user that there is no internet connection
             Toast.makeText(this, "No internet connection. Please check your network settings.", Toast.LENGTH_LONG).show();
         }
     }
