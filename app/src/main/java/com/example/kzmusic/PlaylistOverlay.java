@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -35,14 +36,17 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -176,6 +180,11 @@ public class PlaylistOverlay extends Fragment {
             }
         });
         Button play_all_btn = view.findViewById(R.id.play_all_btn);
+        if (SongQueue.getInstance().current_playlist.equals(SongQueue.getInstance().playing_playlist)) {
+            Drawable icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_pause);
+            play_all_btn.setCompoundDrawablesWithIntrinsicBounds(icon, null, null, null);
+            SongQueue.getInstance().setPlaying_playlist(SongQueue.getInstance().current_playlist);
+        }
         play_all_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -184,19 +193,46 @@ public class PlaylistOverlay extends Fragment {
                 if (track != null) {
                     open_overlay(track, 0);
                 }
+                Drawable icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_pause);
+                play_all_btn.setCompoundDrawablesWithIntrinsicBounds(icon, null, null, null);
+                SongQueue.getInstance().setPlaying_playlist(SongQueue.getInstance().current_playlist);
             }
         });
         Button shuffle_btn = view.findViewById(R.id.shuffle_btn);
+        if (SongQueue.getInstance().shuffle_on == true) {
+            //Setting repeat mode on and replacing icon
+            SongQueue.getInstance().setShuffle_on(true);
+            Drawable icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_shuffle_on);
+            shuffle_btn.setCompoundDrawablesWithIntrinsicBounds(icon, null, null, null);
+
+        } else {
+            //Setting repeat mode off and replacing icon
+            SongQueue.getInstance().setShuffle_on(false);
+            Drawable icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_shuffle);
+            shuffle_btn.setCompoundDrawablesWithIntrinsicBounds(icon, null, null, null);
+        }
         shuffle_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 SongQueue.getInstance().setSong_list(playlist);
-                SongQueue.getInstance().setShuffle_on(true);
-                Random rand = new Random();
-                int index = rand.nextInt(playlist.size());
-                MusicFile track = playlist.get(index);
-                if (track != null) {
-                    open_overlay(track, index);
+                if (SongQueue.getInstance().shuffle_on == true) {
+                    //Setting repeat mode on and replacing icon
+                    SongQueue.getInstance().setShuffle_on(false);
+                    Drawable icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_shuffle);
+                    shuffle_btn.setCompoundDrawablesWithIntrinsicBounds(icon, null, null, null);
+
+                } else {
+                    //Setting repeat mode off and replacing icon
+                    SongQueue.getInstance().setShuffle_on(true);
+                    Random rand = new Random();
+                    int index = rand.nextInt(playlist.size());
+                    MusicFile track = playlist.get(index);
+                    if (track != null) {
+                        open_overlay(track, index);
+                    }
+                    SongQueue.getInstance().setPlaying_playlist(SongQueue.getInstance().current_playlist);
+                    Drawable icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_shuffle_on);
+                    shuffle_btn.setCompoundDrawablesWithIntrinsicBounds(icon, null, null, null);
                 }
             }
         });
@@ -223,14 +259,6 @@ public class PlaylistOverlay extends Fragment {
         PlaylistDao playlistDao = AppDatabase.getDatabase(getContext()).playlistDao();
         PlaylistSongDao playlistSongDao = AppDatabase.getDatabase(getContext()).playlistSongDao();
 
-        // Copy current playlist names on the UI thread to avoid concurrent access
-        List<String> currentNames = new ArrayList<>();
-        requireActivity().runOnUiThread(() -> {
-            for (MusicFile m : playlist) {
-                currentNames.add(m.getName());
-            }
-        });
-
         AppDatabase.databaseWriteExecutor.execute(() -> {
             int playlistId = playlistDao.getPlaylistIdByEmailAndTitle(email, playlist_title);
             List<String> songs = playlistSongDao.get_playlist_songs(email, playlistId);
@@ -240,18 +268,26 @@ public class PlaylistOverlay extends Fragment {
                 return;
             }
 
+            // Build a set of current song names for fast lookup
+            Set<String> existingNames = new HashSet<>();
+            for (MusicFile mf : playlist) {
+                existingNames.add(mf.getName());
+            }
+
             List<MusicFile> toAdd = new ArrayList<>();
-            for (MusicFile musicFile : new ArrayList<>(musicFiles_original)) {
-                if (songs.contains(musicFile.getName()) && !currentNames.contains(musicFile.getName())) {
+            for (MusicFile musicFile : musicFiles_original) {
+                String name = musicFile.getName();
+                if (songs.contains(name) && !existingNames.contains(name)) {
                     toAdd.add(musicFile);
+                    existingNames.add(name); // Update the set to prevent duplicates in toAdd itself
                 }
             }
 
             String url = playlistDao.getUrl(email, playlist_title);
-            // Guard against detached fragment before UI update
+
             if (isAdded() && getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
-                    playlist.addAll(toAdd);
+                    playlist.addAll(toAdd); // Guaranteed no duplicates by name
 
                     if (url == null || url.isEmpty()) {
                         art.setImageResource(R.drawable.logo);
@@ -263,8 +299,6 @@ public class PlaylistOverlay extends Fragment {
                     Log.d("RoomDB", "🔁 Displaying playlist " + playlistId);
                 });
             }
-
-
         });
     }
     //This function loads User music audio files from personal directory

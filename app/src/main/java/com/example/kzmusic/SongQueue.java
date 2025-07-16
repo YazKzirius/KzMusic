@@ -30,6 +30,7 @@ public class SongQueue {
     int current_resource;
     int audio_session_id;
     String current_playlist = "";
+    String playing_playlist = "";
     private SongQueue() {
         this.songs_played = new ArrayList<>();
 
@@ -101,6 +102,15 @@ public class SongQueue {
     public int get_size() {
         return songs_played.size();
     }
+
+    public String getPlaying_playlist() {
+        return playing_playlist;
+    }
+
+    public void setPlaying_playlist(String playing_playlist) {
+        this.playing_playlist = playing_playlist;
+    }
+
     public String get_current_playlist() {
         return current_playlist;
     }

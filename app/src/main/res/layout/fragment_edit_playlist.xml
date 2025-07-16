@@ -66,7 +66,7 @@
                         android:hint="My Playlist #1"
                         android:textColor="@color/white"
                         android:textStyle="bold"
-                        android:textSize="18sp"
+                        android:textSize="20sp"
                         android:backgroundTint="@color/purple"
                         android:padding="12dp"
                         android:background="@drawable/rounded_background" />
@@ -77,11 +77,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
                     android:text="Delete Playlist"
+                    android:layout_marginTop="10dp"
                     android:textSize="18sp"
                     android:backgroundTint="@android:color/system_error_light"
                     android:textColor="@android:color/white"
                     android:textStyle="bold"
-                    android:textAllCaps="false" />
+                    android:textAllCaps="false"
+                    android:drawableLeft="@drawable/ic_bin"/>
             </LinearLayout>
 
 
@@ -107,7 +109,6 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
                 android:orientation="horizontal"
                 android:background="@drawable/rounded_background"
                 android:gravity="center_vertical"

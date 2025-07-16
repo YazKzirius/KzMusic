@@ -51,7 +51,6 @@
 
                 <TextView
                     android:id="@+id/playlist_name"
-                    style="@style/AuthFieldStyle"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -59,8 +58,6 @@
                     android:textColor="@color/white"
                     android:textStyle="bold"
                     android:textSize="18sp"
-                    android:backgroundTint="@color/purple"
-                    android:background="@drawable/rounded_background"
                     android:padding="12dp" />
 
             </LinearLayout>
@@ -80,6 +77,7 @@
                     android:layout_weight="1"
                     android:text="Play"
                     android:textAllCaps="false"
+                    android:drawableLeft="@drawable/ic_play"
                     android:backgroundTint="@color/purple"
                     android:textColor="@color/white"
                     android:layout_marginEnd="10dp" />
@@ -91,8 +89,10 @@
                     android:layout_weight="1"
                     android:text="Shuffle"
                     android:textAllCaps="false"
-                    android:backgroundTint="@color/purple"
-                    android:textColor="@color/white" />
+                    android:drawableLeft="@drawable/ic_shuffle"
+                    android:drawableTint="@color/purple"
+                    android:backgroundTint="@color/white"
+                    android:textColor="@color/black"/>
             </LinearLayout>
 
             <!-- Playlist Song Recycler -->
