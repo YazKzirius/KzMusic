@@ -301,7 +301,8 @@ public class SearchFragment extends Fragment {
                         trackList.addAll(response.body().getTracks().getItems());
                         musicAdapter.notifyDataSetChanged();
                     } else if (response.code() == 401) { // Handle expired access token
-                        navigate_to_activity(GetStarted.class);
+                        TextView text1 = view.findViewById(R.id.results);
+                        text1.setText("Request failed, please re-authorise Spotify");
                     } else {
                        ;
                     }
@@ -348,7 +349,8 @@ public class SearchFragment extends Fragment {
                         trackList.addAll(response.body().getTracks().getItems());
                         musicAdapter.notifyDataSetChanged();
                     } else if (response.code() == 401) { // Handle expired access token
-                        navigate_to_activity(GetStarted.class);
+                        TextView text1 = view.findViewById(R.id.results);
+                        text1.setText("Request failed, please re-authorise Spotify");
                     } else {
                        ;
                     }

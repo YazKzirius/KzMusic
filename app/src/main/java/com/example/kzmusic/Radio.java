@@ -364,7 +364,8 @@ public class Radio extends Fragment {
                         musicAdapter.updateTracks(response.body().getTracks().getItems());
                         sessionManager.save_Tracklist_radio(response.body().getTracks().getItems(), sessionManager.getEmail());
                     } else if (response.code() == 401) { // Handle expired access token
-                        navigate_to_activity(GetStarted.class);
+                        TextView text1 = view.findViewById(R.id.made_for_user);
+                        text1.setText("Request failed, please re-authorise Spotify");
                     } else {
                         ;
                     }

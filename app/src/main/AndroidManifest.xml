@@ -79,16 +79,6 @@
             android:foregroundServiceType="mediaPlayback"
             android:launchMode="singleTask"
             android:screenOrientation="fullSensor">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data
-                    android:host="callback"
-                    android:scheme="kzmusic" />
-            </intent-filter>
         </service>
 
         <meta-data

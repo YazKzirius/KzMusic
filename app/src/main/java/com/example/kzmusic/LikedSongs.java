@@ -365,7 +365,8 @@ public class LikedSongs extends Fragment {
                         musicAdapter1.notifyDataSetChanged();
                         //Checking for more than One of the same track
                     } else if (response.code() == 401) { // Handle expired access token
-                        navigate_to_activity(GetStarted.class);
+                        TextView text1 = view.findViewById(R.id.results);
+                        text1.setText("Request failed, please re-authorise Spotify");
                     } else {
                         ;
                     }
