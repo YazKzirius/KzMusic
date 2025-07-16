@@ -79,6 +79,7 @@ public class GetStarted extends AppCompatActivity {
     //These functions sets up the Spotify Sign-in/authorisation using spotify web API
     public void set_up_spotify_auth() {
         if (isNetworkAvailable()) {
+            AuthorizationClient.clearCookies(getApplicationContext());
             // Spotify authorization URL
             String authUrl = AUTH_URL + "?client_id=" + CLIENT_ID +
                     "&response_type=code" +

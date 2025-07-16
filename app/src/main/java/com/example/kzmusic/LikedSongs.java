@@ -365,7 +365,7 @@ public class LikedSongs extends Fragment {
                         musicAdapter1.notifyDataSetChanged();
                         //Checking for more than One of the same track
                     } else if (response.code() == 401) { // Handle expired access token
-                        ;
+                        navigate_to_activity(GetStarted.class);
                     } else {
                         ;
                     }
@@ -378,6 +378,11 @@ public class LikedSongs extends Fragment {
                 }
             });
         }
+    }
+    //This function navigates to a new activity given parameters
+    public void navigate_to_activity(Class <?> target) {
+        Intent intent = new Intent(getContext(), target);
+        startActivity(intent);
     }
     //This function replaces a tracklist with a list of track names
     public List<String> get_track_names(List<SearchResponse.Track> trackList) {

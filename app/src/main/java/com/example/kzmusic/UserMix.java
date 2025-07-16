@@ -415,7 +415,7 @@ public class UserMix extends Fragment {
                             sessionManager.save_Tracklist_mix(tracklist, email);
                         }
                     } else if (response.code() == 401) { // Handle expired access token
-                        ;
+                        navigate_to_activity(GetStarted.class);
                     } else {
                         ;
                     }

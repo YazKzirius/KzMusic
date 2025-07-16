@@ -301,7 +301,7 @@ public class SearchFragment extends Fragment {
                         trackList.addAll(response.body().getTracks().getItems());
                         musicAdapter.notifyDataSetChanged();
                     } else if (response.code() == 401) { // Handle expired access token
-                        ;
+                        navigate_to_activity(GetStarted.class);
                     } else {
                        ;
                     }
@@ -348,7 +348,7 @@ public class SearchFragment extends Fragment {
                         trackList.addAll(response.body().getTracks().getItems());
                         musicAdapter.notifyDataSetChanged();
                     } else if (response.code() == 401) { // Handle expired access token
-                        ;
+                        navigate_to_activity(GetStarted.class);
                     } else {
                        ;
                     }
