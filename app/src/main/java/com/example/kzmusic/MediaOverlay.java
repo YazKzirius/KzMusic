@@ -195,6 +195,7 @@ public class MediaOverlay extends Fragment {
             set_up_view(musicFile);
             //Setting up media buttons
             set_up_media_buttons();
+            set_up_other_buttons();
             //Setting up speed+pitch seekbar functionality
             set_up_speed_and_pitch();
             //Setting up reverberation seekbar functionality
@@ -464,6 +465,31 @@ public class MediaOverlay extends Fragment {
                 set_up_bar();
             }
         });
+    }
+    //This function sets up other media buttons
+    public void set_up_other_buttons() {
+        ImageButton rewind = view.findViewById(R.id.btnRewind);
+        ImageButton forward = view.findViewById(R.id.btnForward);
+        rewind.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (player != null) {
+                    player.seekTo(player.getCurrentPosition() - 5000);
+                    set_up_bar();
+                }
+
+            }
+        });
+        forward.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (player != null) {
+                    player.seekTo(player.getCurrentPosition() + 5000);
+                    set_up_bar();
+                }
+            }
+        });
+
     }
 
     //This function sets up and implements button functionality
