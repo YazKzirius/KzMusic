@@ -98,8 +98,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="0:00"
+                    android:textStyle="bold"
                     android:textColor="@color/white"
-                    android:textSize="14sp" />
+                    android:textSize="18sp" />
 
                 <SeekBar
                     android:id="@+id/seekBar"
@@ -114,8 +115,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="0:00"
+                    android:textStyle="bold"
                     android:textColor="@color/white"
-                    android:textSize="14sp" />
+                    android:textSize="18sp" />
             </LinearLayout>
 
             <!-- Playback Controls -->
@@ -201,8 +203,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="1.0x"
+                android:textStyle="bold"
                 android:textColor="@color/white"
-                android:textSize="14sp"
+                android:textSize="18sp"
                 android:layout_marginTop="4dp" />
 
             <!-- Reverb Slider -->
@@ -219,8 +222,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Reverberation: 0%"
+                android:textStyle="bold"
                 android:textColor="@color/white"
-                android:textSize="14sp"
+                android:textSize="18sp"
                 android:layout_marginTop="4dp" />
         </LinearLayout>
     </ScrollView>
