@@ -73,8 +73,7 @@
                 android:orientation="horizontal"
                 android:background="@drawable/rounded_background"
                 android:gravity="center_vertical"
-                android:paddingHorizontal="16dp"
-                android:layout_marginBottom="16dp">
+                android:paddingHorizontal="8dp">
 
                 <ImageView
                     android:id="@+id/spotify_icon"
@@ -95,40 +94,12 @@
                     android:layout_marginStart="12dp" />
             </LinearLayout>
 
-            <!-- Analytics Navigation -->
-            <LinearLayout
-                android:id="@+id/analytics_card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/card_background"
-                android:elevation="4dp"
-                android:padding="16dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
-
-                <ImageView
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:src="@drawable/ic_bar_chart"
-                    android:contentDescription="Analytics Icon" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:text="View Listening Analytics"
-                    android:textSize="16sp"
-                    android:textColor="@android:color/black"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
             <!-- Sign Out -->
             <Button
                 android:id="@+id/sign_out_btn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="12dp"
                 android:text="Sign Out"
                 android:textAllCaps="false"
                 android:textSize="16sp"

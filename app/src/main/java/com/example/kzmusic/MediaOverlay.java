@@ -473,6 +473,9 @@ public class MediaOverlay extends Fragment {
         rewind.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                v.animate().scaleX(0.85f).scaleY(0.85f).setDuration(100).withEndAction(() ->
+                        v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+                ).start();
                 if (player != null) {
                     player.seekTo(player.getCurrentPosition() - 5000);
                     set_up_bar();
@@ -483,6 +486,9 @@ public class MediaOverlay extends Fragment {
         forward.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                v.animate().scaleX(0.85f).scaleY(0.85f).setDuration(100).withEndAction(() ->
+                        v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+                ).start();
                 if (player != null) {
                     player.seekTo(player.getCurrentPosition() + 5000);
                     set_up_bar();
