@@ -119,10 +119,44 @@
             </LinearLayout>
 
             <!-- Playback Controls -->
+            <!-- Playback Controls -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:weightSum="5">
+
+                <ImageButton
+                    android:id="@+id/btnEqualizer"
+                    style="@style/OverlayControlButton"
+                    android:src="@drawable/ic_equalizer" />
+
+                <ImageButton
+                    android:id="@+id/btnRewind"
+                    style="@style/OverlayControlButton"
+                    android:src="@drawable/ic_rewind" />
+
+                <ImageButton
+                    android:id="@+id/btnXR"
+                    style="@style/OverlayControlButton"
+                    android:src="@drawable/ic_virtual" />
+
+                <ImageButton
+                    android:id="@+id/btnForward"
+                    style="@style/OverlayControlButton"
+                    android:src="@drawable/ic_foward" />
+
+                <ImageButton
+                    android:id="@+id/btn360"
+                    style="@style/OverlayControlButton"
+                    android:src="@drawable/ic_360audio" />
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
                 android:gravity="center"
                 android:orientation="horizontal"
                 android:weightSum="5">
