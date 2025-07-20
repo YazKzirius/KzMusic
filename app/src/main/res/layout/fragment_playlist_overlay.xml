@@ -22,16 +22,6 @@
             android:layout_marginBottom="80dp"
             android:background="#090909">
 
-            <!-- Logo -->
-            <ImageView
-                android:id="@+id/imageView"
-                android:layout_width="120dp"
-                android:layout_height="120dp"
-                android:layout_gravity="center"
-                android:layout_marginBottom="16dp"
-                android:scaleType="centerInside"
-                android:src="@drawable/logo" />
-
             <!-- Image + Playlist Name + Edit -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -61,6 +51,36 @@
                     android:padding="12dp" />
 
             </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal"
+                android:background="@drawable/rounded_background"
+                android:backgroundTint="#222"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="16dp">
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:id="@+id/edit_icon"
+                    android:layout_marginStart="8dp"
+                    app:tint="@color/purple"
+                    android:src="@drawable/ic_edit"
+                    android:background="?attr/selectableItemBackgroundBorderless" />
+
+                <Button
+                    android:id="@+id/edit_btn"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Edit Playlist"
+                    android:backgroundTint="#222"
+                    android:textColor="@color/white"
+                    android:textSize="16sp"
+                    android:layout_marginStart="12dp" />
+            </LinearLayout>
 
             <!-- Play/Shuffle Buttons -->
             <LinearLayout
@@ -68,7 +88,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_horizontal"
-                android:layout_marginTop="8dp">
+                android:layout_marginTop="10dp">
 
                 <Button
                     android:id="@+id/play_all_btn"
@@ -91,8 +111,8 @@
                     android:textAllCaps="false"
                     android:drawableLeft="@drawable/ic_shuffle"
                     android:drawableTint="@color/purple"
-                    android:backgroundTint="@color/white"
-                    android:textColor="@color/black"/>
+                    android:backgroundTint="#222"
+                    android:textColor="@color/white"/>
             </LinearLayout>
 
             <!-- Playlist Song Recycler -->
@@ -103,35 +123,6 @@
                 android:layout_marginTop="16dp"
                 android:layout_weight="1"
                 android:clipToPadding="false" />
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:orientation="horizontal"
-                android:background="@drawable/rounded_background"
-                android:gravity="center_vertical"
-                android:paddingHorizontal="16dp">
-
-                <ImageView
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:id="@+id/edit_icon"
-                    android:layout_marginStart="8dp"
-                    app:tint="@color/purple"
-                    android:src="@drawable/ic_edit"
-                    android:background="?attr/selectableItemBackgroundBorderless" />
-
-                <Button
-                    android:id="@+id/edit_btn"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Edit Playlist"
-                    android:backgroundTint="@color/white"
-                    android:textColor="@android:color/black"
-                    android:textSize="16sp"
-                    android:layout_marginStart="12dp" />
-            </LinearLayout>
 
         </LinearLayout>
 

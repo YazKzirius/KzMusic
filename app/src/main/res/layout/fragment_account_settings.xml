@@ -73,6 +73,7 @@
                 android:orientation="horizontal"
                 android:background="@drawable/rounded_background"
                 android:gravity="center_vertical"
+                android:backgroundTint="#222"
                 android:paddingHorizontal="8dp">
 
                 <ImageView
@@ -88,8 +89,8 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Connect with Spotify"
-                    android:backgroundTint="@color/white"
-                    android:textColor="@android:color/black"
+                    android:backgroundTint="#222"
+                    android:textColor="@color/white"
                     android:textSize="16sp"
                     android:layout_marginStart="12dp" />
             </LinearLayout>

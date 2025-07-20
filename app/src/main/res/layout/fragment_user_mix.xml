@@ -73,7 +73,7 @@
             android:layout_marginTop="16dp"
             android:text="Refresh Feed"
             android:textAllCaps="false"
-            android:backgroundTint="@color/black"
+            android:backgroundTint="#222"
             android:textColor="@color/white" />
 
         <androidx.recyclerview.widget.RecyclerView
