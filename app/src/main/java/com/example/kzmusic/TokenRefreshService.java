@@ -51,33 +51,37 @@ public class TokenRefreshService extends Service {
     public void onCreate() {
         super.onCreate();
         createNotificationChannel();
-        startForeground(1, buildNotification());
+        if (OnlinePlayerManager.getInstance().getAccess_token() != null) {
+            startForeground(1, buildNotification());
+            tokenRefreshRunnable = new Runnable() {
+                private boolean firstRun = true; // ✅ Track first execution
 
-        tokenRefreshRunnable = new Runnable() {
-            private boolean firstRun = true; // ✅ Track first execution
-
-            @Override
-            public void run() {
-                Log.d("TokenRefreshService", "🔄 Checking token expiration...");
-                if (firstRun) {
-                    firstRun = false; // ✅ Mark first execution as completed
-                    Log.d("TokenRefreshService", "⚡ First execution—skipping session timeout check.");
-                } else {
-                    Log.d("TokenRefreshService", "🚨 Session Timed Out!");
-                    if (OnlinePlayerManager.getInstance().getRefresh_token() != null) {
-                        refreshSpotifyToken(OnlinePlayerManager.getInstance().getRefresh_token());
+                @Override
+                public void run() {
+                    Log.d("TokenRefreshService", "🔄 Checking token expiration...");
+                    if (firstRun) {
+                        firstRun = false; // ✅ Mark first execution as completed
+                        Log.d("TokenRefreshService", "⚡ First execution—skipping session timeout check.");
+                    } else {
+                        Log.d("TokenRefreshService", "🚨 Session Timed Out!");
+                        if (OnlinePlayerManager.getInstance().getRefresh_token() != null) {
+                            refreshSpotifyToken(OnlinePlayerManager.getInstance().getRefresh_token());
+                        }
                     }
-                }
-                Log.d("TokenRefreshService", "⏳ Next expiration check in 5 seconds.");
-                if (OnlinePlayerManager.getInstance().getExpiration_time() != 0) {
-                    handler.postDelayed(this, (OnlinePlayerManager.getInstance().getExpiration_time()-600)*1000); // ✅ Runs indefinitely every 5 seconds
-                } else {
-                    ;
-                }
+                    Log.d("TokenRefreshService", "⏳ Next expiration check in 5 seconds.");
+                    if (OnlinePlayerManager.getInstance().getExpiration_time() != 0) {
+                        handler.postDelayed(this, (OnlinePlayerManager.getInstance().getExpiration_time()-600)*1000); // ✅ Runs indefinitely every 5 seconds
+                    } else {
+                        ;
+                    }
 
-            }
-        };
-        handler.post(tokenRefreshRunnable); // ✅ Start refresh loop
+                }
+            };
+            handler.post(tokenRefreshRunnable); // ✅ Start refresh loop
+        } else {
+            ;
+        }
+
     }
 
     @Override
