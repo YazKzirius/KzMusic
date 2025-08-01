@@ -119,6 +119,8 @@ public class MediaOverlay extends Fragment {
     private static final String API_KEY = "2ae10e3784a6e96d12c87d11692e8089";
     SessionManager sessionManager;
     long last_position = 0;
+    SeekBar seekBarPitch;
+    TextView pitch_text;
 
     public MediaOverlay() {
         // Required empty public constructor
@@ -172,10 +174,12 @@ public class MediaOverlay extends Fragment {
         btnSkip_right = view.findViewById(R.id.btnSkipRight);
         btnShuffle = view.findViewById(R.id.btnShuffle);
         speed_text = view.findViewById(R.id.speed_text);
+        pitch_text = view.findViewById(R.id.pitch_text);
         reverb_text = view.findViewById(R.id.reverb_text);
         seekBar = view.findViewById(R.id.seekBar);
         seekBarReverb = view.findViewById(R.id.seekBarReverb);
         seekBarSpeed = view.findViewById(R.id.seekBarSpeed);
+        seekBarPitch = view.findViewById(R.id.seekBarPitch);
         textCurrentTime = view.findViewById(R.id.textCurrentTime);
         textTotalDuration = view.findViewById(R.id.textTotalDuration);
         //Retrieving data from song queue
@@ -683,7 +687,7 @@ public class MediaOverlay extends Fragment {
                 seekBar.setMax((int) duration);
             } else {
                 // Handle unknown duration case, possibly set to live stream duration handling
-                textTotalDuration.setText("0:00");
+                ;
             }
             seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                 @Override
@@ -897,7 +901,11 @@ public class MediaOverlay extends Fragment {
         seekBarSpeed.setMax(200);
         seekBarSpeed.setMin(50);
         seekBarSpeed.setProgress((int) (song_speed * 100));
-        speed_text.setText(String.format("%.1fx", song_speed));
+        speed_text.setText("Speed: " + String.format("%.1fx", song_speed));
+        seekBarPitch.setMax(200);
+        seekBarPitch.setMin(50);
+        seekBarPitch.setProgress((int) (song_pitch * 100));
+        pitch_text.setText("Pitch: " + String.format("%.1fx", song_pitch));
         //Setting reverb bar to lowest
         seekBarReverb.setMax(2000);
         seekBarReverb.setMin(0);
@@ -912,13 +920,35 @@ public class MediaOverlay extends Fragment {
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 //Setting speed between 0.5x and 2.0x
                 float speed = Math.max(0.5f, Math.min(progress / 100f, 2.0f));
-                song_pitch = speed;
                 song_speed = speed;
-                speed_text.setText(String.format("%.1fx", speed)); // Update the speed text
+                speed_text.setText("Speed: " + String.format("%.1fx", speed)); // Update the speed text
                 if (player != null) {
                     player.setPlaybackParameters(new PlaybackParameters(song_speed, song_pitch));
                 }
                 seekBarSpeed.setProgress(progress);
+                SongQueue.getInstance().setSpeed(song_speed);
+                SongQueue.getInstance().setPitch(song_pitch);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        seekBarPitch.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                //Setting speed between 0.5x and 2.0x
+                float pitch = Math.max(0.5f, Math.min(progress / 100f, 2.0f));
+                song_pitch = pitch;
+                pitch_text.setText("Pitch: " + String.format("%.1fx", pitch)); // Update the speed text
+                if (player != null) {
+                    player.setPlaybackParameters(new PlaybackParameters(song_speed, song_pitch));
+                }
+                seekBarPitch.setProgress(progress);
                 SongQueue.getInstance().setSpeed(song_speed);
                 SongQueue.getInstance().setPitch(song_pitch);
             }

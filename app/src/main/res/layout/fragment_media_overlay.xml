@@ -77,117 +77,13 @@
             <!-- Song Title -->
             <TextView
                 android:id="@+id/songTitle"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:textColor="@color/white"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:layout_marginTop="16dp" />
-
-            <!-- Progress bar -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="36dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:id="@+id/textCurrentTime"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0:00"
-                    android:textStyle="bold"
-                    android:textColor="@color/white"
-                    android:textSize="18sp" />
-
-                <SeekBar
-                    android:id="@+id/seekBar"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginEnd="8dp" />
-
-                <TextView
-                    android:id="@+id/textTotalDuration"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0:00"
-                    android:textStyle="bold"
-                    android:textColor="@color/white"
-                    android:textSize="18sp" />
-            </LinearLayout>
-
-            <!-- Playback Controls -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:gravity="center"
-                android:orientation="horizontal"
-                android:weightSum="5">
-
-                <ImageButton
-                    android:id="@+id/btnLoop"
-                    style="@style/OverlayControlButton"
-                    android:src="@drawable/ic_loop" />
-
-                <ImageButton
-                    android:id="@+id/btnSkipLeft"
-                    style="@style/OverlayControlButton"
-                    android:src="@drawable/ic_skipleft" />
-
-                <ImageButton
-                    android:id="@+id/btnPlayPause"
-                    style="@style/OverlayControlButton"
-                    android:src="@drawable/ic_pause" />
-
-                <ImageButton
-                    android:id="@+id/btnSkipRight"
-                    style="@style/OverlayControlButton"
-                    android:src="@drawable/ic_skipright" />
-
-                <ImageButton
-                    android:id="@+id/btnShuffle"
-                    style="@style/OverlayControlButton"
-                    android:src="@drawable/ic_shuffle" />
-            </LinearLayout>
-            <!-- Playback Controls -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:gravity="center"
-                android:orientation="horizontal"
-                android:weightSum="5">
-
-                <ImageButton
-                    android:id="@+id/btnEqualizer"
-                    style="@style/OverlayControlButton"
-                    android:src="@drawable/ic_equalizer" />
-
-                <ImageButton
-                    android:id="@+id/btnRewind"
-                    style="@style/OverlayControlButton"
-                    android:src="@drawable/ic_rewind" />
-
-                <ImageButton
-                    android:id="@+id/btnXR"
-                    style="@style/OverlayControlButton"
-                    android:src="@drawable/ic_virtual" />
-
-                <ImageButton
-                    android:id="@+id/btnForward"
-                    style="@style/OverlayControlButton"
-                    android:src="@drawable/ic_foward" />
-
-                <ImageButton
-                    android:id="@+id/btn360"
-                    style="@style/OverlayControlButton"
-                    android:src="@drawable/ic_360audio" />
-            </LinearLayout>
 
             <!-- Speed Slider -->
             <SeekBar
@@ -196,13 +92,31 @@
                 android:layout_height="wrap_content"
                 android:max="200"
                 android:progress="100"
-                android:layout_marginTop="16dp" />
+                android:layout_marginTop="30dp" />
 
             <TextView
                 android:id="@+id/speed_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="1.0x"
+                android:text="Speed: 1.0x"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:layout_marginTop="4dp" />
+            <!-- Pitch Slider -->
+            <SeekBar
+                android:id="@+id/seekBarPitch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="200"
+                android:progress="100"
+                android:layout_marginTop="30dp" />
+
+            <TextView
+                android:id="@+id/pitch_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pitch: 1.0x"
                 android:textStyle="bold"
                 android:textColor="@color/white"
                 android:textSize="18sp"
@@ -215,7 +129,7 @@
                 android:layout_height="wrap_content"
                 android:max="1000"
                 android:progress="100"
-                android:layout_marginTop="24dp" />
+                android:layout_marginTop="30dp" />
 
             <TextView
                 android:id="@+id/reverb_text"
@@ -226,6 +140,134 @@
                 android:textColor="@color/white"
                 android:textSize="18sp"
                 android:layout_marginTop="4dp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="36dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:gravity="center_horizontal">
+
+                <!-- Progress Bar Row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingVertical="8dp">
+
+                    <TextView
+                        android:id="@+id/textCurrentTime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0:00"
+                        android:textStyle="bold"
+                        android:textColor="@color/white"
+                        android:textSize="16sp" />
+
+                    <SeekBar
+                        android:id="@+id/seekBar"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginEnd="8dp" />
+
+                    <TextView
+                        android:id="@+id/textTotalDuration"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0:00"
+                        android:textStyle="bold"
+                        android:textColor="@color/white"
+                        android:textSize="16sp" />
+                </LinearLayout>
+
+                <!-- Playback Controls Row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:weightSum="7"
+                    android:paddingVertical="6dp">
+
+                    <ImageButton
+                        android:id="@+id/btnLoop"
+                        style="@style/OverlayControlButton"
+                        android:layout_width="0dp"
+                        android:layout_height="60dp"
+                        android:layout_weight="1"
+                        android:src="@drawable/ic_loop"
+                        android:scaleType="centerInside"
+                        android:contentDescription="Loop" />
+
+                    <ImageButton
+                        android:id="@+id/btnRewind"
+                        style="@style/OverlayControlButton"
+                        android:layout_width="20dp"
+                        android:layout_height="30dp"
+                        android:layout_weight="1"
+                        android:src="@drawable/ic_rewind"
+                        android:scaleType="centerInside"
+                        android:contentDescription="Rewind" />
+
+                    <ImageButton
+                        android:id="@+id/btnSkipLeft"
+                        style="@style/OverlayControlButton"
+                        android:layout_width="20dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:src="@drawable/ic_skipleft"
+                        android:scaleType="centerInside"
+                        android:contentDescription="Skip Left" />
+
+                    <ImageButton
+                        android:id="@+id/btnPlayPause"
+                        style="@style/OverlayControlButton"
+                        android:layout_width="40dp"
+                        android:layout_height="80dp"
+                        android:layout_weight="1"
+                        android:src="@drawable/ic_pause"
+                        android:scaleType="centerInside"
+                        android:contentDescription="Play/Pause" />
+
+                    <ImageButton
+                        android:id="@+id/btnSkipRight"
+                        style="@style/OverlayControlButton"
+                        android:layout_width="20dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:src="@drawable/ic_skipright"
+                        android:scaleType="centerInside"
+                        android:contentDescription="Skip Right" />
+
+                    <ImageButton
+                        android:id="@+id/btnForward"
+                        style="@style/OverlayControlButton"
+                        android:layout_width="20dp"
+                        android:layout_height="30dp"
+                        android:layout_weight="1"
+                        android:src="@drawable/ic_foward"
+                        android:scaleType="centerInside"
+                        android:contentDescription="Forward" />
+
+                    <ImageButton
+                        android:id="@+id/btnShuffle"
+                        style="@style/OverlayControlButton"
+                        android:layout_width="0dp"
+                        android:layout_height="60dp"
+                        android:layout_weight="1"
+                        android:src="@drawable/ic_shuffle"
+                        android:scaleType="centerInside"
+                        android:contentDescription="Shuffle" />
+                </LinearLayout>
+            </LinearLayout>
+            <!-- Playback Controls -->
+
         </LinearLayout>
+
     </ScrollView>
+
 </FrameLayout>
