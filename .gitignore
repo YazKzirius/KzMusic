@@ -9,7 +9,9 @@
 /.idea/assetWizardSettings.xml
 .DS_Store
 /build
+# Firebase configuration
+**/google-services.json
 /captures
 .externalNativeBuild
 .cxx
-local.properties
+local.properties'
