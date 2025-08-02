@@ -41,6 +41,43 @@
           ]
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:251450547660:android:a1799b0b4c14641ee4d169",
+        "android_client_info": {
+          "package_name": "com.example.kzvision"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "251450547660-3mo8irc1q63s1h9l8bc4e509vrdte60k.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.kzvision",
+            "certificate_hash": "4602c200138d376fde896cff36618072af852e9c"
+          }
+        },
+        {
+          "client_id": "251450547660-lprr10a6rtrlj97h3v6gn3h7jmskcgbj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFCRGOdzwBrJzzTDT88bgNSt-bEVeGu8o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "251450547660-lprr10a6rtrlj97h3v6gn3h7jmskcgbj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
     }
   ],
   "configuration_version": "1"
