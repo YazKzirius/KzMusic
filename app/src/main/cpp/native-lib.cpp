@@ -18,14 +18,3 @@ Superpowered::Initialize(licenseKey);
 LOGI("Superpowered initialized with license.");
 }
 Superpowered::TimeStretching *pitchEngine;
-
-extern "C" JNIEXPORT void JNICALL
-Java_com_example_SuperpoweredProcessor_init(JNIEnv *env, jobject, jint sampleRate, jint channels, jfloat pitchShiftCents) {
-    pitchEngine = new Superpowered::TimeStretching((unsigned int)sampleRate);
-}
-
-extern "C" JNIEXPORT void JNICALL
-Java_com_example_SuperpoweredProcessor_processBuffer(JNIEnv *env, jobject, jshortArray input, jint length) {
-    jshort *inputShorts = env->GetShortArrayElements(input, nullptr);
-    env->ReleaseShortArrayElements(input, inputShorts, 0);
-}
