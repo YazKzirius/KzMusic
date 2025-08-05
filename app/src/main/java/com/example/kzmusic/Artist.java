@@ -8,6 +8,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.google.android.exoplayer2.audio.AudioSink;
+
 /**
  * A simple {@link Fragment} subclass.
  * Use the {@link Artist#newInstance} factory method to
