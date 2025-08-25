@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
+import android.media.AudioManager;
 import android.media.audiofx.EnvironmentalReverb;
 import android.net.Uri;
 import android.os.Binder;
@@ -71,7 +72,17 @@ public class PlayerService extends Service {
             return PlayerService.this;
         }
     }
+    static {
+        System.loadLibrary("native-lib");
+    }
 
+    private native void initSuperpowered(int samplerate, int buffersize);
+    private native void openFile(String path);
+    // Your native method declarations
+    private native void play(); // We will add this for clarity
+    private native void setPitchShift(int cents);
+    private native void setTempo(double rate);
+    private native void enableReverb(boolean enable);
     @Override
     public void onCreate() {
         super.onCreate();
@@ -86,6 +97,48 @@ public class PlayerService extends Service {
         createNotificationChannel();
         initializeMediaSession();
         sharedViewModel = SharedViewModelProvider.getViewModel(this);
+        // Get the native sample rate and buffer size of the device.
+        AudioManager audioManager = (AudioManager) this.getSystemService(Context.AUDIO_SERVICE);
+        String sampleRateStr = audioManager.getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE);
+        String framesPerBufferStr = audioManager.getProperty(AudioManager.PROPERTY_OUTPUT_FRAMES_PER_BUFFER);
+        int samplerate = Integer.parseInt(sampleRateStr);
+        int buffersize = Integer.parseInt(framesPerBufferStr);
+
+        // Initialize the Superpowered C++ engine.
+        initSuperpowered(samplerate, buffersize);
+    }
+
+// ... and other JNI methods for effects and control.
+
+    /**
+     * Plays the specified music file using the Superpowered native audio engine.
+     *
+     * @param musicFile The MusicFile object containing the path to the song.
+     */
+    public void play_advanced_Music(MusicFile musicFile) {
+        if (musicFile == null || musicFile.getPath() == null) {
+            return; // Do nothing if the file is invalid.
+        }
+
+        // With Superpowered, the native engine is persistent. We don't create a new
+        // player instance for each song. We simply tell the existing player to open a new track.
+        // This removes the need for complex logic to check if the song is the same as the last one.
+
+        // 1. Open the audio file in the native player.
+        // This call will automatically stop any currently playing track.
+        openFile(musicFile.getPath());
+
+        // 2. Update your application's internal state (queue, history, etc.).
+        // This logic is specific to your app and remains the same.
+        add_song(musicFile);
+        update_song_history(musicFile);
+
+        // 3. Apply audio effects using Superpowered.
+        // The old `apply_audio_effect()` method that used an Android audioSessionId will not work.
+        // You must replace it with a method that calls your Superpowered JNI functions.
+
+        // 4. Start playback.
+        play();
     }
     //This function plays the specified music file
     public void playMusic(MusicFile musicFile) {

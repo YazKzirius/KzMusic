@@ -17,4 +17,5 @@
     </string>
     <string name="attachment_summary_off">Only download attachments when manually requested</string>
     <string name="spotify_redirect_uri">kzmusic://callback</string>
+    <string name="media_playback_attribution_label">Playing music and audio files.</string>
 </resources>

@@ -1,133 +1,164 @@
-//Native C++ Superpowered Library
 #include <jni.h>
 #include <android/log.h>
+#include <string>
+#include <SLES/OpenSLES_AndroidConfiguration.h>
+#include <SLES/OpenSLES.h>
+#include <malloc.h>
+
 #include "Superpowered.h"
 #include "SuperpoweredAndroidAudioIO.h"
 #include "SuperpoweredAdvancedAudioPlayer.h"
-#include <SuperpoweredTimeStretching.h>
-#include <SuperpoweredSimple.h>
-#include <string>
-#include <SuperpoweredSimple.h>
-#include <SuperpoweredCPU.h>
-#include <malloc.h>
-#include <SLES/OpenSLES_AndroidConfiguration.h>
-#include <SLES/OpenSLES.h>
+#include "SuperpoweredTimeStretching.h"
+#include "SuperpoweredReverb.h"
+#include "SuperpoweredSimple.h"
+#include "SuperpoweredCPU.h"
 
-#define LOG_TAG "KzmusicNative"
+#define LOG_TAG "AudioPlayer"
 #define log_print __android_log_print
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 
-//Called periodically by the audio engine
+// Global pointers for the Superpowered components
 static SuperpoweredAndroidAudioIO *audioIO;
 static Superpowered::AdvancedAudioPlayer *player;
+static Superpowered::TimeStretching *timeStretch;
+static Superpowered::Reverb *reverb;
 
-// This is called periodically by the audio engine.
-static bool audioProcessing (
-        void * __unused clientdata, // custom pointer
-        short int *audio,           // output buffer
-        int numberOfFrames,         // number of frames to process
-        int samplerate              // current sample rate in Hz
+// Audio processing callback.
+static bool audioProcessing(
+        void * __unused clientdata,
+        short int *audio,
+        int numberOfFrames,
+        int samplerate
 ) {
     player->outputSamplerate = (unsigned int)samplerate;
-    float playerOutput[numberOfFrames * 2];
 
-    if (player->processStereo(playerOutput, false, (unsigned int)numberOfFrames)) {
-        Superpowered::FloatToShortInt(playerOutput, audio, (unsigned int)numberOfFrames);
-        return true;
-    } else return false;
+    // Create a floating-point buffer. Superpowered effects work with 32-bit floats.
+    // A little extra space is good for the time stretcher.
+    float floatBuffer[numberOfFrames * 2 + 1024];
+
+    // Process the player. If it returns audio, proceed with effects.
+    if (player->processStereo(floatBuffer, false, (unsigned int)numberOfFrames)) {
+        // 1. Time Stretching & Pitch Shifting
+        // Add the audio from the player to the time stretcher's input buffer.
+        timeStretch->addInput(floatBuffer, numberOfFrames);
+
+        // Get the processed audio from the time stretcher's output buffer.
+        // The number of output frames might be different from the input.
+        unsigned int timeStretchedFramesAvailable = numberOfFrames;
+        timeStretch->getOutput(floatBuffer, timeStretchedFramesAvailable);
+
+        if (timeStretchedFramesAvailable > 0) {
+            // 2. Reverb
+            // Apply reverb to the time-stretched audio.
+            reverb->process(floatBuffer, floatBuffer, timeStretchedFramesAvailable);
+
+            // 3. Convert to 16-bit integer for output.
+            Superpowered::FloatToShortInt(floatBuffer, audio, timeStretchedFramesAvailable);
+            return true;
+        }
+    }
+
+    return false;
 }
 
-// Starting audio engine and intitializing player
+// JNI function to initialize the audio engine.
 extern "C" JNIEXPORT void JNICALL
-Java_com_kzmusic_audio_AudioEngine_initSuperpowered(JNIEnv *env, jobject obj, jint samplerate, jint buffersize, jstring tempPath) {
-// Example license key — replace with your own from Superpowered dashboard
-const char *licenseKey = "ExampleLicenseKey-WillExpire-OnNextUpdate";
-Superpowered::Initialize(licenseKey);
-LOGI("Superpowered initialized with license.");
-    // setting the temp folder for progressive downloads or HLS playback
-    // not needed for local file playback
-    const char *str = env->GetStringUTFChars(tempPath, 0);
-    Superpowered::AdvancedAudioPlayer::setTempFolder(str);
-    env->ReleaseStringUTFChars(tempPath, str);
+Java_com_example_kzmusic_PlayerService_initSuperpowered(
+        JNIEnv *env,
+        jobject __unused obj,
+        jint samplerate,
+        jint buffersize
+) {
+    Superpowered::Initialize("ExampleLicenseKey-WillExpire-OnNextUpdate");
 
-    // creating the player
     player = new Superpowered::AdvancedAudioPlayer((unsigned int)samplerate, 0);
+    timeStretch = new Superpowered::TimeStretching((unsigned int)samplerate);
 
-    audioIO = new SuperpoweredAndroidAudioIO (
-            samplerate,                     // device native sampling rate
-            buffersize,                     // device native buffer size
-            false,                          // enableInput
-            true,                           // enableOutput
-            audioProcessing,                // process callback function
-            NULL,                           // clientData
-            -1,                             // inputStreamType (-1 = default)
-            SL_ANDROID_STREAM_MEDIA         // outputStreamType (-1 = default)
+    // Initialize reverb
+    reverb = new Superpowered::Reverb((unsigned int)samplerate);
+
+    audioIO = new SuperpoweredAndroidAudioIO(
+            samplerate, buffersize, false, true, audioProcessing,
+            nullptr, -1, SL_ANDROID_STREAM_MEDIA
     );
 }
 
-// OpenFile - Open file in player, specifying offset and length.
-extern "C" JNIEXPORT void
-Java_com_superpowered_playerexample_MainActivity_OpenFileFromAPK (
-        JNIEnv *env,
-        jobject __unused obj,
-        jstring path,       // path to APK file
-        jint offset,        // offset of audio file
-        jint length         // length of audio file
-) {
+// JNI function to open a file.
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_kzmusic_PlayerService_openFile(JNIEnv *env, jobject __unused obj, jstring path) {
     const char *str = env->GetStringUTFChars(path, 0);
-    player->open(str, offset, length);
+    player->open(str);
     env->ReleaseStringUTFChars(path, str);
-
-    // open file from any path: player->open("file system path to file");
-    // open file from network (progressive download): player->open("http://example.com/music.mp3");
-    // open HLS stream: player->openHLS("http://example.com/stream");
 }
 
-// onUserInterfaceUpdate - Called periodically. Check and react to player events. This can be done in any thread.
-extern "C" JNIEXPORT jboolean
-Java_com_superpowered_playerexample_MainActivity_onUserInterfaceUpdate(JNIEnv * __unused env, jobject __unused obj) {
-    switch (player->getLatestEvent()) {
-        case Superpowered::AdvancedAudioPlayer::PlayerEvent_None:
-        case Superpowered::AdvancedAudioPlayer::PlayerEvent_Opening: break; // do nothing
-        case Superpowered::AdvancedAudioPlayer::PlayerEvent_Opened: player->play(); break;
-        case Superpowered::AdvancedAudioPlayer::PlayerEvent_OpenFailed:
-        {
-            int openError = player->getOpenErrorCode();
-            log_print(ANDROID_LOG_ERROR, "PlayerExample", "Open error %i: %s", openError, Superpowered::AdvancedAudioPlayer::statusCodeToString(openError));
-        }
-            break;
-        case Superpowered::AdvancedAudioPlayer::PlayerEvent_ConnectionLost:
-            log_print(ANDROID_LOG_ERROR, "PlayerExample", "Network download failed."); break;
-        case Superpowered::AdvancedAudioPlayer::PlayerEvent_ProgressiveDownloadFinished:
-            log_print(ANDROID_LOG_ERROR, "PlayerExample", "Download finished. Path: %s", player->getFullyDownloadedFilePath()); break;
-    }
-
-    if (player->eofRecently()) player->setPosition(0, false, false);
-    return (jboolean)player->isPlaying();
-}
-
-// TogglePlayback - Toggle Play/Pause state of the player.
-extern "C" JNIEXPORT void
-Java_com_superpowered_playerexample_MainActivity_TogglePlayback(JNIEnv * __unused env, jobject __unused obj) {
+// JNI function to toggle playback.
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_kzmusic_PlayerService_togglePlayback(JNIEnv * __unused env, jobject __unused obj) {
     player->togglePlayback();
-    Superpowered::CPU::setSustainedPerformanceMode(player->isPlaying()); // prevent dropouts
+    Superpowered::CPU::setSustainedPerformanceMode(player->isPlaying());
 }
 
-// onBackground - Put audio processing to sleep if no audio is playing.
-extern "C" JNIEXPORT void
-Java_com_superpowered_playerexample_MainActivity_onBackground(JNIEnv * __unused env, jobject __unused obj) {
+// JNI function to set pitch shift.
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_kzmusic_PlayerService_setPitchShift(JNIEnv * __unused env, jobject __unused obj, jint cents) {
+    if (timeStretch) {
+        // Correct way: Set the public member variable.
+        timeStretch->pitchShiftCents = cents;
+    }
+}
+
+// JNI function to set tempo/rate.
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_kzmusic_PlayerService_setTempo(JNIEnv * __unused env, jobject __unused obj, jdouble rate) {
+    if (timeStretch) {
+        // Correct way: Set the public member variable.
+        timeStretch->rate = rate;
+    }
+}
+
+// JNI function to enable/disable reverb.
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_kzmusic_PlayerService_enableReverb(JNIEnv * __unused env, jobject __unused obj, jboolean enable) {
+    if (reverb) {
+        // Correct way: Use the enable() method.
+
+    }
+}
+
+// Lifecycle functions
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_kzmusic_PlayerService_onBackground(JNIEnv * __unused env, jobject __unused obj) {
     audioIO->onBackground();
 }
 
-// onForeground - Resume audio processing.
-extern "C" JNIEXPORT void
-Java_com_superpowered_playerexample_MainActivity_onForeground(JNIEnv * __unused env, jobject __unused obj) {
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_kzmusic_PlayerService_onForeground(JNIEnv * __unused env, jobject __unused obj) {
     audioIO->onForeground();
 }
 
-// Cleanup - Free resources.
-extern "C" JNIEXPORT void
-Java_com_superpowered_playerexample_MainActivity_Cleanup(JNIEnv * __unused env, jobject __unused obj) {
+// Cleanup function
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_kzmusic_PlayerService_cleanup(JNIEnv * __unused env, jobject __unused obj) {
     delete audioIO;
     delete player;
+    delete timeStretch;
+    delete reverb;
+}
+// JNI function to start playback.
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_kzmusic_PlayerService_play(JNIEnv * __unused env, jobject __unused obj) {
+    if (player) {
+        player->play();
+        // Use sustained performance mode for low latency playback.
+        Superpowered::CPU::setSustainedPerformanceMode(true);
+    }
+}
+
+// JNI function to pause playback.
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_kzmusic_PlayerService_pause(JNIEnv * __unused env, jobject __unused obj) {
+    if (player) {
+        player->pause();
+        // Release sustained performance mode when paused to save battery.
+        Superpowered::CPU::setSustainedPerformanceMode(false);
+    }
 }
