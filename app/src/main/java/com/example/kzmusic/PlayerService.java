@@ -82,7 +82,7 @@ public class PlayerService extends Service {
     private native void play(); // We will add this for clarity
     private native void setPitchShift(int cents);
     private native void setTempo(double rate);
-    private native void enableReverb(boolean enable);
+    private native void pause();
     @Override
     public void onCreate() {
         super.onCreate();
@@ -120,26 +120,29 @@ public class PlayerService extends Service {
             return; // Do nothing if the file is invalid.
         }
 
-        // With Superpowered, the native engine is persistent. We don't create a new
-        // player instance for each song. We simply tell the existing player to open a new track.
-        // This removes the need for complex logic to check if the song is the same as the last one.
-
         // 1. Open the audio file in the native player.
-        // This call will automatically stop any currently playing track.
+        // This will stop any currently playing track.
         openFile(musicFile.getPath());
 
         // 2. Update your application's internal state (queue, history, etc.).
-        // This logic is specific to your app and remains the same.
         add_song(musicFile);
         update_song_history(musicFile);
 
-        // 3. Apply audio effects using Superpowered.
-        // The old `apply_audio_effect()` method that used an Android audioSessionId will not work.
-        // You must replace it with a method that calls your Superpowered JNI functions.
+        // --- (3) APPLY AUDIO EFFECTS ---
+        // Apply the desired tempo and pitch shift *before* starting playback.
+        // These settings will persist until they are changed again.
 
-        // 4. Start playback.
+        // 4. Start playback with the new effects applied.
         play();
+        apply_advanced_audio_effects();
     }
+    //This function applies advanced audio effects to the music file
+    public void apply_advanced_audio_effects() {
+        setPitchShift(300);
+        setTempo(1.2);
+    }
+
+
     //This function plays the specified music file
     public void playMusic(MusicFile musicFile) {
         if (musicFile == null) {
@@ -496,6 +499,7 @@ public class PlayerService extends Service {
                     showNotification(stateBuilder.build());
                     handlePlay();
                 }
+                play();
             }
 
             @Override
@@ -508,6 +512,7 @@ public class PlayerService extends Service {
                     showNotification(stateBuilder.build());
                     handlePause();
                 }
+                pause();
             }
 
             @Override

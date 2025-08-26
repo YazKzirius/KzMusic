@@ -347,7 +347,7 @@ public class MediaOverlay extends Fragment {
                 playerService = binder.getService();
                 if (playerService != null) {
                     //Playing new song
-                    playerService.playMusic(musicFile);
+                    playerService.play_advanced_Music(musicFile);
                     //This updates notifcation ui every new call
                     playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
                     playerService.updateNotification(musicFile);
