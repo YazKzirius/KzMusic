@@ -115,3 +115,55 @@ Java_com_example_kzmusic_PlayerService_cleanup(JNIEnv * __unused env, jobject __
     delete audioIO;
     delete player;
 }
+// JNI function to seek to a specific position.
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_kzmusic_PlayerService_seekTo(JNIEnv * __unused env, jobject __unused obj, jdouble positionMs) {
+    if (player) {
+        player->setPosition(positionMs, false, false);
+    }
+}
+
+// JNI function to check if the player is currently playing.
+extern "C" JNIEXPORT jboolean JNICALL
+Java_com_example_kzmusic_PlayerService_isPlaying(JNIEnv * __unused env, jobject __unused obj) {
+    if (player) {
+        return (jboolean)player->isPlaying();
+    }
+    return false;
+}
+
+// JNI function to get the current playback position in milliseconds.
+extern "C" JNIEXPORT jdouble JNICALL
+Java_com_example_kzmusic_PlayerService_getPositionMs(JNIEnv * __unused env, jobject __unused obj) {
+    if (player) {
+        return player->getPositionMs();
+    }
+    return 0.0;
+}
+
+// JNI function to get the total duration of the track in milliseconds.
+extern "C" JNIEXPORT jdouble JNICALL
+Java_com_example_kzmusic_PlayerService_getDurationMs(JNIEnv * __unused env, jobject __unused obj) {
+    if (player) {
+        return player->getDurationMs();
+    }
+    return 0.0;
+}
+
+// JNI function to enable or disable looping.
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_kzmusic_PlayerService_setLooping(JNIEnv * __unused env, jobject __unused obj, jboolean isLooping) {
+    if (player) {
+        player->loopOnEOF = isLooping;
+    }
+}
+
+// JNI function to get the latest player event.
+extern "C" JNIEXPORT jint JNICALL
+Java_com_example_kzmusic_PlayerService_getPlayerEvent(JNIEnv * __unused env, jobject __unused obj) {
+    if (player) {
+        return (jint)player->getLatestEvent();
+    }
+    return 0; // PlayerEvent_None
+}
+

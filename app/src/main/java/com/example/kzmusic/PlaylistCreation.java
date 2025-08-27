@@ -379,7 +379,7 @@ public class PlaylistCreation extends Fragment {
             SongQueue.getInstance().setPosition(position);
             Fragment media_page = new MediaOverlay();
             if (playerService != null) {
-                playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
+                playerService.updatePlaybackState();
                 playerService.updateNotification(file);
                 playerService.handlePlay();
             }

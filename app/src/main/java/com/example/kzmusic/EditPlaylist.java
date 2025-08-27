@@ -575,7 +575,7 @@ public class EditPlaylist extends Fragment {
             SongQueue.getInstance().addSong(file);
             SongQueue.getInstance().setPosition(position);
             if (playerService != null) {
-                playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
+                playerService.updatePlaybackState();
                 playerService.updateNotification(file);
                 playerService.handlePlay();
             }

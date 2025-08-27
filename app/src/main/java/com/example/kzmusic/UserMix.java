@@ -145,7 +145,7 @@ public class UserMix extends Fragment {
                     OfflinePlayerManager.getInstance().current_player.pause();
                     OnlinePlayerManager.getInstance().setCurrent_track(track);
                     if (playerService != null) {
-                        playerService.updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
+                        playerService.updatePlaybackState();
                         playerService.updateNotification(SongQueue.getInstance().current_song);
                     }
                     open_spotify_overlay();
@@ -703,7 +703,7 @@ public class UserMix extends Fragment {
             SongQueue.getInstance().setPosition(position);
             Fragment media_page = new MediaOverlay();
             if (playerService != null) {
-                playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
+                playerService.updatePlaybackState();
                 playerService.updateNotification(file);
                 playerService.handlePlay();
             }

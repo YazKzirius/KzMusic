@@ -149,7 +149,7 @@ public class Radio extends Fragment {
                 if (OfflinePlayerManager.getInstance().get_size() > 0 && SongQueue.getInstance().current_song != null) {
                     OfflinePlayerManager.getInstance().current_player.pause();
                     if (playerService != null) {
-                        playerService.updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
+                        playerService.updatePlaybackState();
                         playerService.updateNotification(SongQueue.getInstance().current_song);
                     }
                     OnlinePlayerManager.getInstance().setCurrent_track(track);
@@ -578,7 +578,7 @@ public class Radio extends Fragment {
             SongQueue.getInstance().setPosition(position);
             Fragment media_page = new MediaOverlay();
             if (playerService != null) {
-                playerService.updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
+                playerService.updatePlaybackState();
                 playerService.updateNotification(file);
                 playerService.handlePlay();
             }
