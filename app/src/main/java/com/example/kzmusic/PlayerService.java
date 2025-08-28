@@ -91,6 +91,7 @@ public class PlayerService extends Service {
     native double getDurationMs();
     native void setLooping(boolean isLooping);
     native int getPlayerEvent();
+    native void cleanup();
 
     // Now, create public wrapper methods that your UI can call
     public void seekToPosition(long positionMs) {
@@ -122,9 +123,6 @@ public class PlayerService extends Service {
     public void onCreate() {
         super.onCreate();
         //Stopping all notification sessions for single session management
-        if (OfflinePlayerManager.getInstance().get_size() > 0) {
-            OfflinePlayerManager.getInstance().StopAllSessions();
-        }
         Log.d("Player Service", "Service created");
         //Playing the song
         NOTIFICATION_ID = SongQueue.getInstance().NOTIFICATION_ID;
@@ -374,7 +372,7 @@ public class PlayerService extends Service {
                 MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
                         MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
         );
-
+        OfflinePlayerManager.getInstance().addSession(mediaSession);
         stateBuilder = new PlaybackStateCompat.Builder()
                 .setActions(
                         PlaybackStateCompat.ACTION_PLAY_PAUSE |
@@ -437,6 +435,7 @@ public class PlayerService extends Service {
                     SongQueue.getInstance().addSong(nextSong);
                     SongQueue.getInstance().setPosition(pos);
                     play_advanced_Music(nextSong); // This is your method that starts a new track
+                    updateNotification(nextSong);
                     handleSkip();
                 }
 
@@ -467,6 +466,7 @@ public class PlayerService extends Service {
                     SongQueue.getInstance().addSong(prevSong);
                     SongQueue.getInstance().setPosition(pos);
                     play_advanced_Music(prevSong);
+                    updateNotification(prevSong);
                     handleSkip();
                 }
             }
@@ -545,7 +545,16 @@ public class PlayerService extends Service {
                     }
 
                     @Override
-                    public void onLoadCleared(@Nullable Drawable placeholder) {}
+                    public void onLoadCleared(@Nullable Drawable placeholder) {
+                        ;
+                    }
+                    @Override
+                    public void onLoadFailed(@Nullable Drawable errorDrawable) {
+                        // Load a backup image if the main image fails to load
+                        Bitmap defaultIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(), R.drawable.logo);
+                        builder.setLargeIcon(defaultIcon);
+                        startForeground(NOTIFICATION_ID, builder.build());
+                    }
                 });
     }
 

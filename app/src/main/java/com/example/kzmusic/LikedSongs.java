@@ -142,15 +142,12 @@ public class LikedSongs extends Fragment {
             @Override
             public void onItemClick(SearchResponse.Track track) {
                 //Pausing current player, so no playback overlap
-                if (OfflinePlayerManager.getInstance().get_size() > 0 && OfflinePlayerManager.getInstance().current_player != null) {
-                    OfflinePlayerManager.getInstance().current_player.pause();
+                if (playerService != null) {
+                    playerService.pause();
                     OnlinePlayerManager.getInstance().setCurrent_track(track);
-                    if (playerService != null) {
-                        playerService.updatePlaybackState();
-                        playerService.updateNotification(SongQueue.getInstance().current_song);
-                    }
+                    playerService.updatePlaybackState();
+                    playerService.updateNotification(SongQueue.getInstance().current_song);
                     open_spotify_overlay();
-                    ;
                 } else {
                     OnlinePlayerManager.getInstance().setCurrent_track(track);
                     open_spotify_overlay();
@@ -707,7 +704,12 @@ public class LikedSongs extends Fragment {
                         if (OfflinePlayerManager.getInstance().current_player != null) {
                             OfflinePlayerManager.getInstance().current_player.pause();
                         } else {
-                            ;
+                            if (playerService != null) {
+                                playerService.pause();
+                                playerService.updatePlaybackState();
+                            } else {
+                                ;
+                            }
                         }
                     }
                 }

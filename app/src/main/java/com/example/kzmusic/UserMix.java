@@ -141,13 +141,11 @@ public class UserMix extends Fragment {
             @Override
             public void onItemClick(SearchResponse.Track track){
                 //Pausing current player, so no playback overlap
-                if (OfflinePlayerManager.getInstance().get_size() > 0) {
-                    OfflinePlayerManager.getInstance().current_player.pause();
+                if (playerService != null) {
+                    playerService.pause();
+                    playerService.updatePlaybackState();
+                    playerService.updateNotification(SongQueue.getInstance().current_song);
                     OnlinePlayerManager.getInstance().setCurrent_track(track);
-                    if (playerService != null) {
-                        playerService.updatePlaybackState();
-                        playerService.updateNotification(SongQueue.getInstance().current_song);
-                    }
                     open_spotify_overlay();
                 } else {
                     OnlinePlayerManager.getInstance().setCurrent_track(track);
@@ -502,8 +500,9 @@ public class UserMix extends Fragment {
                     if (playerState.isPaused) {
                         ;
                     } else {
-                        if (OfflinePlayerManager.getInstance().current_player != null) {
-                            OfflinePlayerManager.getInstance().current_player.pause();
+                        if (playerService != null) {
+                            playerService.pause();
+                            playerService.updatePlaybackState();
                         } else {
                             ;
                         }

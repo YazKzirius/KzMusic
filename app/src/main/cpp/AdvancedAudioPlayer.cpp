@@ -68,102 +68,125 @@ Java_com_example_kzmusic_PlayerService_openFile(JNIEnv *env, jobject __unused ob
     player->open(str);
     env->ReleaseStringUTFChars(path, str);
 }
-
-// JNI function to set pitch shift. NO special logic needed.
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_kzmusic_PlayerService_setPitchShift(JNIEnv * __unused env, jobject __unused obj, jint cents) {
+Java_com_example_kzmusic_PlayerService_setPitchShift(JNIEnv* env, jobject obj, jint cents) {
     if (player) {
         player->pitchShiftCents = cents;
+    } else {
+        __android_log_print(ANDROID_LOG_WARN, "PlayerService", "setPitchShift: player is null");
     }
 }
 
-// JNI function to set tempo/rate. NO special logic needed.
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_kzmusic_PlayerService_setTempo(JNIEnv * __unused env, jobject __unused obj, jdouble rate) {
+Java_com_example_kzmusic_PlayerService_setTempo(JNIEnv* env, jobject obj, jdouble rate) {
     if (player) {
         player->playbackRate = rate;
+    } else {
+        __android_log_print(ANDROID_LOG_WARN, "PlayerService", "setTempo: player is null");
     }
 }
 
-
-// --- Standard Playback and Lifecycle Functions ---
-
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_kzmusic_PlayerService_play(JNIEnv * __unused env, jobject __unused obj) {
-    if (player) player->play();
-    Superpowered::CPU::setSustainedPerformanceMode(true);
+Java_com_example_kzmusic_PlayerService_play(JNIEnv* env, jobject obj) {
+    if (player) {
+        player->play();
+        Superpowered::CPU::setSustainedPerformanceMode(true);
+    } else {
+        __android_log_print(ANDROID_LOG_WARN, "PlayerService", "play: player is null");
+    }
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_kzmusic_PlayerService_pause(JNIEnv * __unused env, jobject __unused obj) {
-    if (player) player->pause();
-    Superpowered::CPU::setSustainedPerformanceMode(false);
+Java_com_example_kzmusic_PlayerService_pause(JNIEnv* env, jobject obj) {
+    if (player) {
+        player->pause();
+        Superpowered::CPU::setSustainedPerformanceMode(false);
+    } else {
+        __android_log_print(ANDROID_LOG_WARN, "PlayerService", "pause: player is null");
+    }
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_kzmusic_PlayerService_onBackground(JNIEnv * __unused env, jobject __unused obj) {
-    if (audioIO) audioIO->onBackground();
+Java_com_example_kzmusic_PlayerService_onBackground(JNIEnv* env, jobject obj) {
+    if (audioIO) {
+        audioIO->onBackground();
+    } else {
+        __android_log_print(ANDROID_LOG_WARN, "PlayerService", "onBackground: audioIO is null");
+    }
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_kzmusic_PlayerService_onForeground(JNIEnv * __unused env, jobject __unused obj) {
-    if (audioIO) audioIO->onForeground();
+Java_com_example_kzmusic_PlayerService_onForeground(JNIEnv* env, jobject obj) {
+    if (audioIO) {
+        audioIO->onForeground();
+    } else {
+        __android_log_print(ANDROID_LOG_WARN, "PlayerService", "onForeground: audioIO is null");
+    }
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_kzmusic_PlayerService_cleanup(JNIEnv * __unused env, jobject __unused obj) {
-    delete audioIO;
-    delete player;
+Java_com_example_kzmusic_PlayerService_cleanup(JNIEnv* env, jobject obj) {
+    if (audioIO) {
+        delete audioIO;
+        audioIO = nullptr;
+    }
+    if (player) {
+        delete player;
+        player = nullptr;
+    }
 }
-// JNI function to seek to a specific position.
+
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_kzmusic_PlayerService_seekTo(JNIEnv * __unused env, jobject __unused obj, jdouble positionMs) {
+Java_com_example_kzmusic_PlayerService_seekTo(JNIEnv* env, jobject obj, jdouble positionMs) {
     if (player) {
         player->setPosition(positionMs, false, false);
+    } else {
+        __android_log_print(ANDROID_LOG_WARN, "PlayerService", "seekTo: player is null");
     }
 }
 
-// JNI function to check if the player is currently playing.
 extern "C" JNIEXPORT jboolean JNICALL
-Java_com_example_kzmusic_PlayerService_isPlaying(JNIEnv * __unused env, jobject __unused obj) {
-    if (player) {
-        return (jboolean)player->isPlaying();
+Java_com_example_kzmusic_PlayerService_isPlaying(JNIEnv* env, jobject obj) {
+    if (player == nullptr) {
+        __android_log_print(ANDROID_LOG_ERROR, "PlayerService", "isPlaying: player is null");
+        return JNI_FALSE;
     }
-    return false;
+    return player->isPlaying() ? JNI_TRUE : JNI_FALSE;
 }
 
-// JNI function to get the current playback position in milliseconds.
 extern "C" JNIEXPORT jdouble JNICALL
-Java_com_example_kzmusic_PlayerService_getPositionMs(JNIEnv * __unused env, jobject __unused obj) {
+Java_com_example_kzmusic_PlayerService_getPositionMs(JNIEnv* env, jobject obj) {
     if (player) {
         return player->getPositionMs();
     }
+    __android_log_print(ANDROID_LOG_WARN, "PlayerService", "getPositionMs: player is null");
     return 0.0;
 }
 
-// JNI function to get the total duration of the track in milliseconds.
 extern "C" JNIEXPORT jdouble JNICALL
-Java_com_example_kzmusic_PlayerService_getDurationMs(JNIEnv * __unused env, jobject __unused obj) {
+Java_com_example_kzmusic_PlayerService_getDurationMs(JNIEnv* env, jobject obj) {
     if (player) {
         return player->getDurationMs();
     }
+    __android_log_print(ANDROID_LOG_WARN, "PlayerService", "getDurationMs: player is null");
     return 0.0;
 }
 
-// JNI function to enable or disable looping.
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_kzmusic_PlayerService_setLooping(JNIEnv * __unused env, jobject __unused obj, jboolean isLooping) {
+Java_com_example_kzmusic_PlayerService_setLooping(JNIEnv* env, jobject obj, jboolean isLooping) {
     if (player) {
         player->loopOnEOF = isLooping;
+    } else {
+        __android_log_print(ANDROID_LOG_WARN, "PlayerService", "setLooping: player is null");
     }
 }
 
-// JNI function to get the latest player event.
 extern "C" JNIEXPORT jint JNICALL
-Java_com_example_kzmusic_PlayerService_getPlayerEvent(JNIEnv * __unused env, jobject __unused obj) {
+Java_com_example_kzmusic_PlayerService_getPlayerEvent(JNIEnv* env, jobject obj) {
     if (player) {
         return (jint)player->getLatestEvent();
     }
-    return 0; // PlayerEvent_None
+    __android_log_print(ANDROID_LOG_WARN, "PlayerService", "getPlayerEvent: player is null");
+    return 0;
 }
 

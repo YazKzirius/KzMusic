@@ -9,8 +9,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.Cursor;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
@@ -305,7 +310,7 @@ public class MediaOverlay extends Fragment {
         Glide.with(getContext())
                 .asBitmap()
                 .load(album_uri)
-                .circleCrop()
+                .circleCrop().error(R.drawable.logo)
                 .into(new CustomTarget<Bitmap>() {
                     @Override
                     public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
@@ -322,16 +327,30 @@ public class MediaOverlay extends Fragment {
                     public void onLoadFailed(@Nullable Drawable errorDrawable) {
                         // Load a backup image if the main image fails to load
                         if (album_cover != null && album_cover.getContext() != null) {
-                            Glide.with(album_cover.getContext())
-                                    .asBitmap()
-                                    .load(R.drawable.logo)
-                                    .circleCrop()
-                                    .into(album_cover);
+                            Bitmap defaultIcon = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.logo);
+                            album_cover.setImageBitmap(getCircularBitmap(defaultIcon));
                         }
 
                     }
                 });
         Glide.with(getContext()).asGif().load(R.drawable.media_playing).circleCrop().into(song_gif);
+    }
+    //This function cirle crops a bitmap image for the logo
+    public static Bitmap getCircularBitmap(Bitmap bitmap) {
+        int size = Math.min(bitmap.getWidth(), bitmap.getHeight());
+        Bitmap output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+
+        Canvas canvas = new Canvas(output);
+        final Paint paint = new Paint();
+        final Rect rect = new Rect(0, 0, size, size);
+
+        paint.setAntiAlias(true);
+        canvas.drawARGB(0, 0, 0, 0);
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint);
+        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+        canvas.drawBitmap(bitmap, null, rect, paint);
+
+        return output;
     }
 
     //This function sets up media notification bar skip events
@@ -689,11 +708,7 @@ public class MediaOverlay extends Fragment {
 
     //This function plays the specified music file
     private void set_up_view(MusicFile musicFile) {
-
-        player = OfflinePlayerManager.getInstance().current_player;
         //Initializing song properties
-        session_id = SongQueue.getInstance().getAudio_session_id();
-        //Initializing reverb from Song manager class
         String display_title = musicFile.getName();
         String artist = musicFile.getArtist().replaceAll("/", ", ");
         display_title = display_title.replaceAll("by " + artist, "").replaceAll(

@@ -399,8 +399,9 @@ public class PlaylistCreation extends Fragment {
                     if (playerState.isPaused) {
                         ;
                     } else {
-                        if (OfflinePlayerManager.getInstance().current_player != null) {
-                            OfflinePlayerManager.getInstance().current_player.pause();
+                        if (playerService != null) {
+                            playerService.pause();
+                            playerService.updatePlaybackState();
                         } else {
                             ;
                         }

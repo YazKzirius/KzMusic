@@ -184,14 +184,17 @@ public class MusicFileAdapter extends RecyclerView.Adapter<MusicFileAdapter.Musi
             @Override
             public void onClick(View v) {
                 //Checking if in different activity and responding accordingly
-                if (SongQueue.getInstance().current_resource == R.layout.item_song2 || SongQueue.getInstance().current_resource == R.layout.item_song3) {
+                if (SongQueue.getInstance().current_resource == R.layout.item_song2 || SongQueue.getInstance().current_resource == R.layout.item_song3
+                || SongQueue.getInstance().current_resource == R.layout.item_song) {
                     new_position = holder.getLayoutPosition();
                 } else {
                     new_position = SongQueue.getInstance().song_list.indexOf(musicFile);
                 }
-                //Opening media playback overlay
-                open_overlay(musicFile, new_position);
-                currentlyPlayingHolder = holder;
+                if (musicFile != null) {
+                    //Opening media playback overlay
+                    open_overlay(musicFile, new_position);
+                    currentlyPlayingHolder = holder;
+                }
             }
         });
     }

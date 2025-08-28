@@ -146,13 +146,15 @@ public class AccountSettingsFragment extends Fragment {
             public void onClick(View v) {
                 sessionManager.logoutUser();
                 //Stopping all notification sessions for single session management
-                if (OfflinePlayerManager.getInstance().get_size() > 0) {
-                    OfflinePlayerManager.getInstance().resetToDefaults();
-                    SongQueue.getInstance().resetToDefaults();
-                } else {
-                    ;
+                if (playerService != null) {
+                    Intent intent = new Intent(getContext(), PlayerService.class);
+                    playerService.stopService(intent);
+                    playerService.cleanup();
                 }
+                OfflinePlayerManager.getInstance().resetToDefaults();
+                SongQueue.getInstance().resetToDefaults();
                 navigate_to_activity(MainActivity.class);
+
 
             }
         });
@@ -413,8 +415,9 @@ public class AccountSettingsFragment extends Fragment {
                     if (playerState.isPaused) {
                         ;
                     } else {
-                        if (OfflinePlayerManager.getInstance().current_player != null) {
-                            OfflinePlayerManager.getInstance().current_player.pause();
+                        if (playerService != null) {
+                            playerService.pause();
+                            playerService.updatePlaybackState();
                         } else {
                             ;
                         }
@@ -424,8 +427,8 @@ public class AccountSettingsFragment extends Fragment {
         }
     }
     private void stopPlayerService() {
-        Intent intent = new Intent(requireContext(), PlayerService.class);
-        requireContext().stopService(intent);
+        Intent intent = new Intent(getContext(), TokenRefreshService.class);
+        getContext().stopService(intent);
     }
     //This function navigates to a new activity given parameters
     public void navigate_to_activity(Class <?> target) {
