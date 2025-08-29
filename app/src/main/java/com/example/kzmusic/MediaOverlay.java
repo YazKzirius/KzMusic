@@ -219,7 +219,6 @@ public class MediaOverlay extends Fragment {
             //Setting up menu
             set_up_top_menu();
             add_animation();
-            add_background_animation();
         }
         return view;
     }
@@ -244,49 +243,6 @@ public class MediaOverlay extends Fragment {
         scaleUpY.setDuration(1600);
         scaleUpX.start();
         scaleUpY.start();
-    }
-
-    //This function adds background animation
-    public void add_background_animation() {
-
-        // Reference your root layout
-        FrameLayout rootLayout = view.findViewById(R.id.media_overlay); // If inside Fragment
-
-// Define a large base radius for a spacious glow
-        float baseRadius = 1400f;
-
-// Create the radial gradient drawable
-        GradientDrawable gradient = new GradientDrawable(
-                GradientDrawable.Orientation.TL_BR,
-                new int[]{
-                        Color.parseColor("#3A0CA3"),  // vibrant purple edge
-                        Color.parseColor("#1A0D2E"),  // deep indigo mid
-                        Color.parseColor("#090909")   // dominant black core
-                }
-        );
-        gradient.setGradientType(GradientDrawable.RADIAL_GRADIENT);
-        gradient.setGradientRadius(baseRadius);
-        gradient.setGradientCenter(0.5f, 0.4f); // slightly above center
-        gradient.setCornerRadius(0f);
-
-// Apply background to layout
-        rootLayout.setBackground(gradient);
-
-// Create pulse animation
-        ValueAnimator animator = ValueAnimator.ofFloat(0.8f, 1.3f);
-        animator.setDuration(5000); // slow, breathable pulse
-        animator.setRepeatMode(ValueAnimator.REVERSE);
-        animator.setRepeatCount(ValueAnimator.INFINITE);
-
-// Update radius during animation
-        animator.addUpdateListener(animation -> {
-            float factor = (float) animation.getAnimatedValue();
-            gradient.setGradientRadius(baseRadius * factor);
-            rootLayout.invalidate(); // force redraw
-        });
-
-// Start the animation
-        animator.start();
     }
 
     //This button sets up pop up menu display
@@ -693,6 +649,12 @@ public class MediaOverlay extends Fragment {
     // This function now only sets up the listener. The duration is set in the updater.
     public void set_up_bar() {
         if (playerService == null) return;
+        long duration = playerService.getTrackDuration();
+        if (duration > 0) {
+            textTotalDuration.setText(formatTime(duration));
+            seekBar.setMax((int) duration);
+            isDurationSet = true; // Mark that we've set it for this song.
+        }
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
