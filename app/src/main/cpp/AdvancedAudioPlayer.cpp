@@ -11,12 +11,21 @@
 #include "SuperpoweredAdvancedAudioPlayer.h"
 #include "SuperpoweredSimple.h"
 #include "SuperpoweredCPU.h"
+#include "SuperpoweredReverb.h"
+// Add the FFT header at the top
+#include "SuperpoweredFFT.h"
+#include <pthread.h> // For the mutex
 
 #define LOG_TAG "AudioPlayer"
 #define log_print __android_log_print
-
+static float *fftInputMono;        // A buffer for the mono audio signal
+static float *fftReal;             // Will hold the EVEN samples for PolarFFT input
+static float *fftImag;             // Will hold the ODD samples for PolarFFT input (used as phase input)
+static pthread_mutex_t fftMutex;
+static const int fftSizeLog2 = 10; // FFT size is 2^10 = 1024.
 static SuperpoweredAndroidAudioIO *audioIO;
 static Superpowered::AdvancedAudioPlayer *player;
+static Superpowered::Reverb *reverb;
 
 // This simple callback is correct. The player handles all effects internally.
 static bool audioProcessing(
@@ -27,13 +36,32 @@ static bool audioProcessing(
 ) {
     player->outputSamplerate = (unsigned int)samplerate;
     float floatBuffer[numberOfFrames * 2];
-
+    //Implementing Advanced Audio Player code
     if (player->processStereo(floatBuffer, false, (unsigned int)numberOfFrames)) {
         Superpowered::FloatToShortInt(floatBuffer, audio, (unsigned int)numberOfFrames);
         return true;
     } else {
         return false;
     }
+    //Implementing advanced Polar FFT code
+    // 1. Convert stereo audio to mono.
+    Superpowered::StereoToMono(floatBuffer, fftInputMono, 0.5f, 0.5f, 0.5f, 0.5f, (unsigned int)numberOfFrames);
+
+    // 2. Prepare the "split real" input for PolarFFT.
+    // Even samples go into fftReal, odd samples go into fftImag.
+    for (int i = 0; i < (1 << fftSizeLog2); i += 2) {
+        fftReal[i >> 1] = fftInputMono[i];
+        fftImag[i >> 1] = fftInputMono[i + 1];
+    }
+
+    pthread_mutex_lock(&fftMutex);
+
+    // 3. Perform the Polar FFT.
+    // The fftReal buffer is used as input AND is overwritten with the magnitude output.
+    // The fftImag buffer is used as input AND is overwritten with the phase output (which we don't need).
+    Superpowered::PolarFFT(fftReal, fftImag, fftSizeLog2, true);
+
+    pthread_mutex_unlock(&fftMutex);
 }
 
 // JNI function to initialize the audio engine.
@@ -59,15 +87,22 @@ Java_com_example_kzmusic_PlayerService_initSuperpowered(
             samplerate, buffersize, false, true, audioProcessing,
             nullptr, -1, SL_ANDROID_STREAM_MEDIA
     );
+    //Initialising visualiser
+    const int fftSize = 1 << fftSizeLog2; // 1024
+    fftInputMono = (float *)malloc(fftSize * sizeof(float));
+    fftReal = (float *)malloc((fftSize / 2) * sizeof(float));
+    fftImag = (float *)malloc((fftSize / 2) * sizeof(float));
+    pthread_mutex_init(&fftMutex, NULL);
 }
 
-// JNI function to open a file.
+// These Functions below implement the main player functionality for Superpowered
 extern "C" JNIEXPORT void JNICALL
 Java_com_example_kzmusic_PlayerService_openFile(JNIEnv *env, jobject __unused obj, jstring path) {
     const char *str = env->GetStringUTFChars(path, 0);
     player->open(str);
     env->ReleaseStringUTFChars(path, str);
 }
+
 extern "C" JNIEXPORT void JNICALL
 Java_com_example_kzmusic_PlayerService_setPitchShift(JNIEnv* env, jobject obj, jint cents) {
     if (player) {
@@ -134,6 +169,10 @@ Java_com_example_kzmusic_PlayerService_cleanup(JNIEnv* env, jobject obj) {
         delete player;
         player = nullptr;
     }
+    free(fftInputMono);
+    free(fftReal);
+    free(fftImag);
+    pthread_mutex_destroy(&fftMutex);
 }
 
 extern "C" JNIEXPORT void JNICALL
@@ -188,5 +227,29 @@ Java_com_example_kzmusic_PlayerService_getPlayerEvent(JNIEnv* env, jobject obj) 
     }
     __android_log_print(ANDROID_LOG_WARN, "PlayerService", "getPlayerEvent: player is null");
     return 0;
+}
+//This function implements KzMusic Advanced Audio effects for Superpowered
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_kzmusic_PlayerService_initialiseReverb(JNIEnv* env, jobject obj, jfloat dry, jfloat wet, jfloat mix, jfloat width, jfloat damp, jfloat roomSize, jfloat predelayMs, jfloat lowCutHz) {
+    reverb = new Superpowered::Reverb(44100, 44100);
+    reverb->dry = dry;
+    reverb->wet = wet;
+    reverb->mix = mix;
+    reverb->width = width;
+    reverb->damp = damp;
+}
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_kzmusic_PlayerService_getLatestFftData(JNIEnv *env, jobject __unused obj, jfloatArray javaArray) {
+    if (!fftReal) return; // The magnitudes are now in fftReal
+
+    jfloat *cArray = env->GetFloatArrayElements(javaArray, NULL);
+    if (cArray == NULL) return;
+
+    pthread_mutex_lock(&fftMutex);
+    // Copy the magnitude data from fftReal into the Java array.
+    memcpy(cArray, fftReal, ((1 << (fftSizeLog2 - 1))) * sizeof(float));
+    pthread_mutex_unlock(&fftMutex);
+
+    env->ReleaseFloatArrayElements(javaArray, cArray, 0);
 }
 

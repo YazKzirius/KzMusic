@@ -21,6 +21,12 @@
         <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
         <item name="android:tint">@color/white</item>
     </style>
+    <!-- In res/values/styles.xml or themes.xml -->
+
+    <style name="ShapeAppearance.App.CircleImageView" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
 
 
 </resources>

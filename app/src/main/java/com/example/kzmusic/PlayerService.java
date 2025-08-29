@@ -155,12 +155,21 @@ public class PlayerService extends Service {
 
         // 1. Open the audio file in the native player.
         // This will stop any currently playing track.
+        List<MusicFile> played = SongQueue.getInstance().songs_played;
+        int position = SongQueue.getInstance().pointer-1;
+        if (played.size() > 1) {
+            if (played.get(position).getName().equals(played.get(position-1).getName())) {
+                return;
+            } else {
+                ;
+            }
+        }
         openFile(musicFile.getPath());
 
         // 2. Update your application's internal state (queue, history, etc.).
         add_song(musicFile);
         update_song_history(musicFile);
-
+        SongQueue.getInstance().addSong(musicFile);
         // --- (3) APPLY AUDIO EFFECTS ---
         // Apply the desired tempo and pitch shift *before* starting playback.
         // These settings will persist until they are changed again.
@@ -573,6 +582,9 @@ public class PlayerService extends Service {
 
     // This function replaces `enable_endless_stream` and `simulateEndOfSong`
     public void enable_endless_stream() {
+        if (SongQueue.getInstance().is_looping) {
+            return;
+        }
         stopPlaybackStateUpdater(); // Ensure only one is running
         playbackStateRunnable = new Runnable() {
             @Override

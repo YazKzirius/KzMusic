@@ -1,7 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="#090909"
     android:id="@+id/media_overlay"
     tools:context=".MediaOverlay">
@@ -18,7 +20,7 @@
             android:padding="20dp"
             android:gravity="center_horizontal">
 
-            <!-- Header with down/menu buttons -->
+            <!-- Header with down/menu buttons (Unchanged) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -32,7 +34,7 @@
                     android:layout_height="40dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_down"
-                    android:tint="@color/white" />
+                    app:tint="@color/white" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -50,43 +52,59 @@
                     android:layout_height="40dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_colon"
-                    android:tint="@color/white" />
+                    app:tint="@color/white" />
             </LinearLayout>
 
-            <!-- Album art + Playing GIF -->
-            <FrameLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+            <!--
+            [THE FIX]
+            This section is replaced. Instead of a FrameLayout that just stacks views,
+            we use a ConstraintLayout to perfectly center the circular album art
+            on top of the visualizer, which now acts as the background.
+            -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="300dp"
+                android:layout_height="300dp"
                 android:layout_marginTop="40dp">
 
-                <ImageView
-                    android:id="@+id/song_playing_gif"
-                    android:layout_width="200dp"
-                    android:layout_height="200dp"
-                    android:layout_gravity="center" />
+                <!-- The Visualizer draws the bars in the background -->
+                <com.example.kzmusic.VisualizerView
+                    android:id="@+id/visualizerView"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="visible"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent" />
 
-                <ImageView
+                <!-- The Circular Album Art sits on top in the center -->
+                <!-- ShapeableImageView is used to make it a perfect circle -->
+                <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/musicImage"
-                    android:layout_width="130dp"
-                    android:layout_height="130dp"
-                    android:layout_gravity="center"
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
                     android:scaleType="centerCrop"
-                    android:src="@drawable/ic_library" />
-            </FrameLayout>
+                    android:src="@drawable/ic_library"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.App.CircleImageView"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent" />
 
-            <!-- Song Title -->
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- Song Title (Unchanged) -->
             <TextView
                 android:id="@+id/songTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
                 android:gravity="center"
                 android:textColor="@color/white"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:layout_marginTop="10dp" />
 
-            <!-- Speed Slider -->
+            <!-- Speed Slider (Unchanged) -->
             <SeekBar
                 android:id="@+id/seekBarSpeed"
                 android:layout_width="match_parent"
@@ -104,7 +122,8 @@
                 android:textColor="@color/white"
                 android:textSize="18sp"
                 android:layout_marginTop="4dp" />
-            <!-- Pitch Slider -->
+
+            <!-- Pitch Slider (Unchanged) -->
             <SeekBar
                 android:id="@+id/seekBarPitch"
                 android:layout_width="match_parent"
@@ -123,13 +142,13 @@
                 android:textSize="18sp"
                 android:layout_marginTop="4dp" />
 
-            <!-- Reverb Slider -->
+            <!-- Reverb Slider (Unchanged) -->
             <SeekBar
                 android:id="@+id/seekBarReverb"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:max="1000"
-                android:progress="100"
+                android:max="100"
+                android:progress="0"
                 android:layout_marginTop="20dp" />
 
             <TextView
@@ -141,6 +160,8 @@
                 android:textColor="@color/white"
                 android:textSize="18sp"
                 android:layout_marginTop="4dp" />
+
+            <!-- Progress Bar and Playback Controls Container (Unchanged) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -150,7 +171,7 @@
                 android:paddingEnd="16dp"
                 android:gravity="center_horizontal">
 
-                <!-- Progress Bar Row -->
+                <!-- Progress Bar Row (Unchanged) -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -162,7 +183,7 @@
                         android:id="@+id/textCurrentTime"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="0:00"
+                        android:text="00:00"
                         android:textStyle="bold"
                         android:textColor="@color/white"
                         android:textSize="16sp" />
@@ -179,13 +200,13 @@
                         android:id="@+id/textTotalDuration"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="0:00"
+                        android:text="00:00"
                         android:textStyle="bold"
                         android:textColor="@color/white"
                         android:textSize="16sp" />
                 </LinearLayout>
 
-                <!-- Playback Controls Row -->
+                <!-- Playback Controls Row (Unchanged) -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -265,10 +286,7 @@
                         android:contentDescription="Shuffle" />
                 </LinearLayout>
             </LinearLayout>
-            <!-- Playback Controls -->
 
         </LinearLayout>
-
     </ScrollView>
-
 </FrameLayout>

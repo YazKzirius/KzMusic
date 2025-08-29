@@ -169,7 +169,6 @@ public class MediaOverlay extends Fragment {
         Animation scrollAnim = AnimationUtils.loadAnimation(getContext(), R.anim.scroll_horizontal);
         overlaySongTitle.startAnimation(scrollAnim);
         album_cover = view.findViewById(R.id.musicImage);
-        song_gif = view.findViewById(R.id.song_playing_gif);
         btnPlayPause = view.findViewById(R.id.btnPlayPause);
         btnLoop = view.findViewById(R.id.btnLoop);
         btnSkip_left = view.findViewById(R.id.btnSkipLeft);
@@ -333,7 +332,6 @@ public class MediaOverlay extends Fragment {
 
                     }
                 });
-        Glide.with(getContext()).asGif().load(R.drawable.media_playing).circleCrop().into(song_gif);
     }
     //This function cirle crops a bitmap image for the logo
     public static Bitmap getCircularBitmap(Bitmap bitmap) {
@@ -432,8 +430,6 @@ public class MediaOverlay extends Fragment {
                 Boolean shouldPlayPause = event.getContentIfNotHandled();
                 if (shouldPlayPause != null && shouldPlayPause) {
                     // Stop the GIF by clearing the ImageView
-                    Glide.with(getContext()).clear(song_gif);
-                    song_gif.setImageDrawable(null);
                     btnPlayPause.setImageResource(R.drawable.ic_play);
                 } else {
                     ;
@@ -446,8 +442,6 @@ public class MediaOverlay extends Fragment {
                 Boolean shouldPlayPause = event.getContentIfNotHandled();
                 if (shouldPlayPause != null && shouldPlayPause) {
                     // Stop the GIF by clearing the ImageView
-                    Glide.with(getContext()).clear(song_gif);
-                    song_gif.setImageDrawable(null);
                     btnPlayPause.setImageResource(R.drawable.ic_pause);
                     set_up_circular_view(musicFile);
                 } else {
