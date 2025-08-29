@@ -19,10 +19,13 @@
 #define LOG_TAG "AudioPlayer"
 #define log_print __android_log_print
 static float *fftInputMono;        // A buffer for the mono audio signal
-static float *fftReal;             // Will hold the EVEN samples for PolarFFT input
-static float *fftImag;             // Will hold the ODD samples for PolarFFT input (used as phase input)
-static pthread_mutex_t fftMutex;
-static const int fftSizeLog2 = 10; // FFT size is 2^10 = 1024.
+static const int fftSizeLog2 = 10;                // FFT size = 1024
+static const int fftSize = 1 << fftSizeLog2;      // 1024
+static float *fftAccumulator;                     // This buffer will accumulate audio
+static int fftAccumulatorPosition = 0;            // How much audio is in the accumulator
+static float *fftReal;                            // Buffer for FFT magnitudes
+static float *fftImag;                            // Buffer for FFT phases
+static pthread_mutex_t fftMutex;           // How much audio is in the accumulator
 static SuperpoweredAndroidAudioIO *audioIO;
 static Superpowered::AdvancedAudioPlayer *player;
 static Superpowered::Reverb *reverb;
@@ -34,65 +37,61 @@ static bool audioProcessing(
         int numberOfFrames,
         int samplerate
 ) {
+    if (!player) return false;
     player->outputSamplerate = (unsigned int)samplerate;
     float floatBuffer[numberOfFrames * 2];
-    //Implementing Advanced Audio Player code
+
     if (player->processStereo(floatBuffer, false, (unsigned int)numberOfFrames)) {
+
+        // --- [ROBUST FFT PROCESSING] ---
+        if (fftInputMono) {
+            // 1. Clear the entire FFT input buffer with silence. This is a critical safety step.
+            memset(fftInputMono, 0, fftSize * sizeof(float));
+
+            // 2. Convert the new audio to mono and copy it to the START of the cleared buffer.
+            Superpowered::StereoToMono(floatBuffer, fftInputMono, 0.5f, 0.5f, 0.5f, 0.5f, (unsigned int)numberOfFrames);
+
+            // 3. Prepare the "split real" input for PolarFFT.
+            for (int i = 0; i < fftSize; i += 2) {
+                fftReal[i >> 1] = fftInputMono[i];
+                fftImag[i >> 1] = fftInputMono[i + 1];
+            }
+
+            // 4. Lock, run the FFT on the now-full and safe buffer, then unlock.
+            pthread_mutex_lock(&fftMutex);
+            Superpowered::PolarFFT(fftReal, fftImag, fftSizeLog2, true);
+            pthread_mutex_unlock(&fftMutex);
+        }
+        // --- [END OF FIX] ---
+
+        if (reverb && reverb->enabled) {
+            reverb->process(floatBuffer, floatBuffer, (unsigned int)numberOfFrames);
+        }
         Superpowered::FloatToShortInt(floatBuffer, audio, (unsigned int)numberOfFrames);
         return true;
-    } else {
-        return false;
     }
-    //Implementing advanced Polar FFT code
-    // 1. Convert stereo audio to mono.
-    Superpowered::StereoToMono(floatBuffer, fftInputMono, 0.5f, 0.5f, 0.5f, 0.5f, (unsigned int)numberOfFrames);
-
-    // 2. Prepare the "split real" input for PolarFFT.
-    // Even samples go into fftReal, odd samples go into fftImag.
-    for (int i = 0; i < (1 << fftSizeLog2); i += 2) {
-        fftReal[i >> 1] = fftInputMono[i];
-        fftImag[i >> 1] = fftInputMono[i + 1];
-    }
-
-    pthread_mutex_lock(&fftMutex);
-
-    // 3. Perform the Polar FFT.
-    // The fftReal buffer is used as input AND is overwritten with the magnitude output.
-    // The fftImag buffer is used as input AND is overwritten with the phase output (which we don't need).
-    Superpowered::PolarFFT(fftReal, fftImag, fftSizeLog2, true);
-
-    pthread_mutex_unlock(&fftMutex);
+    return false;
 }
 
-// JNI function to initialize the audio engine.
+// --- JNI Functions ---
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_kzmusic_PlayerService_initSuperpowered(
-        JNIEnv *env,
-        jobject __unused obj,
-        jint samplerate,
-        jint buffersize
-) {
+Java_com_example_kzmusic_PlayerService_initSuperpowered(JNIEnv *env, jobject __unused obj, jint samplerate, jint buffersize) {
     Superpowered::Initialize("ExampleLicenseKey-WillExpire-OnNextUpdate");
 
     player = new Superpowered::AdvancedAudioPlayer((unsigned int)samplerate, 0);
-
-    // Ensure high-quality sound mode is enabled for the best audio.
     player->timeStretchingSound = 2;
-    // Ensure the time stretching feature is enabled.
     player->timeStretching = true;
 
-    // IMPORTANT: 'buffersize' now comes from your Java/Kotlin code,
-    // which should be the larger, safer value.
-    audioIO = new SuperpoweredAndroidAudioIO(
-            samplerate, buffersize, false, true, audioProcessing,
-            nullptr, -1, SL_ANDROID_STREAM_MEDIA
-    );
-    //Initialising visualiser
-    const int fftSize = 1 << fftSizeLog2; // 1024
+    reverb = new Superpowered::Reverb((unsigned int)samplerate);
+
+    // Initialize visualiser components
     fftInputMono = (float *)malloc(fftSize * sizeof(float));
     fftReal = (float *)malloc((fftSize / 2) * sizeof(float));
     fftImag = (float *)malloc((fftSize / 2) * sizeof(float));
     pthread_mutex_init(&fftMutex, NULL);
+
+    audioIO = new SuperpoweredAndroidAudioIO(
+            samplerate, buffersize, false, true, audioProcessing, nullptr, -1, SL_ANDROID_STREAM_MEDIA);
 }
 
 // These Functions below implement the main player functionality for Superpowered
@@ -158,21 +157,47 @@ Java_com_example_kzmusic_PlayerService_onForeground(JNIEnv* env, jobject obj) {
         __android_log_print(ANDROID_LOG_WARN, "PlayerService", "onForeground: audioIO is null");
     }
 }
-
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_kzmusic_PlayerService_cleanup(JNIEnv* env, jobject obj) {
-    if (audioIO) {
+Java_com_example_kzmusic_PlayerService_cleanup(JNIEnv* env, jobject __unused obj) {
+    if (audioIO != nullptr) {
         delete audioIO;
-        audioIO = nullptr;
+        audioIO = nullptr; // Set to null immediately after deletion
+        log_print(ANDROID_LOG_DEBUG, "SuperpoweredEngine", "audioIO cleaned up.");
     }
-    if (player) {
+
+    if (player != nullptr) {
         delete player;
         player = nullptr;
+        log_print(ANDROID_LOG_DEBUG, "SuperpoweredEngine", "player cleaned up.");
     }
-    free(fftInputMono);
-    free(fftReal);
-    free(fftImag);
-    pthread_mutex_destroy(&fftMutex);
+
+    if (reverb != nullptr) {
+        delete reverb;
+        reverb = nullptr;
+        log_print(ANDROID_LOG_DEBUG, "SuperpoweredEngine", "reverb cleaned up.");
+    }
+
+    if (fftInputMono != nullptr) {
+        free(fftInputMono);
+        fftInputMono = nullptr;
+        log_print(ANDROID_LOG_DEBUG, "SuperpoweredEngine", "fftInputMono cleaned up.");
+    }
+
+    if (fftReal != nullptr) {
+        free(fftReal);
+        fftReal = nullptr;
+        log_print(ANDROID_LOG_DEBUG, "SuperpoweredEngine", "fftReal cleaned up.");
+    }
+
+    if (fftImag != nullptr) {
+        free(fftImag);
+        fftImag = nullptr;
+        log_print(ANDROID_LOG_DEBUG, "SuperpoweredEngine", "fftImag cleaned up.");
+    }
+    if (player != nullptr || audioIO != nullptr) { // A simple check to infer initialization
+        pthread_mutex_destroy(&fftMutex);
+        log_print(ANDROID_LOG_DEBUG, "SuperpoweredEngine", "fftMutex destroyed.");
+    }
 }
 
 extern "C" JNIEXPORT void JNICALL
@@ -240,16 +265,38 @@ Java_com_example_kzmusic_PlayerService_initialiseReverb(JNIEnv* env, jobject obj
 }
 extern "C" JNIEXPORT void JNICALL
 Java_com_example_kzmusic_PlayerService_getLatestFftData(JNIEnv *env, jobject __unused obj, jfloatArray javaArray) {
-    if (!fftReal) return; // The magnitudes are now in fftReal
+    // --- STEP 1: Safety Check ---
+    // If the FFT has not been initialized or the passed Java array is invalid, do nothing.
+    if (!fftReal || !javaArray) {
+        return;
+    }
 
+    // --- STEP 2: Get a direct pointer to the Java array's memory ---
+    // This allows C++ to write directly into the memory used by your Android UI's fftData array.
     jfloat *cArray = env->GetFloatArrayElements(javaArray, NULL);
-    if (cArray == NULL) return;
+    if (cArray == NULL) {
+        // This can happen if the system is out of memory.
+        return;
+    }
 
+    // --- STEP 3: Use a Mutex for Thread Safety ---
+    // The audio thread is constantly writing to fftReal. The UI thread is about to read from it.
+    // The mutex ensures the audio thread waits for the UI thread to finish copying, preventing corrupted data.
     pthread_mutex_lock(&fftMutex);
-    // Copy the magnitude data from fftReal into the Java array.
-    memcpy(cArray, fftReal, ((1 << (fftSizeLog2 - 1))) * sizeof(float));
+
+    // --- STEP 4: Copy the Data ---
+    // This is the core of the function. It copies the magnitude data from our C++ fftReal buffer
+    // into the Java array. We only need the first half of the FFT results.
+    // The size is 2^(fftSizeLog2 - 1), which is 1024 / 2 = 512.
+    memcpy(cArray, fftReal, (1 << (fftSizeLog2 - 1)) * sizeof(float));
+
+    // --- STEP 5: Unlock the Mutex ---
+    // Release the lock so the audio thread can continue processing.
     pthread_mutex_unlock(&fftMutex);
 
+    // --- STEP 6: Release the Pointer ---
+    // This tells the Java Virtual Machine that we are done writing to the array's memory.
+    // The '0' argument means "copy the changes back and free the C++ copy".
     env->ReleaseFloatArrayElements(javaArray, cArray, 0);
 }
 

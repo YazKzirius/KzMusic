@@ -91,6 +91,11 @@ public class PlayerService extends Service {
     native double getDurationMs();
     native void setLooping(boolean isLooping);
     native int getPlayerEvent();
+
+    // The native declaration that links to the C++ function
+    native void getLatestFftData(float[] javaArray);
+
+    // The public wrapper method your UI will call
     native void cleanup();
 
     // Now, create public wrapper methods that your UI can call
@@ -118,6 +123,9 @@ public class PlayerService extends Service {
     // Create the public wrapper method
     public int getLatestPlayerEvent() {
         return getPlayerEvent();
+    }
+    public void getFftData(float[] data) {
+        getLatestFftData(data);
     }
     @Override
     public void onCreate() {

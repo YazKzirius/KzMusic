@@ -1,5 +1,8 @@
 package com.example.kzmusic;
 //Imports
+import static androidx.work.LoggerExtKt.logd;
+
+import java.util.Arrays;
 import java.util.Random;
 
 import android.animation.ObjectAnimator;
@@ -123,6 +126,11 @@ public class MediaOverlay extends Fragment {
     private Handler uiUpdateHandler = new Handler(Looper.getMainLooper());
     private Runnable uiUpdateRunnable;
     private boolean isDurationSet = false; // A flag to track if we've set the duration for the current song.
+    private VisualizerView visualizerView;
+    private Handler visualizerHandler;
+    private Runnable visualizerRunnable;
+    private float[] fftData;
+    private boolean isVisualizerRunning = false; // A crucial flag to control the loop's state
 
     public MediaOverlay() {
         // Required empty public constructor
@@ -183,6 +191,7 @@ public class MediaOverlay extends Fragment {
         seekBarPitch = view.findViewById(R.id.seekBarPitch);
         textCurrentTime = view.findViewById(R.id.textCurrentTime);
         textTotalDuration = view.findViewById(R.id.textTotalDuration);
+        visualizerView = view.findViewById(R.id.visualizerView);
         //Retrieving data from song queue
         if (SongQueue.getInstance().current_song == null) {
             ;
@@ -191,6 +200,8 @@ public class MediaOverlay extends Fragment {
             position = SongQueue.getInstance().current_position;
             is_looping = SongQueue.getInstance().is_looping;
             shuffle_on = SongQueue.getInstance().shuffle_on;
+            fftData = new float[512];
+            visualizerHandler = new Handler(Looper.getMainLooper());
             //Setting up notification
             startPlayerService();
             musicFiles = SongQueue.getInstance().song_list;
@@ -332,6 +343,7 @@ public class MediaOverlay extends Fragment {
 
                     }
                 });
+        startVisualizer();
     }
     //This function cirle crops a bitmap image for the logo
     public static Bitmap getCircularBitmap(Bitmap bitmap) {
@@ -349,6 +361,54 @@ public class MediaOverlay extends Fragment {
         canvas.drawBitmap(bitmap, null, rect, paint);
 
         return output;
+    }
+    /**
+     * Starts the periodic UI updates that drive the visualizer.
+     * This method is robust and safe to call multiple times.
+     */
+    private void startVisualizer() {
+        // 1. Check the flag. If the loop is already running, do nothing.
+        //    This prevents creating multiple, conflicting update loops.
+        if (isVisualizerRunning) return;
+        isVisualizerRunning = true; // 2. Set the flag to indicate the loop is now active.
+
+        // 3. Define the task to be run repeatedly (if it's the first time).
+        if (visualizerRunnable == null) {
+            visualizerRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    // The drawing logic only executes if the loop is active and all components are ready.
+                    if (isVisualizerRunning && isBound && playerService != null && playerService.isCurrentlyPlaying() && visualizerView != null) {
+                        // Get the latest audio frequency data from the C++ engine.
+                        playerService.getLatestFftData(fftData);
+                        // Pass the data to our custom view to trigger a redraw.
+                        Log.d("FFT Data", "FFT Data: " + Arrays.toString(fftData));
+                        visualizerView.updateVisualizer(fftData);
+                    }
+
+                    // THE KEY FIX: The re-posting logic is controlled by the flag.
+                    // As long as the flag is true, the loop will schedule itself to run again.
+                    if (isVisualizerRunning) {
+                        visualizerHandler.postDelayed(this, 33); // Schedule next frame (~30 FPS)
+                    }
+                }
+            };
+        }
+        // 4. Start the loop.
+        visualizerHandler.post(visualizerRunnable);
+    }
+
+    /**
+     * Stops the periodic UI updates.
+     * This method is robust and safe to call multiple times.
+     */
+    private void stopVisualizer() {
+        // 1. Set the flag to false. This will cause the runnable to stop re-posting itself on its next execution.
+        isVisualizerRunning = false;
+        // 2. Explicitly remove any pending callbacks from the handler to stop the loop immediately.
+        if (visualizerHandler != null) {
+            visualizerHandler.removeCallbacksAndMessages(null);
+        }
     }
 
     //This function sets up media notification bar skip events
@@ -430,6 +490,7 @@ public class MediaOverlay extends Fragment {
                 Boolean shouldPlayPause = event.getContentIfNotHandled();
                 if (shouldPlayPause != null && shouldPlayPause) {
                     // Stop the GIF by clearing the ImageView
+                    startVisualizer();
                     btnPlayPause.setImageResource(R.drawable.ic_play);
                 } else {
                     ;
@@ -442,6 +503,7 @@ public class MediaOverlay extends Fragment {
                 Boolean shouldPlayPause = event.getContentIfNotHandled();
                 if (shouldPlayPause != null && shouldPlayPause) {
                     // Stop the GIF by clearing the ImageView
+                    startVisualizer();
                     btnPlayPause.setImageResource(R.drawable.ic_pause);
                     set_up_circular_view(musicFile);
                 } else {
@@ -516,11 +578,13 @@ public class MediaOverlay extends Fragment {
                 playerService.updatePlaybackState();
                 btnPlayPause.setImageResource(R.drawable.ic_play);
                 // Notification updates should be handled inside the service's pause() method
+                stopVisualizer();
             } else {
                 playerService.play(); // Call service method
                 playerService.updatePlaybackState();
                 btnPlayPause.setImageResource(R.drawable.ic_pause);
                 // Notification updates should be handled inside the service's play() method
+                startVisualizer();
             }
         });
 

@@ -62,8 +62,8 @@
             on top of the visualizer, which now acts as the background.
             -->
             <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="300dp"
-                android:layout_height="300dp"
+                android:layout_width="240dp"
+                android:layout_height="240dp"
                 android:layout_marginTop="40dp">
 
                 <!-- The Visualizer draws the bars in the background -->
