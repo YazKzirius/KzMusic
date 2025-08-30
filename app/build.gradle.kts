@@ -94,5 +94,8 @@ dependencies {
 // Optional - Testing
     testImplementation(libs.room.testing)
     implementation(libs.material) // Use the latest version
+    // Add the App Check dependency
+    implementation(libs.firebase.appcheck.playintegrity)
+    implementation(libs.firebase.appcheck.debug)
 
 }

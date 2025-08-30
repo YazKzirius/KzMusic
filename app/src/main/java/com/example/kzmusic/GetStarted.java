@@ -4,6 +4,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.content.Context;
 import android.widget.Button;
@@ -16,6 +17,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import com.google.firebase.appcheck.FirebaseAppCheck;
+import com.google.firebase.auth.FirebaseAuth;
 import com.spotify.sdk.android.auth.AuthorizationClient;
 import com.spotify.sdk.android.auth.AuthorizationRequest;
 import com.spotify.sdk.android.auth.AuthorizationResponse;
@@ -27,6 +31,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -43,12 +50,9 @@ public class GetStarted extends AppCompatActivity {
     String REDIRECT_URI = "kzmusic://callback";
     private static final String AUTH_URL = "https://accounts.spotify.com/authorize";
     private static final String TOKEN_URL = "https://accounts.spotify.com/api/token";
-    int REQUEST_CODE = 1337;
-    SpotifyAppRemote mSpotifyAppRemote;
-    String username;
-    String email;
-    String token;
-    long expiration_time;
+
+    private static final String SPOTIFY_ME_URL = "https://api.spotify.com/v1/me";
+    private FirebaseAuth mAuth; // Firebase Auth instance
     SessionManager sessionManager;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,19 +64,14 @@ public class GetStarted extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        sessionManager = new SessionManager(this);
-        if (!sessionManager.isLoggedIn()) {
-            Intent intent = new Intent(GetStarted.this, MainActivity.class);
-            startActivity(intent);
-            finish();
-        } else {
-        }
+        mAuth = FirebaseAuth.getInstance();
         showSignInButton();
         //Get started button functionality
         Button btn = findViewById(R.id.get_started_btn);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                showLoading();
                 set_up_spotify_auth();
             }
         });
@@ -80,7 +79,6 @@ public class GetStarted extends AppCompatActivity {
     //These functions sets up the Spotify Sign-in/authorisation using spotify web API
     public void set_up_spotify_auth() {
         if (isNetworkAvailable()) {
-            showLoading();
             AuthorizationClient.clearCookies(getApplicationContext());
             // Spotify authorization URL
             String authUrl = AUTH_URL + "?client_id=" + CLIENT_ID +
@@ -160,13 +158,9 @@ public class GetStarted extends AppCompatActivity {
                         String accessToken = json.getString("access_token");
                         String refreshToken = json.getString("refresh_token");
                         long expiresIn = json.getLong("expires_in");
-
-                        // *** MODIFIED PART ***
                         // Save tokens to the central manager
                         SpotifyAuthManager.getInstance().setTokens(accessToken, refreshToken, expiresIn);
-
-                        // Proceed to the next activity
-                        navigate_to_activity(MainPage.class);
+                        getSpotifyUserProfile(accessToken);
 
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -174,6 +168,53 @@ public class GetStarted extends AppCompatActivity {
                     }
                 } else {
                     runOnUiThread(() -> Toast.makeText(GetStarted.this, "Authorization failed.", Toast.LENGTH_SHORT).show());
+                }
+            }
+        });
+    }
+    /**
+     * NEW METHOD
+     * Fetches the user's profile from Spotify using the access token.
+     */
+    private void getSpotifyUserProfile(String accessToken) {
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder()
+                .url(SPOTIFY_ME_URL)
+                .addHeader("Authorization", "Bearer " + accessToken)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                runOnUiThread(() -> {
+                    Toast.makeText(GetStarted.this, "Failed to get Spotify profile.", Toast.LENGTH_SHORT).show();
+                    showSignInButton();
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    try {
+                        String responseBody = response.body().string();
+                        JSONObject json = new JSONObject(responseBody);
+                        String spotifyEmail = json.getString("email");
+                        String spotifyUsername = json.getString("display_name");
+                        String spotifyId = json.getString("id"); // This will be our "password"
+                        sessionManager = new SessionManager(GetStarted.this);
+                        sessionManager.createLoginSession(spotifyUsername, spotifyEmail);
+                        navigate_to_activity(MainPage.class);
+                    } catch (JSONException e) {
+                        runOnUiThread(() -> {
+                            Toast.makeText(GetStarted.this, "Failed to parse profile data.", Toast.LENGTH_SHORT).show();
+                            showSignInButton();
+                        });
+                    }
+                } else {
+                    runOnUiThread(() -> {
+                        Toast.makeText(GetStarted.this, "Could not fetch Spotify profile.", Toast.LENGTH_SHORT).show();
+                        showSignInButton();
+                    });
                 }
             }
         });
@@ -189,7 +230,7 @@ public class GetStarted extends AppCompatActivity {
         Button getStartedButton = findViewById(R.id.get_started_btn);
         ProgressBar loadingSpinner = findViewById(R.id.loading_spinner);
         getStartedButton.setVisibility(View.VISIBLE);
-        loadingSpinner.setVisibility(View.GONE);
+        loadingSpinner.setVisibility(View.INVISIBLE);
     }
 
 

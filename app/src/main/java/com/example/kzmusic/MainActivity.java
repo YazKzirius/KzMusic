@@ -27,14 +27,7 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        sessionManager = new SessionManager(this);
-        if (sessionManager.isLoggedIn()) {
-            navigate_to_activity(GetStarted.class);
-        } else {
-            //Creating button functionality
-            set_up_login();
-            set_up_create();
-        }
+        navigate_to_activity(GetStarted.class);
     }
     //This function sets up the login button
     //Moves to Sign-in page
