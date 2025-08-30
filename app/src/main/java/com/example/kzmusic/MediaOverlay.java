@@ -131,6 +131,7 @@ public class MediaOverlay extends Fragment {
     private Runnable visualizerRunnable;
     private float[] fftData;
     private boolean isVisualizerRunning = false; // A crucial flag to control the loop's state
+    private Float reverb;
 
     public MediaOverlay() {
         // Required empty public constructor
@@ -299,7 +300,13 @@ public class MediaOverlay extends Fragment {
 
                     }
                 });
-        startVisualizer();
+        if (playerService != null){
+            if (playerService.isCurrentlyPlaying()) {
+                startVisualizer();
+            } else {
+                stopVisualizer();
+            }
+        }
     }
     //This function cirle crops a bitmap image for the logo
     public static Bitmap getCircularBitmap(Bitmap bitmap) {
@@ -648,7 +655,12 @@ public class MediaOverlay extends Fragment {
     // This function now only sets up the listener. The duration is set in the updater.
     public void set_up_bar() {
         if (playerService == null) return;
-
+        long duration = playerService.getTrackDuration();
+        if (duration > 0) {
+            textTotalDuration.setText(formatTime(duration));
+            seekBar.setMax((int) duration);
+            isDurationSet = true; // Mark that we've set it for this song.
+        }
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -679,7 +691,7 @@ public class MediaOverlay extends Fragment {
             @Override
             public void run() {
                 if (playerService != null) {
-                    // Check if the player has confirmed that the file is open.
+                    // Always update the current position if the player is playing.
                     if (!isDurationSet ) {
                         long duration = playerService.getTrackDuration();
                         if (duration > 0) {
@@ -865,6 +877,7 @@ public class MediaOverlay extends Fragment {
         //Initialising audio settings
         song_speed = SongQueue.getInstance().speed;
         song_pitch = SongQueue.getInstance().pitch;
+        reverb = SongQueue.getInstance().reverb;
         //Setting playback speed properties
         //Setting up speed+pitch seekbar
         seekBarSpeed.setMax(200);
@@ -875,6 +888,11 @@ public class MediaOverlay extends Fragment {
         seekBarPitch.setMin(50);
         seekBarPitch.setProgress((int) (song_pitch * 100));
         pitch_text.setText("Pitch: " + String.format("%.1fx", song_pitch));
+        //Setting up reverb seekbar
+        seekBarReverb.setMax(100);
+        seekBarReverb.setMin(0);
+        seekBarReverb.setProgress(reverb.intValue());
+        reverb_text.setText("Reverberation: "+reverb.intValue()+"%");
     }
     //This function sets up speed manager seek bar
     public void set_up_speed_and_pitch() {
@@ -940,6 +958,16 @@ public class MediaOverlay extends Fragment {
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 //Set reverb parameters
                 setReverbPreset(progress);
+                SongQueue.getInstance().setReverb_level((float) progress);
+                reverb_text.setText("Reverberation: "+progress+"%");
+                if (playerService != null) {
+                    if (progress == 0) {
+                        playerService.setEnabled(false);
+                    } else {
+                        playerService.initialiseReverb((float) progress);
+                        playerService.setEnabled(true);
+                    }
+                }
             }
 
             @Override

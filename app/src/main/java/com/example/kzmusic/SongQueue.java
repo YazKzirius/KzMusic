@@ -20,10 +20,10 @@ public class SongQueue {
     int current_position = -1;
     Float speed = (float) 1;
     Float pitch = (float) 1;
+    Float reverb = (float) 0;
     int reverb_level = -1000;
     Boolean is_looping = false;
     Boolean shuffle_on = false;
-    EnvironmentalReverb reverb;
     long current_time = 0;
     long last_postion = 0;
     int pointer = 0;
@@ -72,8 +72,8 @@ public class SongQueue {
         this.pitch = pitch;
     }
 
-    public void setReverb_level(int reverb_level) {
-        this.reverb_level = reverb_level;
+    public void setReverb_level(float reverb_level) {
+        this.reverb = reverb_level;
     }
 
     public void setIs_looping(Boolean is_looping) {
@@ -87,59 +87,19 @@ public class SongQueue {
     public void setCurrent_resource(int current_resource) {
         this.current_resource = current_resource;
     }
-
-    public void setAudio_session_id(int audio_session_id) {
-        this.audio_session_id = audio_session_id;
-    }
-
-    public int getAudio_session_id() {
-        return audio_session_id;
-    }
-
-    public void setCurrent_time(long current_time) {
-        this.current_time = current_time;
-    }
     public int get_size() {
         return songs_played.size();
     }
 
-    public String getPlaying_playlist() {
-        return playing_playlist;
-    }
 
     public void setPlaying_playlist(String playing_playlist) {
         this.playing_playlist = playing_playlist;
     }
 
-    public String get_current_playlist() {
-        return current_playlist;
-    }
     public void set_current_playlist(String playlist) {
         current_playlist = playlist;
     }
-    public MusicFile get_specified(int index) {
-        if (index < 0 || index >= songs_played.size()) { // ✅ Prevents invalid index access
-            return null; // ✅ Handle gracefully instead of crashing
-        }
-        return songs_played.get(index);
-    }
-    public void initialize_reverb(int sessionId) {
-        if (this.reverb != null) {
-            this.reverb.release();
-            this.reverb = null;
-        }
-        this.reverb = new EnvironmentalReverb(0, sessionId);
-    }
-    public void update_id() {
-        NOTIFICATION_ID += 1;
-        CHANNEL_ID += ""+NOTIFICATION_ID;
-    }
     public void resetToDefaults() {
-        if (reverb != null) {
-            reverb.release();
-            reverb = null;
-        }
-
         song_list = null;
         songs_played.clear();
         current_song = null;

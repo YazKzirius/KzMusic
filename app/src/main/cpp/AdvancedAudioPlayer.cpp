@@ -158,49 +158,6 @@ Java_com_example_kzmusic_PlayerService_onForeground(JNIEnv* env, jobject obj) {
     }
 }
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_kzmusic_PlayerService_cleanup(JNIEnv* env, jobject __unused obj) {
-    if (audioIO != nullptr) {
-        delete audioIO;
-        audioIO = nullptr; // Set to null immediately after deletion
-        log_print(ANDROID_LOG_DEBUG, "SuperpoweredEngine", "audioIO cleaned up.");
-    }
-
-    if (player != nullptr) {
-        delete player;
-        player = nullptr;
-        log_print(ANDROID_LOG_DEBUG, "SuperpoweredEngine", "player cleaned up.");
-    }
-
-    if (reverb != nullptr) {
-        delete reverb;
-        reverb = nullptr;
-        log_print(ANDROID_LOG_DEBUG, "SuperpoweredEngine", "reverb cleaned up.");
-    }
-
-    if (fftInputMono != nullptr) {
-        free(fftInputMono);
-        fftInputMono = nullptr;
-        log_print(ANDROID_LOG_DEBUG, "SuperpoweredEngine", "fftInputMono cleaned up.");
-    }
-
-    if (fftReal != nullptr) {
-        free(fftReal);
-        fftReal = nullptr;
-        log_print(ANDROID_LOG_DEBUG, "SuperpoweredEngine", "fftReal cleaned up.");
-    }
-
-    if (fftImag != nullptr) {
-        free(fftImag);
-        fftImag = nullptr;
-        log_print(ANDROID_LOG_DEBUG, "SuperpoweredEngine", "fftImag cleaned up.");
-    }
-    if (player != nullptr || audioIO != nullptr) { // A simple check to infer initialization
-        pthread_mutex_destroy(&fftMutex);
-        log_print(ANDROID_LOG_DEBUG, "SuperpoweredEngine", "fftMutex destroyed.");
-    }
-}
-
-extern "C" JNIEXPORT void JNICALL
 Java_com_example_kzmusic_PlayerService_seekTo(JNIEnv* env, jobject obj, jdouble positionMs) {
     if (player) {
         player->setPosition(positionMs, false, false);
@@ -255,14 +212,27 @@ Java_com_example_kzmusic_PlayerService_getPlayerEvent(JNIEnv* env, jobject obj) 
 }
 //This function implements KzMusic Advanced Audio effects for Superpowered
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_kzmusic_PlayerService_initialiseReverb(JNIEnv* env, jobject obj, jfloat dry, jfloat wet, jfloat mix, jfloat width, jfloat damp, jfloat roomSize, jfloat predelayMs, jfloat lowCutHz) {
+Java_com_example_kzmusic_PlayerService_initialiseReverb(JNIEnv* env, jobject obj, float wet) {
     reverb = new Superpowered::Reverb(44100, 44100);
-    reverb->dry = dry;
+    reverb->dry = 0.987;
     reverb->wet = wet;
-    reverb->mix = mix;
-    reverb->width = width;
-    reverb->damp = damp;
+    reverb->mix = 0.4;
+    reverb->width = 1;
+    reverb->damp = 0.5;
+    reverb->roomSize = 0.8;
+    reverb->lowCutHz = 0;
+    reverb->predelayMs = 0;
 }
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_kzmusic_PlayerService_setEnabled(JNIEnv* env, jobject obj, jboolean condition) {
+    if (reverb) {
+        reverb->enabled = condition;
+    } else {
+        __android_log_print(ANDROID_LOG_WARN, "PlayerService", "set_enabled: reverb is null");
+    }
+}
+
 extern "C" JNIEXPORT void JNICALL
 Java_com_example_kzmusic_PlayerService_getLatestFftData(JNIEnv *env, jobject __unused obj, jfloatArray javaArray) {
     // --- STEP 1: Safety Check ---
@@ -298,5 +268,47 @@ Java_com_example_kzmusic_PlayerService_getLatestFftData(JNIEnv *env, jobject __u
     // This tells the Java Virtual Machine that we are done writing to the array's memory.
     // The '0' argument means "copy the changes back and free the C++ copy".
     env->ReleaseFloatArrayElements(javaArray, cArray, 0);
+}
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_kzmusic_PlayerService_cleanup(JNIEnv* env, jobject __unused obj) {
+    if (audioIO != nullptr) {
+        delete audioIO;
+        audioIO = nullptr; // Set to null immediately after deletion
+        log_print(ANDROID_LOG_DEBUG, "SuperpoweredEngine", "audioIO cleaned up.");
+    }
+
+    if (player != nullptr) {
+        delete player;
+        player = nullptr;
+        log_print(ANDROID_LOG_DEBUG, "SuperpoweredEngine", "player cleaned up.");
+    }
+
+    if (reverb != nullptr) {
+        delete reverb;
+        reverb = nullptr;
+        log_print(ANDROID_LOG_DEBUG, "SuperpoweredEngine", "reverb cleaned up.");
+    }
+
+    if (fftInputMono != nullptr) {
+        free(fftInputMono);
+        fftInputMono = nullptr;
+        log_print(ANDROID_LOG_DEBUG, "SuperpoweredEngine", "fftInputMono cleaned up.");
+    }
+
+    if (fftReal != nullptr) {
+        free(fftReal);
+        fftReal = nullptr;
+        log_print(ANDROID_LOG_DEBUG, "SuperpoweredEngine", "fftReal cleaned up.");
+    }
+
+    if (fftImag != nullptr) {
+        free(fftImag);
+        fftImag = nullptr;
+        log_print(ANDROID_LOG_DEBUG, "SuperpoweredEngine", "fftImag cleaned up.");
+    }
+    if (player != nullptr || audioIO != nullptr) { // A simple check to infer initialization
+        pthread_mutex_destroy(&fftMutex);
+        log_print(ANDROID_LOG_DEBUG, "SuperpoweredEngine", "fftMutex destroyed.");
+    }
 }
 

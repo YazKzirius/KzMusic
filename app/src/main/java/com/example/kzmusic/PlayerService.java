@@ -90,7 +90,8 @@ public class PlayerService extends Service {
     native double getPositionMs();
     native double getDurationMs();
     native void setLooping(boolean isLooping);
-    native int getPlayerEvent();
+    native void initialiseReverb(float wet);
+    native void setEnabled(boolean condition);
 
     // The native declaration that links to the C++ function
     native void getLatestFftData(float[] javaArray);
@@ -118,14 +119,9 @@ public class PlayerService extends Service {
     public void enableLooping(boolean enable) {
         setLooping(enable);
     }
-    // Define the event constant. The value '10' comes from the SuperpoweredAdvancedAudioPlayer.h header file.
-    public static final int PLAYER_EVENT_OPENED = 10;
-    // Create the public wrapper method
-    public int getLatestPlayerEvent() {
-        return getPlayerEvent();
-    }
-    public void getFftData(float[] data) {
-        getLatestFftData(data);
+    public void show_reverb() {
+        initialiseReverb(SongQueue.getInstance().reverb);
+        Log.d("Reverb", "Reverb enabled: " + SongQueue.getInstance().reverb);
     }
     @Override
     public void onCreate() {
@@ -192,6 +188,12 @@ public class PlayerService extends Service {
         double pitch_cents = (SongQueue.getInstance().pitch - 1.0) * 1000;
         setPitchShift((int) pitch_cents);
         setTempo(SongQueue.getInstance().speed);
+        if (SongQueue.getInstance().reverb == (float) 0) {
+            ;
+        } else {
+            initialiseReverb(SongQueue.getInstance().reverb);
+            setEnabled(true);
+        }
     }
     //This function adds new song to firestore collection
     public void add_song(MusicFile musicFile) {

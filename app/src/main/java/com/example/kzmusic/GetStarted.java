@@ -70,7 +70,6 @@ public class GetStarted extends AppCompatActivity {
         showSignInButton();
         //Get started button functionality
         Button btn = findViewById(R.id.get_started_btn);
-        set_up_spotify_auth();
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
