@@ -334,47 +334,56 @@ public class Radio extends Fragment {
         startActivity(intent);
     }
     //This function searches for random music using API queries and updates the current tracklist
-    public void display_random_music() {
-        accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
-
+    private void display_random_music() {
         TextView text1 = view.findViewById(R.id.made_for_user);
-        if (accesstoken == null) {
-            text1.setText("No internet connection, please try again.");
-        } else {
-            String[] randomQueries = {
-                    "vibe: chill synthwave",
-                    "inspired by: tame impala",
-                    "soundtrack for: late-night coding",
-                    "nostalgia: 90s hip-hop",
-                    "playlist: feel-good throwbacks",
-                    "theme: fantasy RPG battle",
-                    "mood: euphoric dance",
-                    "genre: alt-R&B with soul"
-            };
 
-            String randomQuery = randomQueries[(int) (Math.random() * randomQueries.length)];
-            SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
-            Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
-            call.enqueue(new Callback<SearchResponse>() {
-                @Override
-                public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
-                    if (response.isSuccessful() && response.body() != null) {
-                        musicAdapter.updateTracks(response.body().getTracks().getItems());
-                        sessionManager.save_Tracklist_radio(response.body().getTracks().getItems(), sessionManager.getEmail());
-                    } else if (response.code() == 401) { // Handle expired access token
-                        TextView text1 = view.findViewById(R.id.made_for_user);
-                        text1.setText("Request failed, please re-authorise Spotify");
-                    } else {
-                        ;
+        // Array of creative search queries
+        String[] randomQueries = {
+                "vibe: chill synthwave", "inspired by: tame impala",
+                "soundtrack for: late-night coding", "nostalgia: 90s hip-hop",
+                "playlist: feel-good throwbacks", "theme: fantasy RPG battle",
+                "mood: euphoric dance", "genre: alt-R&B with soul"
+        };
+        String randomQuery = randomQueries[(int) (Math.random() * randomQueries.length)];
+
+        // Ask the manager for a valid token
+        SpotifyAuthManager.getInstance().getValidAccessToken(new TokenCallback() {
+            @Override
+            public void onTokenReceived(String accessToken) {
+                // SUCCESS: We have a valid token, now make the API call
+                SpotifyApiService apiService = RetrofitClient.getClient(accessToken).create(SpotifyApiService.class);
+                Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
+
+                call.enqueue(new Callback<SearchResponse>() {
+                    @Override
+                    public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
+                        if (response.isSuccessful() && response.body() != null) {
+                            trackList.clear();
+                            trackList.addAll(response.body().getTracks().getItems());
+                            musicAdapter.notifyDataSetChanged();
+                        } else {
+                            // Handle other API errors (e.g., 404, 500)
+                            Log.e("DisplayRandom", "API call failed with code: " + response.code());
+                            text1.setText("Could not fetch recommendations.");
+                        }
                     }
-                }
-                @Override
-                public void onFailure(Call<SearchResponse> call, Throwable t) {
-                    TextView text1 = view.findViewById(R.id.made_for_user);
-                    text1.setText("Request failed, please try again.");
-                }
-            });
-        }
+
+                    @Override
+                    public void onFailure(Call<SearchResponse> call, Throwable t) {
+                        // Handle network failures
+                        Log.e("DisplayRandom", "API call failed on network.", t);
+                        text1.setText("No internet connection, please try again.");
+                    }
+                });
+            }
+
+            @Override
+            public void onError() {
+                // FAILURE: Could not get a valid token. User must log in again.
+                Toast.makeText(getContext(), "Session expired. Please log in again.", Toast.LENGTH_LONG).show();
+                SpotifyAuthManager.getInstance().logout(getContext());
+            }
+        });
     }
     //This function assigns data from playback overlay to bottom navigation
     public void set_up_play_bar() {

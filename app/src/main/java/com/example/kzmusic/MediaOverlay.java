@@ -338,7 +338,6 @@ public class MediaOverlay extends Fragment {
                         // Get the latest audio frequency data from the C++ engine.
                         playerService.getLatestFftData(fftData);
                         // Pass the data to our custom view to trigger a redraw.
-                        Log.d("FFT Data", "FFT Data: " + Arrays.toString(fftData));
                         visualizerView.updateVisualizer(fftData);
                     }
 
@@ -649,12 +648,7 @@ public class MediaOverlay extends Fragment {
     // This function now only sets up the listener. The duration is set in the updater.
     public void set_up_bar() {
         if (playerService == null) return;
-        long duration = playerService.getTrackDuration();
-        if (duration > 0) {
-            textTotalDuration.setText(formatTime(duration));
-            seekBar.setMax((int) duration);
-            isDurationSet = true; // Mark that we've set it for this song.
-        }
+
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -685,9 +679,8 @@ public class MediaOverlay extends Fragment {
             @Override
             public void run() {
                 if (playerService != null) {
-                    // --- [THE FIX] ---
                     // Check if the player has confirmed that the file is open.
-                    if (!isDurationSet && playerService.getLatestPlayerEvent() == PlayerService.PLAYER_EVENT_OPENED) {
+                    if (!isDurationSet ) {
                         long duration = playerService.getTrackDuration();
                         if (duration > 0) {
                             textTotalDuration.setText(formatTime(duration));
@@ -695,13 +688,17 @@ public class MediaOverlay extends Fragment {
                             isDurationSet = true; // Mark that we've set it for this song.
                         }
                     }
-                    // -----------------
-
                     // Always update the current position if the player is playing.
                     if (playerService.isCurrentlyPlaying()) {
                         long currentPosition = playerService.getCurrentPosition();
                         seekBar.setProgress((int) currentPosition);
                         textCurrentTime.setText(formatTime(currentPosition));
+                        long duration = playerService.getTrackDuration();
+                        if (duration > 0) {
+                            textTotalDuration.setText(formatTime(duration));
+                            seekBar.setMax((int) duration);
+                            isDurationSet = true; // Mark that we've set it for this song.
+                        }
                     }
                 }
                 // Post again for the next update.

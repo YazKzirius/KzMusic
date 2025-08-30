@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.content.Context;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 import android.content.Intent;
 import androidx.activity.EdgeToEdge;
@@ -66,6 +67,7 @@ public class GetStarted extends AppCompatActivity {
             finish();
         } else {
         }
+        showSignInButton();
         //Get started button functionality
         Button btn = findViewById(R.id.get_started_btn);
         set_up_spotify_auth();
@@ -79,6 +81,7 @@ public class GetStarted extends AppCompatActivity {
     //These functions sets up the Spotify Sign-in/authorisation using spotify web API
     public void set_up_spotify_auth() {
         if (isNetworkAvailable()) {
+            showLoading();
             AuthorizationClient.clearCookies(getApplicationContext());
             // Spotify authorization URL
             String authUrl = AUTH_URL + "?client_id=" + CLIENT_ID +
@@ -127,7 +130,7 @@ public class GetStarted extends AppCompatActivity {
             }
         }
     }
-    //This function exchanges the auth code for the access token and expiration time
+    // This function exchanges the auth code for the access token and expiration time
     public void exchangeAuthorizationCodeForToken(String authorizationCode) {
         OkHttpClient client = new OkHttpClient();
 
@@ -139,17 +142,14 @@ public class GetStarted extends AppCompatActivity {
                 .add("client_secret", CLIENT_SECRET)
                 .build();
 
-        Request request = new Request.Builder()
-                .url(TOKEN_URL)
-                .post(formBody)
-                .build();
+        Request request = new Request.Builder().url(TOKEN_URL).post(formBody).build();
 
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
                 e.printStackTrace();
                 runOnUiThread(() -> Toast.makeText(GetStarted.this, "Failed to exchange token, please try again.", Toast.LENGTH_SHORT).show());
-                navigate_to_activity(MainPage.class);
+                navigate_to_activity(MainPage.class); // Or back to a login screen
             }
 
             @Override
@@ -159,21 +159,38 @@ public class GetStarted extends AppCompatActivity {
                     try {
                         JSONObject json = new JSONObject(responseBody);
                         String accessToken = json.getString("access_token");
-                        String refresh = json.getString("refresh_token");
-                        long expirationTime = json.getLong("expires_in");
-                        OnlinePlayerManager.getInstance().setAccess_token(accessToken);
-                        OnlinePlayerManager.getInstance().setRefresh_token(refresh);
-                        OnlinePlayerManager.getInstance().setExpiration_time(expirationTime);
-                        // Proceed to the next activity with the token
+                        String refreshToken = json.getString("refresh_token");
+                        long expiresIn = json.getLong("expires_in");
+
+                        // *** MODIFIED PART ***
+                        // Save tokens to the central manager
+                        SpotifyAuthManager.getInstance().setTokens(accessToken, refreshToken, expiresIn);
+
+                        // Proceed to the next activity
                         navigate_to_activity(MainPage.class);
 
                     } catch (JSONException e) {
                         e.printStackTrace();
-                        navigate_to_activity(MainPage.class);
+                        navigate_to_activity(MainPage.class); // Or back to a login screen
                     }
+                } else {
+                    runOnUiThread(() -> Toast.makeText(GetStarted.this, "Authorization failed.", Toast.LENGTH_SHORT).show());
                 }
             }
         });
+    }
+    private void showLoading() {
+        Button getStartedButton = findViewById(R.id.get_started_btn);
+        ProgressBar loadingSpinner = findViewById(R.id.loading_spinner);
+        getStartedButton.setVisibility(View.GONE);
+        loadingSpinner.setVisibility(View.VISIBLE);
+    }
+
+    private void showSignInButton() {
+        Button getStartedButton = findViewById(R.id.get_started_btn);
+        ProgressBar loadingSpinner = findViewById(R.id.loading_spinner);
+        getStartedButton.setVisibility(View.VISIBLE);
+        loadingSpinner.setVisibility(View.GONE);
     }
 
 

@@ -291,91 +291,99 @@ public class LikedSongs extends Fragment {
     //This function makes an API call using previous access token to search for random music
     //It does this based on the track_name entered
     private void search_track(String track_name, String Artist, String url) {
-        String accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
-        if (accesstoken == null) {
-            TextView text1 = view.findViewById(R.id.results);
-            text1.setText("No internet connection, please try again.");
-        } else {
-            String randomQuery = "track:" + track_name + " artist:" + Artist;
-            SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
-            Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
-            call.enqueue(new Callback<SearchResponse>() {
-                @Override
-                public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
-                    if (response.isSuccessful() && response.body() != null) {
-                        //Getting track data and formatting
-                        List<SearchResponse.Track> Tracks = response.body().getTracks().getItems();
-                        List<String> tracks = get_track_names(Tracks);
-                        List<String> urls = get_track_urls(Tracks);
-                        //Getting indices of specified information
-                        int i = tracks.indexOf(track_name+" by "+Artist);
-                        int j = urls.indexOf(url);
-                        //This counts the number of errors
-                        int n = 0;
-                        try {
-                            if (Tracks.size() > 0) {
-                                //Checking if it doesn't exist and performs j-index dependent adding
-                                if (i == -1) {
-                                    i = tracks.indexOf(track_name);
-                                    ///Checking if both indices are equal
-                                    if (i == j) {
-                                        tracklist.add(Tracks.get(i));
-                                    } else {
-                                        //Otherwise checking if the url index holds the same title as the current title
-                                        String title = tracks.get(j);
-                                        if (title.equals(track_name+" by "+Artist) || title.equals(track_name)) {
-                                            tracklist.add(Tracks.get(j));
-                                        } else {
-                                            ;
-                                        }
-                                    }
-                                    //Otherwise, perform similar calculations but with i-index dependent adding
-                                } else {
-                                    if (i == j) {
-                                        tracklist.add(Tracks.get(i));
-                                    } else {
-                                        String title = tracks.get(j);
-                                        if (title.equals(track_name+" by "+Artist) || title.equals(track_name)) {
-                                            tracklist.add(Tracks.get(j));
-                                        } else {
+        TextView resultsTextView = view.findViewById(R.id.results);
+        String query = "track:" + track_name + " artist:" + Artist;
+
+        // 1. Ask the SpotifyAuthManager for a valid access token.
+        // This replaces the manual token fetching and the null check.
+        SpotifyAuthManager.getInstance().getValidAccessToken(new TokenCallback() {
+            @Override
+            public void onTokenReceived(String accessToken) {
+                // SUCCESS: We have a valid token. Now, make the API call.
+                SpotifyApiService apiService = RetrofitClient.getClient(accessToken).create(SpotifyApiService.class);
+                Call<SearchResponse> call = apiService.searchTracks(query, "track");
+
+                call.enqueue(new Callback<SearchResponse>() {
+                    @Override
+                    public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
+                        // This 'if' block replaces the original 'if/else if (401)' block.
+                        if (response.isSuccessful() && response.body() != null) {
+
+                            // --- YOUR ORIGINAL TRACK LOGIC (UNCHANGED) ---
+                            List<SearchResponse.Track> Tracks = response.body().getTracks().getItems();
+                            List<String> tracks = get_track_names(Tracks);
+                            List<String> urls = get_track_urls(Tracks);
+                            int i = tracks.indexOf(track_name + " by " + Artist);
+                            int j = urls.indexOf(url);
+                            int n = 0;
+                            try {
+                                if (Tracks.size() > 0) {
+                                    if (i == -1) {
+                                        i = tracks.indexOf(track_name);
+                                        if (i == j) {
                                             tracklist.add(Tracks.get(i));
+                                        } else {
+                                            String title = tracks.get(j);
+                                            if (title.equals(track_name + " by " + Artist) || title.equals(track_name)) {
+                                                tracklist.add(Tracks.get(j));
+                                            } else {
+                                                ;
+                                            }
+                                        }
+                                    } else {
+                                        if (i == j) {
+                                            tracklist.add(Tracks.get(i));
+                                        } else {
+                                            String title = tracks.get(j);
+                                            if (title.equals(track_name + " by " + Artist) || title.equals(track_name)) {
+                                                tracklist.add(Tracks.get(j));
+                                            } else {
+                                                tracklist.add(Tracks.get(i));
+                                            }
                                         }
                                     }
+                                } else {
+                                    n += 1;
                                 }
-                            } else {
-                                n += 1;
+                            } catch (Exception e) {
+                                if (i == j && i == -1) {
+                                    tracklist.add(Tracks.get(i));
+                                } else if (i != -1 && j == -1) {
+                                    tracklist.add(Tracks.get(i));
+                                } else {
+                                    tracklist.add(Tracks.get(j));
+                                }
                             }
-                        } catch (Exception e) {
-                            if (i == j && i == -1) {
-                                tracklist.add(Tracks.get(i));
-                            } else if (i != -1 && j == -1) {
-                                tracklist.add(Tracks.get(i));
+                            if (sessionManager.getSavedTracklist(email + "TRACK_LIST_LIKED").size() < tracklist.size()) {
+                                sessionManager.save_Tracklist_liked(tracklist, email);
                             } else {
-                                tracklist.add(Tracks.get(j));
+                                sessionManager.save_Tracklist_liked(tracklist, email);
                             }
-                        }
-                        if (sessionManager.getSavedTracklist(email+"TRACK_LIST_LIKED").size() < tracklist.size()) {
-                            sessionManager.save_Tracklist_liked(tracklist, email);
+                            musicAdapter1.notifyDataSetChanged();
+                            // --- END OF YOUR ORIGINAL TRACK LOGIC ---
+
                         } else {
-                            sessionManager.save_Tracklist_liked(tracklist, email);
+                            // This handles all non-successful responses, including 400, 404, 500, etc.
+                            Log.e("SearchTrack", "API call failed with code: " + response.code());
                         }
-                        musicAdapter1.notifyDataSetChanged();
-                        //Checking for more than One of the same track
-                    } else if (response.code() == 401) { // Handle expired access token
-                        TextView text1 = view.findViewById(R.id.results);
-                        text1.setText("Request failed, please re-authorise Spotify");
-                    } else {
-                        ;
                     }
 
-                }
-                @Override
-                public void onFailure(Call<SearchResponse> call, Throwable t) {
-                    TextView text1 = view.findViewById(R.id.results);
-                    text1.setText("No internet connection, please try again.");
-                }
-            });
-        }
+                    @Override
+                    public void onFailure(Call<SearchResponse> call, Throwable t) {
+                        // This replaces your original onFailure block.
+                        Log.e("SearchTrack", "API call failed on network.", t);
+                        resultsTextView.setText("No internet connection, please try again.");
+                    }
+                });
+            }
+
+            @Override
+            public void onError() {
+                // This is the new, centralized handler for when a token cannot be refreshed.
+                Toast.makeText(getContext(), "Session expired. Please log in again.", Toast.LENGTH_LONG).show();
+                SpotifyAuthManager.getInstance().logout(getContext());
+            }
+        });
     }
     //This function navigates to a new activity given parameters
     public void navigate_to_activity(Class <?> target) {

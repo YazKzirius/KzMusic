@@ -395,37 +395,62 @@ public class UserMix extends Fragment {
     }
     //This function searches for random music using API queries and updates the current tracklist
     public void display_generated_music(String artist) {
-        access_token = OnlinePlayerManager.getInstance().getAccess_token();
-        if (access_token == null) {
-            TextView text1 = view.findViewById(R.id.made_for_user);
-            text1.setText("No internet connection, please try again.");
-        } else {
-            String randomQuery = "artist: " + artist;
-            SpotifyApiService apiService = RetrofitClient.getClient(access_token).create(SpotifyApiService.class);
-            Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
-            call.enqueue(new Callback<SearchResponse>() {
-                @Override
-                public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
-                    if (response.isSuccessful() && response.body() != null) {
-                        tracklist.addAll(response.body().getTracks().getItems().subList(0, 4));
-                        if (tracklist.size() == 40) {
-                            musicAdapter.notifyDataSetChanged();
-                            sessionManager.save_Tracklist_mix(tracklist, email);
+        TextView madeForUserTextView = view.findViewById(R.id.made_for_user);
+        String query = "artist:" + artist; // Use "artist:" for a more precise search
+
+        // 1. Ask the SpotifyAuthManager for a valid access token.
+        SpotifyAuthManager.getInstance().getValidAccessToken(new TokenCallback() {
+            @Override
+            public void onTokenReceived(String accessToken) {
+                // SUCCESS: We have a valid token. Now, make the API call.
+                SpotifyApiService apiService = RetrofitClient.getClient(accessToken).create(SpotifyApiService.class);
+                Call<SearchResponse> call = apiService.searchTracks(query, "track");
+
+                call.enqueue(new Callback<SearchResponse>() {
+                    @Override
+                    public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
+                        if (response.isSuccessful() && response.body() != null) {
+                            // Check if there are items before trying to access them
+                            if (response.body().getTracks() != null && !response.body().getTracks().getItems().isEmpty()) {
+                                // Safely add up to 4 tracks to the list
+                                List<SearchResponse.Track> items = response.body().getTracks().getItems();
+                                int itemsToAdd = Math.min(4, items.size());
+                                tracklist.addAll(items.subList(0, itemsToAdd));
+
+                                // Check if the playlist is now complete
+                                if (tracklist.size() >= 40) { // Using >= is safer than ==
+                                    musicAdapter.notifyDataSetChanged();
+                                    // Assuming sessionManager and email are accessible here
+                                    sessionManager.save_Tracklist_mix(tracklist, email);
+                                }
+                            } else {
+                                Log.w("GeneratedMusic", "No tracks found for artist: " + artist);
+                            }
+
+                        } else {
+                            // Handle other API errors (e.g., 404 Not Found, 500 Server Error)
+                            Log.e("GeneratedMusic", "API call failed with code: " + response.code());
+                            madeForUserTextView.setText("Could not fetch music for this artist.");
                         }
-                    } else if (response.code() == 401) { // Handle expired access token
-                        TextView text1 = view.findViewById(R.id.made_for_user);
-                        text1.setText("Request failed, please re-authorise Spotify");
-                    } else {
-                        ;
                     }
-                }
-                @Override
-                public void onFailure(Call<SearchResponse> call, Throwable t) {
-                    TextView text1 = view.findViewById(R.id.made_for_user);
-                    text1.setText("No internet connection, please try again.");
-                }
-            });
-        }
+
+                    @Override
+                    public void onFailure(Call<SearchResponse> call, Throwable t) {
+                        // Handle network connection failures
+                        Log.e("GeneratedMusic", "API call failed on network.", t);
+                        madeForUserTextView.setText("No internet connection, please try again.");
+                    }
+                });
+            }
+
+            @Override
+            public void onError() {
+                // FAILURE: Could not get a valid token, even after attempting a refresh.
+                // This means the user's session is invalid and they must log in again.
+                Toast.makeText(getContext(), "Session expired. Please log in again.", Toast.LENGTH_LONG).show();
+                SpotifyAuthManager.getInstance().logout(getContext()); // Redirect to login screen
+            }
+        });
     }
     //This function navigates to a new activity given parameters
     public void navigate_to_activity(Class <?> target) {

@@ -136,6 +136,7 @@ public class AccountSettingsFragment extends Fragment {
         connect_spotify.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                SpotifyAuthManager.getInstance().logout(getContext());
                Intent intent = new Intent(getActivity(), GetStarted.class);
                startActivity(intent);
             }

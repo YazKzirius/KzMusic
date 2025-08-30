@@ -19,7 +19,9 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.text.Editable;
@@ -30,6 +32,7 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -96,6 +99,8 @@ public class SearchFragment extends Fragment {
     Boolean isBound;
     ServiceConnection serviceConnection;
     private long last_position;
+    private final Handler searchHandler = new Handler(Looper.getMainLooper());
+    private Runnable searchRunnable;
 
     public SearchFragment() {
         // Required empty public constructor
@@ -158,67 +163,74 @@ public class SearchFragment extends Fragment {
         });
         recyclerView.setAdapter(musicAdapter);
         display_random();
-        TextView View = view.findViewById(R.id.results);
-        EditText search = view.findViewById(R.id.search_input);
-        //Edit text live functionality
-        search.addTextChangedListener(new TextWatcher() {
+
+        TextView resultsView = view.findViewById(R.id.results);
+        EditText searchInput = view.findViewById(R.id.search_input);
+        Button searchButton = view.findViewById(R.id.search_button);
+
+        resultsView.setText("Search results:");
+
+// Edit text live functionality with DEBOUNCING
+        searchInput.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                // No action needed before text changes
-            }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                // Call your search_track function here
-                String trackName = s.toString();
-                if (s.length() == 0) {
-                    ;
-                } else {
-                    search_track(trackName);
+                String query = s.toString();
+
+                // Cancel any pending search
+                searchHandler.removeCallbacks(searchRunnable);
+
+                // If the text is empty, don't search. You could display random tracks again here if you want.
+                if (query.isEmpty()) {
+                    return;
                 }
+
+                // Define a new search task to run after a delay
+                searchRunnable = () -> search_track(query);
+
+                // Schedule the search task to run after 300ms
+                searchHandler.postDelayed(searchRunnable, 300);
             }
 
             @Override
-            public void afterTextChanged(Editable s) {
-                // No action needed after text changes
-            }
+            public void afterTextChanged(Editable s) { }
         });
-        View.setText("Search results:");
-        Button search_button = view.findViewById(R.id.search_button);
-        search_button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //Searching for random tracks based on the name input
-                String input = search.getText().toString();
-                if (input.equals("")) {
+
+
+// Search button functionality (immediate search, no delay needed)
+        searchButton.setOnClickListener(v -> {
+            String input = searchInput.getText().toString();
+            if (input.isEmpty()) {
+                display_random();
+            } else {
+                search_track(input);
+            }
+            resultsView.setText("Search results:");
+        });
+
+
+// "Enter" key functionality on keyboard
+        searchInput.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE ||
+                    (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
+
+                // Hide the keyboard
+                InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+
+                // Perform the search
+                String input = searchInput.getText().toString();
+                if (input.isEmpty()) {
                     display_random();
-                    View.setText("Search results:");
                 } else {
-                    //Displaying results
                     search_track(input);
-                    View.setText("Search results:");
                 }
+                resultsView.setText("Search results:");
+                return true; // Event was handled
             }
-        });
-        //Implementing functionality for enter button clicking
-        search.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if (actionId == EditorInfo.IME_ACTION_DONE ||
-                        (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
-                    // Handle the Enter key event here
-                    String input = search.getText().toString();
-                    //Displaying search results
-                    if (input.equals("")) {
-                        display_random();
-                    } else {
-                        search_track(input);
-                    }
-                    View.setText("Search results:");
-                    return true; // Return true to indicate the event was handled
-                }
-                return false; // Return false if the event is not handled
-            }
+            return false; // Event was not handled
         });
         //Setting up bottom playback navigator
         set_up_spotify_play();
@@ -283,35 +295,47 @@ public class SearchFragment extends Fragment {
     //This function makes an API call using previous access token to search for random music
     //It does this based on the track_name entered
     private void search_track(String track_name) {
-        accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
-        if (accesstoken == null) {
-            TextView text1 = view.findViewById(R.id.results);
-            text1.setText("No internet connection, please try again.");
-        } else {
-            String randomQuery = track_name;
-            SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
-            Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
-            call.enqueue(new Callback<SearchResponse>() {
-                @Override
-                public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
-                    if (response.isSuccessful() && response.body() != null) {
-                        trackList.clear();
-                        trackList.addAll(response.body().getTracks().getItems());
-                        musicAdapter.notifyDataSetChanged();
-                    } else if (response.code() == 401) { // Handle expired access token
-                        TextView text1 = view.findViewById(R.id.results);
-                        text1.setText("Request failed, please re-authorise Spotify");
-                    } else {
-                       ;
+        TextView text1 = view.findViewById(R.id.results);
+
+        // Ask the manager for a valid token
+        SpotifyAuthManager.getInstance().getValidAccessToken(new TokenCallback() {
+            @Override
+            public void onTokenReceived(String accessToken) {
+                // SUCCESS: We have a valid token, now we can make the API call
+                SpotifyApiService apiService = RetrofitClient.getClient(accessToken).create(SpotifyApiService.class);
+                Call<SearchResponse> call = apiService.searchTracks(track_name, "track");
+
+                call.enqueue(new Callback<SearchResponse>() {
+                    @Override
+                    public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
+                        if (response.isSuccessful() && response.body() != null) {
+                            trackList.clear();
+                            trackList.addAll(response.body().getTracks().getItems());
+                            musicAdapter.notifyDataSetChanged();
+                        } else {
+                            // This handles other errors like 404, 500, etc.
+                            Log.e("SearchTrack", "API call failed with code: " + response.code());
+                            text1.setText("Search request failed.");
+                        }
                     }
-                }
-                @Override
-                public void onFailure(Call<SearchResponse> call, Throwable t) {
-                    TextView text1 = view.findViewById(R.id.results);
-                    text1.setText("No internet connection, please try again.");
-                }
-            });
-        }
+
+                    @Override
+                    public void onFailure(Call<SearchResponse> call, Throwable t) {
+                        // This handles network failures
+                        Log.e("SearchTrack", "API call failed on network.", t);
+                        text1.setText("No internet connection, please try again.");
+                    }
+                });
+            }
+
+            @Override
+            public void onError() {
+                // FAILURE: Could not get a valid token. The refresh token is likely invalid.
+                // The user must re-authenticate.
+                Toast.makeText(getContext(), "Session expired. Please log in again.", Toast.LENGTH_LONG).show();
+                SpotifyAuthManager.getInstance().logout(getContext());
+            }
+        });
     }
     //This function navigates to a new activity given parameters
     public void navigate_to_activity(Class <?> target) {
@@ -321,45 +345,55 @@ public class SearchFragment extends Fragment {
     //This function gets random music based on catergory
     //It does this before the user chooses to search for a random track
     private void display_random() {
-        accesstoken = OnlinePlayerManager.getInstance().getAccess_token();
-        if (accesstoken == null) {
-            TextView text1 = view.findViewById(R.id.results);
-            text1.setText("No internet connection, please try again.");
-        } else {
-            String[] randomQueries = {
-                    "vibe: chill synthwave",
-                    "inspired by: tame impala",
-                    "soundtrack for: late-night coding",
-                    "nostalgia: 90s hip-hop",
-                    "playlist: feel-good throwbacks",
-                    "theme: fantasy RPG battle",
-                    "mood: euphoric dance",
-                    "genre: alt-R&B with soul"
-            };
-            String randomQuery = randomQueries[(int) (Math.random() * randomQueries.length)];
-            SpotifyApiService apiService = RetrofitClient.getClient(accesstoken).create(SpotifyApiService.class);
-            Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
-            call.enqueue(new Callback<SearchResponse>() {
-                @Override
-                public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
-                    if (response.isSuccessful() && response.body() != null) {
-                        trackList.clear();
-                        trackList.addAll(response.body().getTracks().getItems());
-                        musicAdapter.notifyDataSetChanged();
-                    } else if (response.code() == 401) { // Handle expired access token
-                        TextView text1 = view.findViewById(R.id.results);
-                        text1.setText("Request failed, please re-authorise Spotify");
-                    } else {
-                       ;
+        TextView text1 = view.findViewById(R.id.results);
+
+        // Array of creative search queries
+        String[] randomQueries = {
+                "vibe: chill synthwave", "inspired by: tame impala",
+                "soundtrack for: late-night coding", "nostalgia: 90s hip-hop",
+                "playlist: feel-good throwbacks", "theme: fantasy RPG battle",
+                "mood: euphoric dance", "genre: alt-R&B with soul"
+        };
+        String randomQuery = randomQueries[(int) (Math.random() * randomQueries.length)];
+
+        // Ask the manager for a valid token
+        SpotifyAuthManager.getInstance().getValidAccessToken(new TokenCallback() {
+            @Override
+            public void onTokenReceived(String accessToken) {
+                // SUCCESS: We have a valid token, now make the API call
+                SpotifyApiService apiService = RetrofitClient.getClient(accessToken).create(SpotifyApiService.class);
+                Call<SearchResponse> call = apiService.searchTracks(randomQuery, "track");
+
+                call.enqueue(new Callback<SearchResponse>() {
+                    @Override
+                    public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
+                        if (response.isSuccessful() && response.body() != null) {
+                            trackList.clear();
+                            trackList.addAll(response.body().getTracks().getItems());
+                            musicAdapter.notifyDataSetChanged();
+                        } else {
+                            // Handle other API errors (e.g., 404, 500)
+                            Log.e("DisplayRandom", "API call failed with code: " + response.code());
+                            text1.setText("Could not fetch recommendations.");
+                        }
                     }
-                }
-                @Override
-                public void onFailure(Call<SearchResponse> call, Throwable t) {
-                    TextView text1 = view.findViewById(R.id.results);
-                    text1.setText("No internet connection, please try again.");
-                }
-            });
-        }
+
+                    @Override
+                    public void onFailure(Call<SearchResponse> call, Throwable t) {
+                        // Handle network failures
+                        Log.e("DisplayRandom", "API call failed on network.", t);
+                        text1.setText("No internet connection, please try again.");
+                    }
+                });
+            }
+
+            @Override
+            public void onError() {
+                // FAILURE: Could not get a valid token. User must log in again.
+                Toast.makeText(getContext(), "Session expired. Please log in again.", Toast.LENGTH_LONG).show();
+                SpotifyAuthManager.getInstance().logout(getContext());
+            }
+        });
     }
     //This function assigns data from playback overlay to bottom navigation
     public void set_up_play_bar() {

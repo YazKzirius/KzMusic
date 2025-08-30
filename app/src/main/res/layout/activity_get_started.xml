@@ -1,4 +1,7 @@
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Root layout using ConstraintLayout -->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
@@ -9,10 +12,11 @@
 
     <!-- App Logo -->
     <ImageView
-        android:id="@+id/imageView3"
+        android:id="@+id/logo_image"
         android:layout_width="180dp"
         android:layout_height="180dp"
         android:layout_marginTop="64dp"
+        android:contentDescription="KzMusic Logo"
         android:scaleType="centerInside"
         app:srcCompat="@drawable/logo"
         app:layout_constraintTop_toTopOf="parent"
@@ -24,16 +28,29 @@
         android:id="@+id/get_started_btn"
         android:layout_width="0dp"
         android:layout_height="56dp"
-        android:layout_marginTop="48dp"
         android:layout_marginStart="32dp"
+        android:layout_marginTop="48dp"
         android:layout_marginEnd="32dp"
-        android:text="Get Started"
-        android:textSize="18sp"
-        android:textAllCaps="false"
         android:backgroundTint="@color/purple"
+        android:text="Get Started"
+        android:textAllCaps="false"
         android:textColor="@android:color/white"
-        app:layout_constraintTop_toBottomOf="@+id/imageView3"
+        android:textSize="18sp"
+        app:layout_constraintTop_toBottomOf="@+id/logo_image"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Loading Spinner / ProgressBar -->
+    <ProgressBar
+        android:id="@+id/loading_spinner"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="28dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@+id/get_started_btn"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:visibility="visible" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
