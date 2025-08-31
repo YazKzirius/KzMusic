@@ -22,90 +22,48 @@ import com.google.android.gms.tasks.OnFailureListener;
 import java.util.HashMap;
 import java.util.Map;
 
-public class UsersFirestore {
-    FirebaseFirestore db = FirebaseFirestore.getInstance();
-    FirebaseAuth auth = FirebaseAuth.getInstance();
 
-    Context context;
+public class UsersFirestore {
+    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private final Context context;
+
     public UsersFirestore(Context context) {
         this.context = context;
     }
 
-    //This function adds a new user and creates new table in google firestore
-    public void add_account(String username, String email, String UID) {
-        db.collection("Users").whereEqualTo("EMAIL", email).get()
-                .addOnSuccessListener(querySnapshot -> {
-                    if (querySnapshot.isEmpty()) {
-                        Map<String, Object> sampleUser = new HashMap<>();
-                        sampleUser.put("USERNAME", username);
-                        sampleUser.put("EMAIL", email);
-                        sampleUser.put("UID", UID);
-                        db.collection("Users")
-                                .add(sampleUser)
-                                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-                                    @Override
-                                    public void onSuccess(DocumentReference documentReference) {
-                                        Log.d("Firebase", "User created with ID: " + documentReference.getId());
-                                    }
-                                })
-                                .addOnFailureListener(new OnFailureListener() {
-                                    @Override
-                                    public void onFailure(@NonNull Exception e) {
-                                        Log.d("Firebase", e.getMessage());
-                                    }
-                                });
-                    } else {
-                        ;
-                    }
-                });
-    }
-    //This function registers a new user using Firebase auth
-    public void registerUser(String username, String email, String password) {
-        db.collection("Users").whereEqualTo("EMAIL", email).get()
-                .addOnSuccessListener(querySnapshot -> {
-                    if (querySnapshot.isEmpty()) {
-                        auth.createUserWithEmailAndPassword(email, password)
-                                .addOnCompleteListener(task -> {
-                                    if (task.isSuccessful()) {
-                                        add_account(username, email, auth.getCurrentUser().getUid());
-                                        Toast.makeText(context, "Registered", Toast.LENGTH_LONG).show();
-                                        Log.d("FirebaseAuth", "User registered successfully!");
-                                    } else {
-                                        Log.e("FirebaseAuth", "Error registering user", task.getException());
-                                    }
-                                });
-                    } else {
-                        Toast.makeText(context, "Registration Error: This account is already registered, please sign-in.", Toast.LENGTH_LONG).show();
-                    }
+    //This function creates or updates a user document
+    public void createOrUpdateUserDocument(String username, String email, String uid) {
+        if (uid == null || uid.isEmpty()) {
+            Log.e("Firebase", "Cannot create document for an invalid UID.");
+            return;
+        }
+
+        // Use the UID as the unique document ID
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("USERNAME", username);
+        userData.put("EMAIL", email);
+        userData.put("UID", uid); // It's still good practice to store the UID inside
+        db.collection("Users").document(uid).set(userData, SetOptions.merge())
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("Firebase", "User document successfully written for UID: " + uid);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("Firebase", "Error writing user document for UID: " + uid, e);
                 });
     }
 
-    //This function updates user information in user collection
-    public void update_user(String ID, String username, String email) {
-        //Storing data in hash-map
+    //This function updates the document in users collection
+    public void updateUserDocument(String uid, String username, String email) {
         Map<String, Object> user = new HashMap<>();
         user.put("USERNAME", username);
         user.put("EMAIL", email);
-        user.put("UID", FirebaseAuth.getInstance().getCurrentUser().getUid());
-        db.collection("Users").document(ID)
-                .set(user)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void unused) {
-                        Log.d("Firebase", "Data updates at "+ID);
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.d("Firebase", "Data update failed for "+ID);
-                    }
-                });
+
+        // Update the document that is keyed by the user's actual UID
+        db.collection("Users").document(uid).update(user)
+                .addOnSuccessListener(aVoid -> Log.d("Firebase", "Data updated for UID: " + uid))
+                .addOnFailureListener(e -> Log.e("Firebase", "Data update failed for UID: " + uid, e));
     }
-
-
-
-
-
-
 }
+
+
+

@@ -7,16 +7,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import android.view.View;
-import android.widget.Button;
 import android.content.Intent;
-import android.database.Cursor;
-import android.widget.Toast;
+
 
 //This class implements the application homepage
 //Allows users to login or create account
 public class MainActivity extends AppCompatActivity {
-    SessionManager sessionManager;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -29,19 +25,6 @@ public class MainActivity extends AppCompatActivity {
         });
         navigate_to_activity(GetStarted.class);
     }
-    //This function sets up the login button
-    //Moves to Sign-in page
-    public void set_up_login() {
-        Button get_started = findViewById(R.id.Login_btn);
-        get_started.setOnClickListener(v -> navigate_to_activity(SignIn.class));
-    }
-    //This function sets up the Create account button
-    //Moves to New account page
-    public void set_up_create() {
-        Button get_started = findViewById(R.id.create);
-        get_started.setOnClickListener(v -> navigate_to_activity(NewAccount.class));
-    }
-
     //This function navigates to the given activity in parameter
     public void navigate_to_activity(Class <?> target) {
         Intent intent = new Intent(MainActivity.this, target);

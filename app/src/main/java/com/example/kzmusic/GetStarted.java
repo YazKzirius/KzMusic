@@ -20,6 +20,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.firebase.appcheck.FirebaseAppCheck;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.spotify.sdk.android.auth.AuthorizationClient;
 import com.spotify.sdk.android.auth.AuthorizationRequest;
 import com.spotify.sdk.android.auth.AuthorizationResponse;
@@ -92,6 +93,7 @@ public class GetStarted extends AppCompatActivity {
         } else {
             // Optionally, inform the user that there is no internet connection
             Toast.makeText(this, "No internet connection. Please check your network settings.", Toast.LENGTH_LONG).show();
+            runOnUiThread(() -> showSignInButton());
             navigate_to_activity(MainPage.class);
         }
     }
@@ -122,6 +124,7 @@ public class GetStarted extends AppCompatActivity {
                 exchangeAuthorizationCodeForToken(code);
             } else if (uri.getQueryParameter("error") != null) {
                 // Handle error from authorization
+                runOnUiThread(() -> showSignInButton());
                 Toast.makeText(this, "Authorization failed, please try again later.", Toast.LENGTH_SHORT).show();
                 navigate_to_activity(MainPage.class);
             }
@@ -145,6 +148,7 @@ public class GetStarted extends AppCompatActivity {
             @Override
             public void onFailure(Call call, IOException e) {
                 e.printStackTrace();
+                runOnUiThread(() -> showSignInButton());
                 runOnUiThread(() -> Toast.makeText(GetStarted.this, "Failed to exchange token, please try again.", Toast.LENGTH_SHORT).show());
                 navigate_to_activity(MainPage.class); // Or back to a login screen
             }
@@ -164,10 +168,12 @@ public class GetStarted extends AppCompatActivity {
 
                     } catch (JSONException e) {
                         e.printStackTrace();
+                        runOnUiThread(() -> showSignInButton());
                         navigate_to_activity(MainPage.class); // Or back to a login screen
                     }
                 } else {
                     runOnUiThread(() -> Toast.makeText(GetStarted.this, "Authorization failed.", Toast.LENGTH_SHORT).show());
+                    runOnUiThread(() -> showSignInButton());
                 }
             }
         });
@@ -201,9 +207,8 @@ public class GetStarted extends AppCompatActivity {
                         String spotifyEmail = json.getString("email");
                         String spotifyUsername = json.getString("display_name");
                         String spotifyId = json.getString("id"); // This will be our "password"
-                        sessionManager = new SessionManager(GetStarted.this);
-                        sessionManager.createLoginSession(spotifyUsername, spotifyEmail);
-                        navigate_to_activity(MainPage.class);
+                        String hashedPassword = hashString(spotifyId);
+                        registerUser(spotifyUsername, spotifyEmail, hashedPassword);
                     } catch (JSONException e) {
                         runOnUiThread(() -> {
                             Toast.makeText(GetStarted.this, "Failed to parse profile data.", Toast.LENGTH_SHORT).show();
@@ -219,6 +224,72 @@ public class GetStarted extends AppCompatActivity {
             }
         });
     }
+    //This function hashes a SHA-256 string for a secure password
+    private String hashString(String input) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] encodedhash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder(2 * encodedhash.length);
+            for (byte b : encodedhash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            // This should never happen with SHA-256
+            throw new RuntimeException("SHA-256 algorithm not found", e);
+        }
+    }
+    //This function registers a new user using Firebase auth
+    // This method is in your GetStarted activity or another UI class
+    public void registerUser(String username, String email, String password) {
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        UsersFirestore table = new UsersFirestore(getApplicationContext());
+
+        auth.createUserWithEmailAndPassword(email, password)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && auth.getCurrentUser() != null) {
+                        Log.d("FirebaseAuth", "User registered successfully!");
+                        Toast.makeText(getApplicationContext(), "Welcome "+username+"!", Toast.LENGTH_SHORT).show();
+                        table.createOrUpdateUserDocument(username, email, auth.getCurrentUser().getUid());
+                        sessionManager = new SessionManager(GetStarted.this);
+                        sessionManager.createLoginSession(username, email);
+                        runOnUiThread(() -> showSignInButton());
+                        navigate_to_activity(MainPage.class);
+                    } else {
+                        Exception exception = task.getException();
+                        if (exception instanceof FirebaseAuthUserCollisionException) {
+                            // This email exists, so let's try to sign the user in instead
+                            Log.w("FirebaseAuth", "Email already exists. Attempting to sign in.");
+                            auth.signInWithEmailAndPassword(email, password)
+                                    .addOnCompleteListener(signInTask -> {
+                                        if (signInTask.isSuccessful()) {
+                                            Log.d("FirebaseAuth", "User signed in successfully after collision.");
+                                            Toast.makeText(getApplicationContext(), "Welcome back "+username+"!", Toast.LENGTH_SHORT).show();
+                                            sessionManager = new SessionManager(GetStarted.this);
+                                            sessionManager.createLoginSession(username, email);
+                                            runOnUiThread(() -> showSignInButton());
+                                            navigate_to_activity(MainPage.class);
+                                        } else {
+                                            // Sign-in failed (likely an incorrect password)
+                                            Log.e("FirebaseAuth", "Sign-in failed after collision.", signInTask.getException());
+                                            Toast.makeText(getApplicationContext(), "Incorrect password.", Toast.LENGTH_SHORT).show();
+                                            runOnUiThread(() -> showSignInButton());
+                                        }
+                                    });
+                        } else {
+                            // The error was something else (weak password, invalid email, etc.)
+                            Log.e("FirebaseAuth", "Error registering user", exception);
+                            Toast.makeText(getApplicationContext(), "Registration failed: " + exception.getMessage(), Toast.LENGTH_LONG).show();
+                            runOnUiThread(() -> showSignInButton());
+                        }
+                    }
+                });
+    }
+
     private void showLoading() {
         Button getStartedButton = findViewById(R.id.get_started_btn);
         ProgressBar loadingSpinner = findViewById(R.id.loading_spinner);

@@ -11,10 +11,5 @@ public class KzMusicApplication extends Application {
     public void onCreate() {
         super.onCreate();
         FirebaseApp.initializeApp(this); // Initialize Firebase
-
-        FirebaseAppCheck firebaseAppCheck = FirebaseAppCheck.getInstance();
-        firebaseAppCheck.installAppCheckProviderFactory(
-                PlayIntegrityAppCheckProviderFactory.getInstance()
-        );
     }
 }

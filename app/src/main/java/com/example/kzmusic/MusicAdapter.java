@@ -61,29 +61,18 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
         //Checking if song is liked and displaying necessary icons
         String title = track.getName()+" by "+track.getArtists().get(0).getName(
         );
-        table.db.collection("Users").whereEqualTo("EMAIL", email).limit(1).get()
-                .addOnSuccessListener(querySnapshot -> {
-                    if (!querySnapshot.isEmpty()) {
-                        String user_id = querySnapshot.getDocuments().get(0).getId();
-                        // 🔥 Check if the same song exists for the user
-                        table.db.collection("SavedSongs")
-                                .whereEqualTo("TITLE", title)
-                                .whereEqualTo("USER_ID", user_id) // Ensure user does not have this song already
-                                .get()
-                                .addOnSuccessListener(songSnapshot -> {
-                                    if (songSnapshot.isEmpty()) {
-                                        // ✅ Song is unique for this user, proceed to add
-                                        holder.liked.setImageResource(R.drawable.ic_liked_off);
-                                    } else {
-                                        holder.liked.setImageResource(R.drawable.ic_liked);
-                                    }
-                                })
-                                .addOnFailureListener(e -> Log.e("Firebase", "Error checking song existence", e));
-                    } else {
-                        Log.e("Firebase", "User not found.");
-                    }
-                })
-                .addOnFailureListener(e -> Log.e("Firebase", "Error retrieving user", e));
+        sessionManager = new SessionManager(context);
+        email = sessionManager.getEmail(); // The secure 'is_saved' will ignore this, but we pass it to match the signature.
+        table.is_saved(email, title, isSaved -> {
+            // 3. Update the UI inside the asynchronous callback when the result is ready.
+            if (isSaved) {
+                // If the song is saved, show the filled heart icon.
+                holder.liked.setImageResource(R.drawable.ic_liked);
+            } else {
+                // If the song is NOT saved, show the empty heart icon.
+                holder.liked.setImageResource(R.drawable.ic_liked_off);
+            }
+        });
         // Use Glide to load album image
         Glide.with(context)
                 .load(track.getAlbum().getImages().get(0).getUrl())
@@ -94,35 +83,19 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
             public void onClick(View v) {
                 SavedSongsFirestore table = new SavedSongsFirestore(context);
                 sessionManager = new SessionManager(context);
-                username = sessionManager.getUsername();
                 email = sessionManager.getEmail();
-                String title = track.getName()+" by "+track.getArtists().get(0).getName();
+
+                String title = track.getName() + " by " + track.getArtists().get(0).getName();
                 String url = track.getAlbum().getImages().get(0).getUrl();
-                //Saving songs to Saved collection if not already saved
-                table.db.collection("Users").whereEqualTo("EMAIL", email).limit(1).get()
-                        .addOnSuccessListener(querySnapshot -> {
-                            if (!querySnapshot.isEmpty()) {
-                                String user_id = querySnapshot.getDocuments().get(0).getId();
-                                // 🔥 Check if the same song exists for the user
-                                table.db.collection("SavedSongs")
-                                        .whereEqualTo("TITLE", title)
-                                        .whereEqualTo("USER_ID", user_id) // Ensure user does not have this song already
-                                        .get()
-                                        .addOnSuccessListener(songSnapshot -> {
-                                            if (songSnapshot.isEmpty()) {
-                                                table.save_new_song(email, title, url);
-                                                holder.liked.setImageResource(R.drawable.ic_liked);
-                                            } else {
-                                                table.remove_saved_song(email, title, url);
-                                                holder.liked.setImageResource(R.drawable.ic_liked_off);
-                                            }
-                                        })
-                                        .addOnFailureListener(e -> Log.e("Firebase", "Error checking song existence", e));
-                            } else {
-                                Log.e("Firebase", "User not found.");
-                            }
-                        })
-                        .addOnFailureListener(e -> Log.e("Firebase", "Error retrieving user", e));
+                table.is_saved(email, title, isSaved -> {
+                    if (isSaved) {
+                        table.remove_saved_song(email, title, url);
+                        holder.liked.setImageResource(R.drawable.ic_liked_off);
+                    } else {
+                        table.save_new_song(email, title, url);
+                        holder.liked.setImageResource(R.drawable.ic_liked);
+                    }
+                });
             }
         });
         holder.menu.setOnClickListener(new View.OnClickListener() {

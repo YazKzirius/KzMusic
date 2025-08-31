@@ -29,7 +29,6 @@ public class MainPage extends AppCompatActivity {
         email = sessionManager.getEmail();
         sessionManager.setCurrent_activity(MainPage.class);
         if (savedInstanceState == null) { // <--- ADD THIS CHECK
-            Toast.makeText(this, "Welcome " + username + "!", Toast.LENGTH_LONG).show();
             getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new HomeFragment()).commit();
             Intent serviceIntent = new Intent(getApplicationContext(), TokenRefreshService.class);
             startService(serviceIntent); // immediate call works, because intent is here and ready

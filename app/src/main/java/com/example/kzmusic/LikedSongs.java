@@ -24,13 +24,19 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.WriteBatch;
 import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
 
@@ -168,63 +174,9 @@ public class LikedSongs extends Fragment {
         username = sessionManager.getUsername();
         email = sessionManager.getEmail();
         //Saving songs to Saved collection if not already saved
-        table.db.collection("Users").whereEqualTo("EMAIL", email).limit(1).get()
-                .addOnSuccessListener(querySnapshot -> {
-                            if (!querySnapshot.isEmpty()) {
-                                String user_id = querySnapshot.getDocuments().get(0).getId();
-                                // 🔥 Check if the same song exists for the user
-                                table.db.collection("SavedSongs")
-                                        .whereEqualTo("USER_ID", user_id) // Ensure user does not have this song already
-                                        .get()
-                                        .addOnSuccessListener(songSnapshot -> {
-                                            if (songSnapshot.isEmpty()) {
-                                                ;
-                                            } else {
-                                                all_liked(isLiked -> {
-                                                    if (isLiked) {
-                                                        if (sessionManager.getSavedTracklist(email+"TRACK_LIST_LIKED").size() == 0 || songSnapshot.getDocuments().size() !=
-                                                                sessionManager.getSavedTracklist(email+"TRACK_LIST_LIKED").size()) {
-                                                            get_liked_songs();
-                                                        } else {
-                                                            musicAdapter1.updateTracks(sessionManager.getSavedTracklist(email+"TRACK_LIST_LIKED"));
-                                                        }
-                                                    } else {
-                                                        get_liked_songs();
-                                                    }
-                                                });
-                                            }
-                                        });
-                            } else {
-                                ;
-                            }
-                        });
+        get_liked_songs();
         set_up_playback_buttons();
         return view;
-    }
-    //This function checks if all songs in view are liked
-    public void all_liked(OnSuccessListener<Boolean> callback) {
-        SavedSongsFirestore table = new SavedSongsFirestore(getContext());
-        String email = sessionManager.getEmail();
-        List<SearchResponse.Track> trackList = sessionManager.getSavedTracklist(email+"TRACK_LIST_LIKED");
-
-        if (trackList.isEmpty()) {
-            callback.onSuccess(false);
-            return;
-        }
-
-        AtomicInteger count = new AtomicInteger(0);
-        for (SearchResponse.Track track : trackList) {
-            String title = track.getName() + " by " + track.getArtists().get(0).getName();
-            table.is_saved(email, title, isLiked -> {
-                if (!isLiked) {
-                    callback.onSuccess(false);
-                } else {
-                    if (count.incrementAndGet() == trackList.size()) {
-                        callback.onSuccess(true); // ✅ All songs are liked
-                    }
-                }
-            });
-        }
     }
     //This function sets up playback buttons at top
     public void set_up_playback_buttons() {
@@ -236,24 +188,36 @@ public class LikedSongs extends Fragment {
             @Override
             public void onClick(View v) {
                 //Clearing liked songs
+                FirebaseAuth auth = FirebaseAuth.getInstance();
+                FirebaseUser currentUser = auth.getCurrentUser();
                 SavedSongsFirestore table = new SavedSongsFirestore(getContext());
-                table.db.collection("Users").whereEqualTo("EMAIL", email).limit(1).get()
-                        .addOnSuccessListener(querySnapshot -> {
-                                    if (!querySnapshot.isEmpty()) {
-                                        String user_id = querySnapshot.getDocuments().get(0).getId();
-                                        // 🔥 Check if the same song exists for the user
-                                        table.db.collection("SavedSongs")
-                                                .whereEqualTo("USER_ID", user_id) // Ensure user does not have this song already
-                                                .get()
-                                                .addOnSuccessListener(songSnapshot -> {
-                                                    for (DocumentSnapshot documentSnapshot : songSnapshot.getDocuments()) {
-                                                        table.remove_saved_song(email, documentSnapshot.getString("TITLE"), documentSnapshot.getString("ALBUM_URL"));
-                                                    }
-                                                });
-                                    } else {
-                                        ;
-                                    }
-                        });
+
+                if (currentUser != null) {
+                    String uid = currentUser.getUid();
+                    CollectionReference savedSongsRef = table.db.collection("Users").document(uid).collection("SavedSongs");
+
+                    // Get all the documents in the user's subcollection
+                    savedSongsRef.get().addOnSuccessListener(querySnapshot -> {
+                        if (querySnapshot.isEmpty()) {
+                            Log.d("FirebaseSecurity", "No songs to remove.");
+                            return;
+                        }
+
+                        // Use a Batched Write for efficiency and reliability
+                        WriteBatch batch = table.db.batch();
+                        for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                            batch.delete(doc.getReference());
+                        }
+
+                        // Commit the batch to delete all documents at once
+                        batch.commit()
+                                .addOnSuccessListener(aVoid -> Log.d("FirebaseSecurity", "All liked songs successfully removed."))
+                                .addOnFailureListener(e -> Log.e("FirebaseSecurity", "Failed to remove all liked songs.", e));
+
+                    }).addOnFailureListener(e -> Log.e("FirebaseSecurity", "Could not query songs for deletion.", e));
+                } else {
+                    Log.e("FirebaseSecurity", "User not authenticated.");
+                }
             }
         });
         //Play button functionality
@@ -290,98 +254,55 @@ public class LikedSongs extends Fragment {
     }
     //This function makes an API call using previous access token to search for random music
     //It does this based on the track_name entered
-    private void search_track(String track_name, String Artist, String url) {
-        TextView resultsTextView = view.findViewById(R.id.results);
-        String query = "track:" + track_name + " artist:" + Artist;
+    // You need to define this simple interface inside your class or in its own file.
+    interface TrackSearchResultCallback {
+        void onTrackFound(SearchResponse.Track track);
+    }
 
-        // 1. Ask the SpotifyAuthManager for a valid access token.
-        // This replaces the manual token fetching and the null check.
+    //This function gets a specific track based of name, artist and url
+    private void findSingleTrack(String track_name, String Artist, String url, TrackSearchResultCallback callback) {
+        String query = "track:" + track_name + " artist:" + Artist;
         SpotifyAuthManager.getInstance().getValidAccessToken(new TokenCallback() {
             @Override
             public void onTokenReceived(String accessToken) {
-                // SUCCESS: We have a valid token. Now, make the API call.
                 SpotifyApiService apiService = RetrofitClient.getClient(accessToken).create(SpotifyApiService.class);
                 Call<SearchResponse> call = apiService.searchTracks(query, "track");
-
                 call.enqueue(new Callback<SearchResponse>() {
                     @Override
                     public void onResponse(Call<SearchResponse> call, Response<SearchResponse> response) {
-                        // This 'if' block replaces the original 'if/else if (401)' block.
+                        SearchResponse.Track resultTrack = null;
                         if (response.isSuccessful() && response.body() != null) {
-
-                            // --- YOUR ORIGINAL TRACK LOGIC (UNCHANGED) ---
                             List<SearchResponse.Track> Tracks = response.body().getTracks().getItems();
-                            List<String> tracks = get_track_names(Tracks);
-                            List<String> urls = get_track_urls(Tracks);
-                            int i = tracks.indexOf(track_name + " by " + Artist);
-                            int j = urls.indexOf(url);
-                            int n = 0;
                             try {
-                                if (Tracks.size() > 0) {
+                                if (!Tracks.isEmpty()) {
+                                    List<String> tracks = get_track_names(Tracks);
+                                    List<String> urls = get_track_urls(Tracks);
+                                    int i = tracks.indexOf(track_name + " by " + Artist);
+                                    int j = urls.indexOf(url);
                                     if (i == -1) {
                                         i = tracks.indexOf(track_name);
-                                        if (i == j) {
-                                            tracklist.add(Tracks.get(i));
-                                        } else {
-                                            String title = tracks.get(j);
-                                            if (title.equals(track_name + " by " + Artist) || title.equals(track_name)) {
-                                                tracklist.add(Tracks.get(j));
-                                            } else {
-                                                ;
-                                            }
-                                        }
-                                    } else {
-                                        if (i == j) {
-                                            tracklist.add(Tracks.get(i));
-                                        } else {
-                                            String title = tracks.get(j);
-                                            if (title.equals(track_name + " by " + Artist) || title.equals(track_name)) {
-                                                tracklist.add(Tracks.get(j));
-                                            } else {
-                                                tracklist.add(Tracks.get(i));
-                                            }
-                                        }
                                     }
-                                } else {
-                                    n += 1;
+                                    // Prioritize the best possible match
+                                    if (j != -1) { resultTrack = Tracks.get(j); }
+                                    else if (i != -1) { resultTrack = Tracks.get(i); }
                                 }
                             } catch (Exception e) {
-                                if (i == j && i == -1) {
-                                    tracklist.add(Tracks.get(i));
-                                } else if (i != -1 && j == -1) {
-                                    tracklist.add(Tracks.get(i));
-                                } else {
-                                    tracklist.add(Tracks.get(j));
-                                }
+                                Log.e("FindSingleTrack", "Error in matching logic", e);
                             }
-                            if (sessionManager.getSavedTracklist(email + "TRACK_LIST_LIKED").size() < tracklist.size()) {
-                                sessionManager.save_Tracklist_liked(tracklist, email);
-                            } else {
-                                sessionManager.save_Tracklist_liked(tracklist, email);
-                            }
-                            musicAdapter1.notifyDataSetChanged();
-                            // --- END OF YOUR ORIGINAL TRACK LOGIC ---
-
-                        } else {
-                            // This handles all non-successful responses, including 400, 404, 500, etc.
-                            Log.e("SearchTrack", "API call failed with code: " + response.code());
                         }
+                        // Use the callback to "return" the result
+                        callback.onTrackFound(resultTrack);
                     }
-
                     @Override
                     public void onFailure(Call<SearchResponse> call, Throwable t) {
-                        // This replaces your original onFailure block.
-                        Log.e("SearchTrack", "API call failed on network.", t);
-                        resultsTextView.setText("No internet connection, please try again.");
+                        callback.onTrackFound(null); // Return null on failure
                     }
                 });
             }
-
             @Override
             public void onError() {
-                // This is the new, centralized handler for when a token cannot be refreshed.
-                Toast.makeText(getContext(), "Session expired. Please log in again.", Toast.LENGTH_LONG).show();
-                SpotifyAuthManager.getInstance().logout(getContext());
+                // Handle auth error
+                callback.onTrackFound(null);
             }
         });
     }
@@ -427,51 +348,78 @@ public class LikedSongs extends Fragment {
     }
     //This function gets the users liked songs in the database
     public void get_liked_songs() {
-        SavedSongsFirestore table = new SavedSongsFirestore(getContext());
         sessionManager = new SessionManager(getContext());
-        String email = sessionManager.getEmail();
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        FirebaseUser currentUser = auth.getCurrentUser();
+        TextView text = view.findViewById(R.id.x_liked);
 
-        table.db.collection("Users").whereEqualTo("EMAIL", email).limit(1).get()
-                .addOnSuccessListener(querySnapshot -> {
-                    if (!querySnapshot.isEmpty()) {
-                        String userId = querySnapshot.getDocuments().get(0).getId();
+        if (currentUser == null) {
+            text.setText("Please log in to see liked songs.");
+            tracklist.clear();
+            musicAdapter1.notifyDataSetChanged();
+            return;
+        }
 
-                        table.db.collection("SavedSongs").whereEqualTo("USER_ID", userId).get()
-                                .addOnSuccessListener(songSnapshot -> {
-                                    TextView text = view.findViewById(R.id.x_liked);
+        String uid = currentUser.getUid();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-                                    if (songSnapshot.isEmpty()) {
-                                        text.setText("No liked songs");
-                                    } else {
-                                        List<DocumentSnapshot> documents = songSnapshot.getDocuments();
-                                        for (DocumentSnapshot doc : documents) {
-                                            String title = doc.getString("TITLE");
-                                            String track_name = title;
-                                            String artist = "";
-
-                                            if (title != null && title.contains(" by ")) {
-                                                String[] parts = title.split(" by ");
-                                                if (parts.length == 2) {
-                                                    track_name = parts[0];
-                                                    artist = parts[1];
-                                                }
-                                            }
-
-                                            try {
-                                                search_track(track_name, artist, doc.getString("ALBUM_URL"));
-                                            } catch (Exception e) {
-                                                text.setText("No internet connection, please try again.");
-                                                Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_LONG).show();
-                                            }
-                                        }
-                                    }
-                                })
-                                .addOnFailureListener(e -> Log.e("Firebase", "Error checking song existence", e));
+        tracklist.clear();
+        musicAdapter1.notifyDataSetChanged();
+        text.setText("Loading liked songs...");
+        ProgressBar progressBar = view.findViewById(R.id.loading_spinner);
+        progressBar.setVisibility(View.VISIBLE);
+        db.collection("Users").document(uid).collection("SavedSongs").get()
+                .addOnSuccessListener(songSnapshot -> {
+                    if (songSnapshot.isEmpty()) {
+                        text.setText("No liked songs");
                     } else {
-                        Log.e("Firebase", "User not found.");
+                        final int totalSongsToFetch = songSnapshot.size();
+                        final List<SearchResponse.Track> fetchedTracks = new ArrayList<>();
+
+                        for (com.google.firebase.firestore.DocumentSnapshot doc : songSnapshot.getDocuments()) {
+                            String title = doc.getString("TITLE");
+                            String albumUrl = doc.getString("ALBUM_URL");
+                            String track_name = title;
+                            String artist = "";
+
+                            if (title != null && title.contains(" by ")) {
+                                String[] parts = title.split(" by ");
+                                if (parts.length == 2) {
+                                    track_name = parts[0];
+                                    artist = parts[1];
+                                }
+                            }
+
+                            // Call the safe "worker" function
+                            findSingleTrack(track_name, artist, albumUrl, track -> {
+                                if (track != null) {
+                                    fetchedTracks.add(track);
+                                }
+
+                                // Check if all workers have reported back
+                                if (fetchedTracks.size() >= totalSongsToFetch) {
+                                    // --- THIS IS THE CRITICAL PART ---
+                                    // Now that all results are collected, we perform all the "side effects" at once.
+
+                                    // 1. Update the main list
+                                    tracklist.addAll(fetchedTracks);
+                                    // 2. Save the complete list to the session
+                                    sessionManager.save_Tracklist_liked(tracklist, email);
+                                    // 3. Update the UI a single time
+                                    musicAdapter1.notifyDataSetChanged();
+
+                                    text.setText(tracklist.size() + " liked songs");
+                                }
+                            });
+                        }
                     }
+                    progressBar.setVisibility(View.GONE);
                 })
-                .addOnFailureListener(e -> Log.e("Firebase", "Error retrieving user", e));
+                .addOnFailureListener(e -> {
+                    Log.e("FirebaseSecurity", "Error retrieving liked songs.", e);
+                    text.setText("Could not load liked songs.");
+                    progressBar.setVisibility(View.GONE);
+                });
     }
     //This function sets up media notification bar skip events
     public void set_up_skipping() {

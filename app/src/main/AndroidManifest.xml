@@ -43,17 +43,7 @@
             </intent-filter>
         </activity> <!-- or "landscape" -->
         <activity
-            android:name=".NewAccount"
-            android:exported="true"
-            android:configChanges="orientation|screenSize"
-            android:screenOrientation="fullSensor"></activity>
-        <activity
             android:name=".MainPage"
-            android:exported="true"
-            android:configChanges="orientation|screenSize"
-            android:screenOrientation="fullSensor"></activity>
-        <activity
-            android:name=".SignIn"
             android:exported="true"
             android:configChanges="orientation|screenSize"
             android:screenOrientation="fullSensor"></activity>
