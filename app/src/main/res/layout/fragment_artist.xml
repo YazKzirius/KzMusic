@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#090909"
+    android:background="#0A0A0A"
     tools:context=".Artist">
     <LinearLayout
         android:layout_width="match_parent"
@@ -36,7 +36,7 @@
                 android:id="@+id/like_all"
                 android:layout_gravity="right"
                 android:tint="@color/white"
-                android:background="#090909"
+                android:background="#0A0A0A"
                 android:src="@drawable/ic_liked_off"/>
             <ImageButton
                 android:layout_width="60dp"
@@ -44,7 +44,7 @@
                 android:id="@+id/play_all"
                 android:layout_gravity="right"
                 android:tint="@color/white"
-                android:background="#090909"
+                android:background="#0A0A0A"
                 android:src="@drawable/ic_play"/>
             <ImageButton
                 android:layout_width="60dp"
@@ -52,7 +52,7 @@
                 android:id="@+id/shuffle"
                 android:layout_gravity="right"
                 android:tint="@color/white"
-                android:background="#090909"
+                android:background="#0A0A0A"
                 android:src="@drawable/ic_shuffle"/>
 
         </LinearLayout>

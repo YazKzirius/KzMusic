@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:background="#090909"
+    android:background="#0A0A0A"
     android:id="@+id/media_overlay"
     tools:context=".MediaOverlay">
 
