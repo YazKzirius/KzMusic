@@ -325,10 +325,6 @@ public class MediaOverlay extends Fragment {
 
         return output;
     }
-    /**
-     * Starts the periodic UI updates that drive the visualizer.
-     * This method is robust and safe to call multiple times.
-     */
     private void startVisualizer() {
         // 1. Check the flag. If the loop is already running, do nothing.
         //    This prevents creating multiple, conflicting update loops.
@@ -346,6 +342,7 @@ public class MediaOverlay extends Fragment {
                         playerService.getLatestFftData(fftData);
                         // Pass the data to our custom view to trigger a redraw.
                         visualizerView.updateVisualizer(fftData);
+                        visualizerView.setVisualizerMode(VisualizerView.VisualizerMode.FOLDED);
                     }
 
                     // THE KEY FIX: The re-posting logic is controlled by the flag.
@@ -359,11 +356,6 @@ public class MediaOverlay extends Fragment {
         // 4. Start the loop.
         visualizerHandler.post(visualizerRunnable);
     }
-
-    /**
-     * Stops the periodic UI updates.
-     * This method is robust and safe to call multiple times.
-     */
     private void stopVisualizer() {
         // 1. Set the flag to false. This will cause the runnable to stop re-posting itself on its next execution.
         isVisualizerRunning = false;
@@ -371,6 +363,25 @@ public class MediaOverlay extends Fragment {
         if (visualizerHandler != null) {
             visualizerHandler.removeCallbacksAndMessages(null);
         }
+    }
+    private void setRandomVisualizerMode() {
+        Random visualizerRandomizer = new Random();
+        // Safety check to prevent crashes if the view isn't ready
+        if (visualizerView == null) {
+            return;
+        }
+
+        // Get an array of all possible modes from the VisualizerMode enum
+        VisualizerView.VisualizerMode[] allModes = VisualizerView.VisualizerMode.values();
+
+        // Pick a random index from the array
+        int randomIndex = visualizerRandomizer.nextInt(allModes.length);
+
+        // Get the randomly selected mode
+        VisualizerView.VisualizerMode randomMode = allModes[randomIndex];
+
+        // Apply the new mode to the view
+        visualizerView.setVisualizerMode(randomMode);
     }
 
     //This function sets up media notification bar skip events

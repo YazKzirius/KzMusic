@@ -54,13 +54,6 @@
                     android:src="@drawable/ic_colon"
                     app:tint="@color/white" />
             </LinearLayout>
-
-            <!--
-            [THE FIX]
-            This section is replaced. Instead of a FrameLayout that just stacks views,
-            we use a ConstraintLayout to perfectly center the circular album art
-            on top of the visualizer, which now acts as the background.
-            -->
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="240dp"
                 android:layout_height="240dp"
