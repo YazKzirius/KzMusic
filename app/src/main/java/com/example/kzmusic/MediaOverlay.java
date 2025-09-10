@@ -342,7 +342,6 @@ public class MediaOverlay extends Fragment {
                         playerService.getLatestFftData(fftData);
                         // Pass the data to our custom view to trigger a redraw.
                         visualizerView.updateVisualizer(fftData);
-                        visualizerView.setVisualizerMode(VisualizerView.VisualizerMode.FOLDED);
                     }
 
                     // THE KEY FIX: The re-posting logic is controlled by the flag.
