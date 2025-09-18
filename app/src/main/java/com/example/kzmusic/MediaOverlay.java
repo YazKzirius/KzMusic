@@ -300,6 +300,7 @@ public class MediaOverlay extends Fragment {
 
                     }
                 });
+        //Loading images into views
         if (playerService != null){
             if (playerService.isCurrentlyPlaying()) {
                 startVisualizer();
@@ -330,7 +331,11 @@ public class MediaOverlay extends Fragment {
         //    This prevents creating multiple, conflicting update loops.
         if (isVisualizerRunning) return;
         isVisualizerRunning = true; // 2. Set the flag to indicate the loop is now active.
+        Random random = new Random();
+        int randomIndex = random.nextInt(7);
 
+        setVisualizerOrientation(VisualizerView.Orientation.values()[randomIndex]);
+        visualizerView.setVisualizerMode(VisualizerView.VisualizerMode.SPLIT);
         // 3. Define the task to be run repeatedly (if it's the first time).
         if (visualizerRunnable == null) {
             visualizerRunnable = new Runnable() {
@@ -343,11 +348,8 @@ public class MediaOverlay extends Fragment {
                         // Pass the data to our custom view to trigger a redraw.
                         visualizerView.updateVisualizer(fftData);
                     }
-
-                    // THE KEY FIX: The re-posting logic is controlled by the flag.
-                    // As long as the flag is true, the loop will schedule itself to run again.
                     if (isVisualizerRunning) {
-                        visualizerHandler.postDelayed(this, 33); // Schedule next frame (~30 FPS)
+                        visualizerHandler.postDelayed(this, 33);
                     }
                 }
             };
@@ -363,24 +365,14 @@ public class MediaOverlay extends Fragment {
             visualizerHandler.removeCallbacksAndMessages(null);
         }
     }
-    private void setRandomVisualizerMode() {
-        Random visualizerRandomizer = new Random();
-        // Safety check to prevent crashes if the view isn't ready
-        if (visualizerView == null) {
-            return;
+    public void setVisualizerOrientation(VisualizerView.Orientation orientation) {
+        // This is the crucial safety check. If the view hasn't been created yet
+        // (i.e., onViewCreated hasn't run), this method will do nothing and prevent a crash.
+        if (visualizerView != null) {
+            // Because this method is part of the MediaOverlay instance, it has access
+            // to the visualizerView instance and can call its non-static methods.
+            visualizerView.setOrientation(orientation);
         }
-
-        // Get an array of all possible modes from the VisualizerMode enum
-        VisualizerView.VisualizerMode[] allModes = VisualizerView.VisualizerMode.values();
-
-        // Pick a random index from the array
-        int randomIndex = visualizerRandomizer.nextInt(allModes.length);
-
-        // Get the randomly selected mode
-        VisualizerView.VisualizerMode randomMode = allModes[randomIndex];
-
-        // Apply the new mode to the view
-        visualizerView.setVisualizerMode(randomMode);
     }
 
     //This function sets up media notification bar skip events

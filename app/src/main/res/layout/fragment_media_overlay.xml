@@ -74,8 +74,8 @@
                 <!-- ShapeableImageView is used to make it a perfect circle -->
                 <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/musicImage"
-                    android:layout_width="140dp"
-                    android:layout_height="140dp"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
                     android:scaleType="centerCrop"
                     android:src="@drawable/ic_library"
                     app:shapeAppearanceOverlay="@style/ShapeAppearance.App.CircleImageView"
