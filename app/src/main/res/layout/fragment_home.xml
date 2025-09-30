@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -6,6 +5,9 @@
     android:layout_height="match_parent"
     android:background="#0A0A0A"
     tools:context=".HomeFragment">
+
+    <!-- Main Scrollable Content -->
+    <!-- The outer LinearLayout is now the primary container for the new list -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -13,7 +15,8 @@
         android:gravity="center_horizontal"
         android:padding="24dp"
         android:layout_marginBottom="80dp">
-        <!-- App Logo -->
+
+        <!-- App Logo (Unchanged) -->
         <ImageView
             android:id="@+id/imageView"
             android:layout_width="120dp"
@@ -22,151 +25,124 @@
             android:src="@drawable/logo"
             android:contentDescription="App Logo"
             android:scaleType="centerCrop" />
-        <androidx.constraintlayout.widget.ConstraintLayout
-            xmlns:android="http://schemas.android.com/apk/res/android"
-            xmlns:app="http://schemas.android.com/apk/res-auto"
+
+        <!-- === MODIFIED STRUCTURE STARTS HERE === -->
+        <!-- The 2x2 grid has been replaced by a single column of horizontal items. -->
+
+        <!-- Item 1: Your Radio -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="#0A0A0A">
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingVertical="12dp">
 
+            <ImageView
+                android:id="@+id/ic_radio"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_radio" />
 
-            <!-- Combined Radio + Made For You Stack -->
-            <LinearLayout
-                android:id="@+id/iconAndLabelRow"
-                android:layout_width="wrap_content"
+            <TextView
+                android:id="@+id/your_radio"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="40dp"
-                android:gravity="center"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
+                android:layout_weight="1"
+                android:layout_marginStart="20dp"
+                android:text="Your Radio"
+                android:textColor="@color/white"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
-                <!-- Your Radio Block -->
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="center_horizontal"
-                    android:layout_marginEnd="48dp">
+        <!-- Item 2: Made for You -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingVertical="12dp">
 
-                    <ImageView
-                        android:id="@+id/ic_radio"
-                        android:layout_width="120dp"
-                        android:layout_height="120dp"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/ic_radio" />
+            <ImageView
+                android:id="@+id/ic_for_you"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_for_you" />
 
-                    <TextView
-                        android:id="@+id/your_radio"
-                        android:layout_width="120dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:gravity="center"
-                        android:text="Your Radio"
-                        android:textColor="@color/white"
-                        android:textSize="20sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- Made For You Block -->
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="center_horizontal">
-
-                    <ImageView
-                        android:id="@+id/ic_for_you"
-                        android:layout_width="120dp"
-                        android:layout_height="120dp"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/ic_for_you" />
-
-                    <TextView
-                        android:id="@+id/made_for_x"
-                        android:layout_width="120dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:gravity="center"
-                        android:text="Made for You"
-                        android:textColor="@color/white"
-                        android:textSize="20sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- Discovery Row (Top Songs & Liked Songs) -->
-            <LinearLayout
-                android:id="@+id/discovery_row"
-                android:layout_width="wrap_content"
+            <TextView
+                android:id="@+id/made_for_x"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="84dp"
-                android:gravity="center"
-                android:orientation="horizontal"
-                app:layout_constraintTop_toBottomOf="@id/iconAndLabelRow"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
+                android:layout_weight="1"
+                android:layout_marginStart="20dp"
+                android:text="Made for You"
+                android:textColor="@color/white"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
-                <!-- Top Songs Block -->
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="center_horizontal"
-                    android:layout_marginEnd="48dp">
+        <!-- Item 3: Your Top 100 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingVertical="12dp">
 
-                    <ImageView
-                        android:id="@+id/ic_podium"
-                        android:layout_width="120dp"
-                        android:layout_height="120dp"
-                        android:layout_marginBottom="12dp"
-                        android:src="@drawable/ic_podium" />
+            <ImageView
+                android:id="@+id/ic_podium"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:src="@drawable/ic_podium" />
 
-                    <TextView
-                        android:id="@+id/top_songs"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Your Top 100"
-                        android:textColor="@color/white"
-                        android:textSize="20sp"
-                        android:textStyle="bold"
-                        android:gravity="center" />
-                </LinearLayout>
+            <TextView
+                android:id="@+id/top_songs"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="20dp"
+                android:text="Your Top 100"
+                android:textColor="@color/white"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
-                <!-- Liked Songs Block -->
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="center_horizontal">
+        <!-- Item 4: Liked Songs -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingVertical="12dp">
 
-                    <ImageButton
-                        android:id="@+id/liked_btn"
-                        android:layout_width="120dp"
-                        android:layout_height="120dp"
-                        android:layout_marginBottom="12dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:src="@drawable/ic_liked"
-                        android:scaleType="centerInside"
-                        android:contentDescription="Liked Songs" />
+            <ImageButton
+                android:id="@+id/liked_btn"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_liked"
+                android:scaleType="centerInside"
+                android:contentDescription="Liked Songs" />
 
-                    <TextView
-                        android:id="@+id/liked_songs_label"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Liked Songs"
-                        android:textColor="@color/white"
-                        android:textSize="20sp"
-                        android:textStyle="bold"
-                        android:gravity="center" />
-                </LinearLayout>
-            </LinearLayout>
+            <TextView
+                android:id="@+id/liked_songs_label"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="20dp"
+                android:text="Liked Songs"
+                android:textColor="@color/white"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+        <!-- === MODIFIED STRUCTURE ENDS HERE === -->
+
     </LinearLayout>
 
-
-
+    <!-- Playback Bar (Unchanged) -->
     <RelativeLayout
         android:id="@+id/playback_bar"
         android:layout_width="match_parent"

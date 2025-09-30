@@ -292,7 +292,11 @@ public class PlaylistOverlay extends Fragment {
                     if (url == null || url.isEmpty()) {
                         art.setImageResource(R.drawable.logo);
                     } else {
-                        art.setImageURI(Uri.parse(url));
+                        // Use Glide to safely load the URI. This will not crash.
+                        Glide.with(this) // 'this' is safe inside a Fragment
+                                .load(Uri.parse(url))
+                                .error(R.drawable.logo) // Fallback image if loading fails
+                                .into(art);
                     }
 
                     musicAdapter1.notifyDataSetChanged();

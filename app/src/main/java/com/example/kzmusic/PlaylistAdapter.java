@@ -18,6 +18,8 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+
 import java.util.List;
 
 public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.PlaylistViewHolder> {
@@ -57,10 +59,14 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.Playli
                 } else {
                     holder.num_tracks.setText(songs.size() + " Tracks");
                 }
-                if (url.equals("") || url == null ) {
-                    holder.playlistArt.setImageResource(R.drawable.logo);
+                if (url != null && !url.isEmpty()) {
+                    Glide.with(context)
+                            .load(Uri.parse(url))
+                            .error(R.drawable.logo) // Fallback image if loading fails
+                            .into(holder.playlistArt);
                 } else {
-                    holder.playlistArt.setImageURI(Uri.parse(url));
+                    // Set default image if URL is missing
+                    holder.playlistArt.setImageResource(R.drawable.logo);
                 }
             });
         });

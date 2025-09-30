@@ -162,26 +162,68 @@ public class EditPlaylist extends Fragment {
         imagePickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
-                    Intent data = result.getData();
-                    if (result.getResultCode() == Activity.RESULT_OK && data != null && data.getData() != null) {
-                        Uri selectedImageUri = data.getData();
-                        Log.d("ImagePicker", "Selected URI: " + selectedImageUri);
+                    if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                        Uri selectedImageUri = result.getData().getData();
+                        if (selectedImageUri != null) {
+                            Log.d("ImagePicker", "Selected URI: " + selectedImageUri);
+                            try {
+                                final int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION;
+                                requireActivity().getContentResolver().takePersistableUriPermission(selectedImageUri, takeFlags);
+                            } catch (SecurityException e) {
+                                Log.e("PermissionError", "Failed to take persistable URI permission", e);
+                                Toast.makeText(getContext(), "Could not save permission for this image.", Toast.LENGTH_SHORT).show();
+                            }
+                            url = selectedImageUri.toString();
 
-                        // Take persistable URI permission
-                        final int takeFlags = data.getFlags()
-                                & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-
-                        requireActivity().getContentResolver()
-                                .takePersistableUriPermission(selectedImageUri, takeFlags);
-
-                        // Display image in ImageView
-                        ImageView imageView = view.findViewById(R.id.add_photo);
-                        imageView.setImageURI(selectedImageUri);
-                        url = selectedImageUri.toString();
+                            // Display the image using the robust Glide library
+                            ImageView imageView = view.findViewById(R.id.add_photo);
+                            Glide.with(this)
+                                    .load(selectedImageUri)
+                                    .error(R.drawable.ic_album_photo) // Fallback
+                                    .into(imageView);
+                        }
                     } else {
                         Log.d("ImagePicker", "User cancelled or no image selected.");
                     }
                 });
+    }
+
+    // This function updates the album photo when the fragment loads
+    public void update_album_photo() {
+        ImageView imageView = view.findViewById(R.id.add_photo);
+        PlaylistDao playlistDao = AppDatabase.getDatabase(getContext()).playlistDao();
+
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            SessionManager sessionManager = new SessionManager(getContext());
+            String playlist_name = SongQueue.getInstance().current_playlist;
+            String email = sessionManager.getEmail();
+
+            // This 'url' will be the one retrieved from the database
+            String retrievedUrl = playlistDao.getUrl(email, playlist_name);
+
+            // Update the UI on the main thread
+            new Handler(Looper.getMainLooper()).post(() -> {
+                this.url = retrievedUrl; // Update the member variable
+                if (retrievedUrl == null || retrievedUrl.isEmpty()) {
+                    imageView.setImageResource(R.drawable.ic_album_photo);
+                } else {
+                    Glide.with(this)
+                            .load(Uri.parse(retrievedUrl))
+                            .error(R.drawable.ic_album_photo) // A fallback if the URI is invalid
+                            .into(imageView);
+                }
+            });
+        });
+    }
+
+    // You will also need a method to launch the picker
+    private void launchImagePicker() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("image/*");
+        if (imagePickerLauncher != null) {
+            imagePickerLauncher.launch(intent);
+        }
     }
     private void displayPlaylistNames() {
         AppDatabase.databaseWriteExecutor.execute(() -> {
@@ -190,24 +232,6 @@ public class EditPlaylist extends Fragment {
             PlaylistDao playlistDao = AppDatabase.getDatabase(getContext()).playlistDao();
             List<Playlist> playlists = playlistDao.getAllPlaylists(email);
             Log.d("RoomDB", "✅ Playlists retrieved "+playlists.size());
-        });
-    }
-    //This function updates album photo
-    public void update_album_photo() {
-        ImageView imageView = view.findViewById(R.id.add_photo);
-        PlaylistDao playlistDao = AppDatabase.getDatabase(getContext()).playlistDao();
-        AppDatabase.databaseWriteExecutor.execute(() -> {
-            SessionManager sessionManager = new SessionManager(getContext());
-            String playlist_name = SongQueue.getInstance().current_playlist;
-            String email = sessionManager.getEmail();
-            url = playlistDao.getUrl(email, playlist_name);
-            new Handler(Looper.getMainLooper()).post(() -> {
-                if (url == null || url.isEmpty()) {
-                    imageView.setImageResource(R.drawable.ic_album_photo);
-                } else {
-                    imageView.setImageURI(Uri.parse(url));
-                }
-            });
         });
     }
     //This function loads User music audio files from personal directory

@@ -119,7 +119,7 @@ public class HomeFragment extends Fragment {
         sessionManager = new SessionManager(getContext());
         username = sessionManager.getUsername();
         email = sessionManager.getEmail();
-        //Setting up Homepage and getting given accesstoken
+        //Setting up Homepage and getting given access token
         set_up_buttons();
         TextView text1 = view.findViewById(R.id.your_radio);
         TextView text3 = view.findViewById(R.id.made_for_x);
